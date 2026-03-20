@@ -1,0 +1,142 @@
+using Gym.Application.DTOs.Trainers;
+using Gym.Application.Interfaces.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Gym.ManagementAPI.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+[Authorize]
+public class TrainersController : ControllerBase
+{
+    private readonly ITrainerService _trainerService;
+    private readonly ILogger<TrainersController> _logger;
+
+    public TrainersController(ITrainerService trainerService, ILogger<TrainersController> logger)
+    {
+        _trainerService = trainerService;
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// Get all trainers
+    /// URL: GET /api/Trainers
+    /// </summary>
+    [HttpGet]
+    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    public async Task<IActionResult> GetTrainers()
+    {
+        _logger.LogInformation("Getting all trainers");
+        var result = await _trainerService.GetAllAsync();
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Get trainer by ID
+    /// URL: GET /api/Trainers/{id}
+    /// </summary>
+    [HttpGet("{id}")]
+    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    public async Task<IActionResult> GetTrainer(Guid id)
+    {
+        _logger.LogInformation("Getting trainer by ID: {TrainerId}", id);
+        var result = await _trainerService.GetByIdAsync(id);
+
+        if (!result.Success)
+            return NotFound(result);
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Get only active trainers (SỬA ĐỂ KHỚP VỚI FRONTEND)
+    /// URL: GET /api/Trainers/active
+    /// </summary>
+    [HttpGet("active")] // <--- ĐÃ SỬA TỪ "available" THÀNH "active"
+    [AllowAnonymous]
+    public async Task<IActionResult> GetActiveTrainers()
+    {
+        _logger.LogInformation("Getting active trainers");
+        // Lưu ý: Đảm bảo Service của bạn cũng có hàm GetActiveAsync hoặc tương tự
+        var result = await _trainerService.GetAvailableAsync();
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Create new trainer
+    /// URL: POST /api/Trainers
+    /// </summary>
+    [HttpPost]
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<IActionResult> CreateTrainer([FromBody] CreateTrainerDto dto)
+    {
+        _logger.LogInformation("Creating new trainer: {FullName}", dto.FullName);
+        var result = await _trainerService.CreateAsync(dto);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return CreatedAtAction(nameof(GetTrainer), new { id = result.Data!.Id }, result);
+    }
+
+    /// <summary>
+    /// Update trainer
+    /// URL: PUT /api/Trainers/{id}
+    /// </summary>
+    [HttpPut("{id}")]
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<IActionResult> UpdateTrainer(Guid id, [FromBody] UpdateTrainerDto dto)
+    {
+        _logger.LogInformation("Updating trainer: {TrainerId}", id);
+        var result = await _trainerService.UpdateAsync(id, dto);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Delete trainer (soft delete)
+    /// URL: DELETE /api/Trainers/{id}
+    /// </summary>
+    [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> DeleteTrainer(Guid id)
+    {
+        _logger.LogInformation("Deleting trainer: {TrainerId}", id);
+        var result = await _trainerService.DeleteAsync(id);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
+
+    [HttpGet("{id}/members")]
+    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    public async Task<IActionResult> GetAssignedMembers(Guid id)
+    {
+        var result = await _trainerService.GetAssignedMembersAsync(id);
+        return Ok(result);
+    }
+
+    [HttpPost("assign")]
+    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    public async Task<IActionResult> AssignMember([FromBody] CreateTrainerAssignmentDto dto)
+    {
+        var result = await _trainerService.AssignMemberAsync(dto);
+        if (!result.Success) return BadRequest(result);
+        return Ok(result);
+    }
+
+    [HttpDelete("unassign/{assignmentId}")]
+    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    public async Task<IActionResult> RemoveAssignment(Guid assignmentId)
+    {
+        var result = await _trainerService.RemoveAssignmentAsync(assignmentId);
+        if (!result.Success) return BadRequest(result);
+        return Ok(result);
+    }
+}

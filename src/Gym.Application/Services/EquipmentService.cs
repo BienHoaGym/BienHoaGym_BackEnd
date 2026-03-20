@@ -1,0 +1,282 @@
+using AutoMapper;
+using Gym.Application.DTOs.Common;
+using Gym.Application.DTOs.Equipment;
+using Gym.Application.Interfaces;
+using Gym.Application.Interfaces.Services;
+using Gym.Domain.Entities;
+using Gym.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
+
+namespace Gym.Application.Services;
+
+public class EquipmentService : IEquipmentService
+{
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
+
+    public EquipmentService(IUnitOfWork unitOfWork, IMapper mapper)
+    {
+        _unitOfWork = unitOfWork;
+        _mapper = mapper;
+    }
+
+    public async Task<ResponseDto<List<EquipmentDto>>> GetEquipmentsAsync(Guid? categoryId = null, Guid? providerId = null, EquipmentStatus? status = null, string? location = null, string? searchTerm = null)
+    {
+        var query = _unitOfWork.Equipments.GetQueryable()
+            .Include(e => e.EquipmentCategory)
+            .Include(e => e.Provider)
+            .Where(e => !e.IsDeleted)
+            .AsQueryable();
+
+        if (categoryId.HasValue) query = query.Where(e => e.CategoryId == categoryId.Value);
+        if (providerId.HasValue) query = query.Where(e => e.ProviderId == providerId.Value);
+        if (status.HasValue) query = query.Where(e => e.Status == status.Value);
+        if (!string.IsNullOrWhiteSpace(location)) query = query.Where(e => e.Location != null && e.Location.Contains(location));
+        if (!string.IsNullOrWhiteSpace(searchTerm)) query = query.Where(e => e.Name.Contains(searchTerm) || e.EquipmentCode.Contains(searchTerm) || (e.SerialNumber != null && e.SerialNumber.Contains(searchTerm)));
+
+        var equipments = await query.ToListAsync();
+        return ResponseDto<List<EquipmentDto>>.SuccessResult(_mapper.Map<List<EquipmentDto>>(equipments));
+    }
+
+    public async Task<ResponseDto<EquipmentDto>> GetByIdAsync(Guid id)
+    {
+        var equipment = await _unitOfWork.Equipments.GetQueryable()
+            .Include(e => e.EquipmentCategory)
+            .Include(e => e.Provider)
+            .FirstOrDefaultAsync(e => e.Id == id && !e.IsDeleted);
+        if (equipment == null) return ResponseDto<EquipmentDto>.FailureResult("Thiết bị không tồn tại");
+        return ResponseDto<EquipmentDto>.SuccessResult(_mapper.Map<EquipmentDto>(equipment));
+    }
+
+    public async Task<ResponseDto<EquipmentDto>> CreateEquipmentAsync(CreateEquipmentDto dto)
+    {
+        // Tự động sinh mã nếu để trống
+        if (string.IsNullOrWhiteSpace(dto.EquipmentCode))
+        {
+            var count = await _unitOfWork.Equipments.GetQueryable().CountAsync();
+            dto.EquipmentCode = $"EQ{(count + 1):D4}";
+        }
+
+        var equipment = _mapper.Map<Equipment>(dto);
+        await _unitOfWork.Equipments.AddAsync(equipment);
+        await _unitOfWork.SaveChangesAsync();
+        return ResponseDto<EquipmentDto>.SuccessResult(_mapper.Map<EquipmentDto>(equipment));
+    }
+
+    public async Task<ResponseDto<EquipmentDto>> UpdateEquipmentAsync(Guid id, CreateEquipmentDto dto)
+    {
+        var equipment = await _unitOfWork.Equipments.GetQueryable()
+            .Include(e => e.MaintenanceLogs)
+            .Include(e => e.IncidentLogs)
+            .FirstOrDefaultAsync(e => e.Id == id && !e.IsDeleted);
+
+        if (equipment == null) return ResponseDto<EquipmentDto>.FailureResult("Thiết bị không tồn tại");
+        
+        // Kiểm tra chặn sửa mã nếu đã có lịch sử
+        if (equipment.EquipmentCode != dto.EquipmentCode)
+        {
+            var hasHistory = equipment.MaintenanceLogs.Count > 0 || equipment.IncidentLogs.Count > 0;
+            if (hasHistory) return ResponseDto<EquipmentDto>.FailureResult("Không thể sửa mã thiết bị đã có lịch sử bảo trì hoặc sự cố");
+        }
+
+        // Lưu lịch sử nhà cung cấp nếu thay đổi
+        if (equipment.ProviderId != dto.ProviderId)
+        {
+            var history = new EquipmentProviderHistory
+            {
+                EquipmentId = id,
+                OldProviderId = equipment.ProviderId,
+                NewProviderId = dto.ProviderId,
+                ChangeDate = DateTime.UtcNow,
+                Reason = "Cập nhật thông tin thiết bị"
+            };
+            await _unitOfWork.EquipmentProviderHistories.AddAsync(history);
+        }
+
+        // Lưu lịch sử điều chuyển nếu vị trí thay đổi
+        if (equipment.Location != dto.Location)
+        {
+            var trans = new EquipmentTransaction
+            {
+                EquipmentId = id,
+                Type = EquipmentTransactionType.Transfer,
+                Quantity = equipment.Quantity,
+                Date = DateTime.UtcNow,
+                FromLocation = equipment.Location,
+                ToLocation = dto.Location,
+                Note = "Tự động ghi nhận khi cập nhật vị trí"
+            };
+            await _unitOfWork.EquipmentTransactions.AddAsync(trans);
+        }
+
+        _mapper.Map(dto, equipment);
+        _unitOfWork.Equipments.Update(equipment);
+        await _unitOfWork.SaveChangesAsync();
+        return ResponseDto<EquipmentDto>.SuccessResult(_mapper.Map<EquipmentDto>(equipment));
+    }
+
+    public async Task<ResponseDto<bool>> DeleteEquipmentAsync(Guid id)
+    {
+        var equipment = await _unitOfWork.Equipments.GetQueryable()
+            .Include(e => e.MaintenanceLogs)
+            .Include(e => e.IncidentLogs)
+            .FirstOrDefaultAsync(e => e.Id == id && !e.IsDeleted);
+
+        if (equipment == null) return ResponseDto<bool>.FailureResult("Không tìm thấy");
+
+        // Nếu có lịch sử, chuyển sang trạng thái Thanh lý thay vì xóa
+        var hasHistory = equipment.MaintenanceLogs.Count > 0 || equipment.IncidentLogs.Count > 0;
+        if (hasHistory)
+        {
+            return ResponseDto<bool>.FailureResult("Thiết bị đã có lịch sử, vui lòng sử dụng chức năng Thanh lý");
+        }
+
+        equipment.IsDeleted = true;
+        _unitOfWork.Equipments.Update(equipment);
+        await _unitOfWork.SaveChangesAsync();
+        return ResponseDto<bool>.SuccessResult(true, "Đã xóa thiết bị");
+    }
+
+    public async Task<ResponseDto<bool>> LiquidateEquipmentAsync(Guid id)
+    {
+        var equipment = await _unitOfWork.Equipments.GetByIdAsync(id);
+        if (equipment == null) return ResponseDto<bool>.FailureResult("Không tìm thấy");
+
+        equipment.Status = EquipmentStatus.Liquidated;
+        
+        // Ghi nhận giao dịch thanh lý
+        var trans = new EquipmentTransaction
+        {
+            EquipmentId = id,
+            Type = EquipmentTransactionType.Liquidation,
+            Quantity = equipment.Quantity,
+            Date = DateTime.UtcNow,
+            Note = "Ghi nhận thanh lý thiết bị"
+        };
+        await _unitOfWork.EquipmentTransactions.AddAsync(trans);
+
+        _unitOfWork.Equipments.Update(equipment);
+        await _unitOfWork.SaveChangesAsync();
+        return ResponseDto<bool>.SuccessResult(true, "Đã thanh lý thiết bị");
+    }
+
+    public async Task<ResponseDto<List<EquipmentTransactionDto>>> GetTransactionsAsync(Guid? equipmentId = null)
+    {
+        var query = _unitOfWork.EquipmentTransactions.GetQueryable()
+            .Include(t => t.Equipment)
+            .AsQueryable();
+        
+        if (equipmentId.HasValue) query = query.Where(t => t.EquipmentId == equipmentId.Value);
+        
+        var transactions = await query.OrderByDescending(t => t.Date).ToListAsync();
+        return ResponseDto<List<EquipmentTransactionDto>>.SuccessResult(_mapper.Map<List<EquipmentTransactionDto>>(transactions));
+    }
+
+    public async Task<ResponseDto<bool>> RecordTransactionAsync(CreateEquipmentTransactionDto dto)
+    {
+        var equipment = await _unitOfWork.Equipments.GetByIdAsync(dto.EquipmentId);
+        if (equipment == null) return ResponseDto<bool>.FailureResult("Equipment not found");
+        
+        var transaction = _mapper.Map<EquipmentTransaction>(dto);
+        await _unitOfWork.EquipmentTransactions.AddAsync(transaction);
+        await _unitOfWork.SaveChangesAsync();
+        return ResponseDto<bool>.SuccessResult(true, "Transaction recorded successfully");
+    }
+
+    public async Task<ResponseDto<List<EquipmentProviderHistoryDto>>> GetProviderHistoryAsync(Guid equipmentId)
+    {
+        var history = await _unitOfWork.EquipmentProviderHistories.GetQueryable()
+            .Include(h => h.OldProvider)
+            .Include(h => h.NewProvider)
+            .Where(h => h.EquipmentId == equipmentId)
+            .OrderByDescending(h => h.ChangeDate)
+            .ToListAsync();
+        
+        return ResponseDto<List<EquipmentProviderHistoryDto>>.SuccessResult(_mapper.Map<List<EquipmentProviderHistoryDto>>(history));
+    }
+
+    public async Task<ResponseDto<List<MaintenanceLogDto>>> GetMaintenanceLogsAsync(Guid? equipmentId = null)
+    {
+        var query = _unitOfWork.MaintenanceLogs.GetQueryable()
+            .Include(l => l.Equipment)
+            .AsQueryable();
+        
+        if (equipmentId.HasValue) query = query.Where(l => l.EquipmentId == equipmentId.Value);
+        
+        var logs = await query.OrderByDescending(l => l.Date).ToListAsync();
+        return ResponseDto<List<MaintenanceLogDto>>.SuccessResult(_mapper.Map<List<MaintenanceLogDto>>(logs));
+    }
+
+    public async Task<ResponseDto<MaintenanceLogDto>> LogMaintenanceAsync(CreateMaintenanceLogDto dto)
+    {
+        var equipment = await _unitOfWork.Equipments.GetByIdAsync(dto.EquipmentId);
+        if (equipment == null) return ResponseDto<MaintenanceLogDto>.FailureResult("Equipment not found");
+        
+        var log = _mapper.Map<MaintenanceLog>(dto);
+        await _unitOfWork.MaintenanceLogs.AddAsync(log);
+
+        // Update equipment maintenance dates if completed
+        if (dto.Status == MaintenanceStatus.Completed)
+        {
+            equipment.LastMaintenanceDate = dto.Date;
+            equipment.NextMaintenanceDate = dto.Date.AddDays(equipment.MaintenanceIntervalDays);
+            _unitOfWork.Equipments.Update(equipment);
+        }
+
+        await _unitOfWork.SaveChangesAsync();
+        return ResponseDto<MaintenanceLogDto>.SuccessResult(_mapper.Map<MaintenanceLogDto>(log), "Maintenance log created");
+    }
+
+    public async Task<ResponseDto<List<IncidentLogDto>>> GetIncidentLogsAsync(Guid? equipmentId = null)
+    {
+        var query = _unitOfWork.IncidentLogs.GetQueryable()
+            .Include(l => l.Equipment)
+            .AsQueryable();
+
+        if (equipmentId.HasValue) query = query.Where(l => l.EquipmentId == equipmentId.Value);
+
+        var logs = await query.OrderByDescending(l => l.Date).ToListAsync();
+        return ResponseDto<List<IncidentLogDto>>.SuccessResult(_mapper.Map<List<IncidentLogDto>>(logs));
+    }
+
+    public async Task<ResponseDto<IncidentLogDto>> LogIncidentAsync(CreateIncidentLogDto dto)
+    {
+        var equipment = await _unitOfWork.Equipments.GetByIdAsync(dto.EquipmentId);
+        if (equipment == null) return ResponseDto<IncidentLogDto>.FailureResult("Equipment not found");
+
+        var log = _mapper.Map<IncidentLog>(dto);
+        await _unitOfWork.IncidentLogs.AddAsync(log);
+        
+        // Optional: Update status to Broken
+        if (dto.ResolutionStatus == "Open")
+        {
+            equipment.Status = EquipmentStatus.Broken;
+            _unitOfWork.Equipments.Update(equipment);
+        }
+
+        await _unitOfWork.SaveChangesAsync();
+        return ResponseDto<IncidentLogDto>.SuccessResult(_mapper.Map<IncidentLogDto>(log));
+    }
+
+    public async Task<ResponseDto<List<DepreciationDto>>> GetDepreciationsAsync(Guid? equipmentId = null)
+    {
+        var query = _unitOfWork.Depreciations.GetQueryable()
+            .Include(d => d.Equipment)
+            .AsQueryable();
+        
+        if (equipmentId.HasValue) query = query.Where(d => d.EquipmentId == equipmentId.Value);
+        
+        var result = await query.OrderByDescending(d => d.Date).ToListAsync();
+        return ResponseDto<List<DepreciationDto>>.SuccessResult(_mapper.Map<List<DepreciationDto>>(result));
+    }
+
+    public async Task<ResponseDto<List<EquipmentDto>>> GetMaintenancePlanAsync()
+    {
+        // Get equipments that need maintenance in the next 7 days or are overdue
+        var threshold = DateTime.UtcNow.AddDays(7);
+        var equipments = await _unitOfWork.Equipments.FindAsync(e => 
+            e.NextMaintenanceDate <= threshold || e.Status == EquipmentStatus.Broken);
+            
+        return ResponseDto<List<EquipmentDto>>.SuccessResult(_mapper.Map<List<EquipmentDto>>(equipments));
+    }
+}
