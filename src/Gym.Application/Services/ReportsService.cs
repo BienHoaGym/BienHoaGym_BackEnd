@@ -172,11 +172,53 @@ public class ReportsService : IReportsService
                 .ToList()
         };
 
-        var totalDepreciation = equipments.Sum(e => e.Depreciations.Sum(d => d.Value));
+        var totalDepreciation = equipments.Sum(e => e.Depreciations.Sum(d => d.Amount));
         stats.TotalCurrentValue = stats.TotalOriginalValue - totalDepreciation;
 
         return ResponseDto<AssetInventoryStatsDto>.SuccessResult(stats);
     }
+
+    public async Task<ResponseDto<DepreciationReportDto>> GetDepreciationReportAsync(int month, int year)
+    {
+        var depreciations = await _unitOfWork.Depreciations.GetQueryable()
+            .Include(d => d.Equipment)
+                .ThenInclude(e => e!.EquipmentCategory)
+            .Where(d => d.PeriodMonth == month && d.PeriodYear == year && !d.IsDeleted)
+            .ToListAsync();
+
+        var report = new DepreciationReportDto
+        {
+            Month = month,
+            Year = year,
+            TotalDepreciationAmount = depreciations.Sum(d => d.Amount),
+            EquipmentCount = depreciations.Select(d => d.EquipmentId).Distinct().Count(),
+            
+            ByCategory = depreciations
+                .GroupBy(d => d.Equipment!.EquipmentCategory?.Name ?? "Khác")
+                .Select(g => new DepreciationByCategoryDto
+                {
+                    CategoryName = g.Key,
+                    EquipmentCount = g.Select(d => d.EquipmentId).Distinct().Count(),
+                    TotalAmount = g.Sum(d => d.Amount)
+                })
+                .OrderByDescending(x => x.TotalAmount)
+                .ToList(),
+                
+            Details = depreciations.Select(d => new EquipmentDepreciationDetailDto
+            {
+                EquipmentId = d.EquipmentId,
+                EquipmentCode = d.Equipment!.EquipmentCode,
+                EquipmentName = d.Equipment!.Name,
+                OriginalPrice = d.Equipment!.PurchasePrice,
+                DepreciationAmount = d.Amount,
+                RemainingValue = d.RemainingValue,
+                Status = d.Equipment!.Status.ToString()
+            }).ToList()
+        };
+
+        return ResponseDto<DepreciationReportDto>.SuccessResult(report);
+    }
+
 
     public async Task<ResponseDto<bool>> SeedReportDataAsync()
     {

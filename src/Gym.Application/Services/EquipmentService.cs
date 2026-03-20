@@ -35,7 +35,17 @@ public class EquipmentService : IEquipmentService
         if (!string.IsNullOrWhiteSpace(searchTerm)) query = query.Where(e => e.Name.Contains(searchTerm) || e.EquipmentCode.Contains(searchTerm) || (e.SerialNumber != null && e.SerialNumber.Contains(searchTerm)));
 
         var equipments = await query.ToListAsync();
-        return ResponseDto<List<EquipmentDto>>.SuccessResult(_mapper.Map<List<EquipmentDto>>(equipments));
+        var dtos = _mapper.Map<List<EquipmentDto>>(equipments);
+        
+        // Enrich with depreciation data
+        foreach(var d in dtos) {
+            var e = equipments.First(x => x.Id == d.Id);
+            d.AccumulatedDepreciation = e.Depreciations.Sum(dep => dep.Amount);
+            d.CurrentBookValue = e.PurchasePrice - d.AccumulatedDepreciation;
+            d.IsFullyDepreciated = d.CurrentBookValue <= d.SalvageValue;
+        }
+
+        return ResponseDto<List<EquipmentDto>>.SuccessResult(dtos);
     }
 
     public async Task<ResponseDto<EquipmentDto>> GetByIdAsync(Guid id)
@@ -45,7 +55,15 @@ public class EquipmentService : IEquipmentService
             .Include(e => e.Provider)
             .FirstOrDefaultAsync(e => e.Id == id && !e.IsDeleted);
         if (equipment == null) return ResponseDto<EquipmentDto>.FailureResult("Thiết bị không tồn tại");
-        return ResponseDto<EquipmentDto>.SuccessResult(_mapper.Map<EquipmentDto>(equipment));
+        
+        var dto = _mapper.Map<EquipmentDto>(equipment);
+        dto.AccumulatedDepreciation = await _unitOfWork.Depreciations.GetQueryable()
+            .Where(d => d.EquipmentId == id)
+            .SumAsync(d => d.Amount);
+        dto.CurrentBookValue = equipment.PurchasePrice - dto.AccumulatedDepreciation;
+        dto.IsFullyDepreciated = dto.CurrentBookValue <= equipment.SalvageValue;
+        
+        return ResponseDto<EquipmentDto>.SuccessResult(dto);
     }
 
     public async Task<ResponseDto<EquipmentDto>> CreateEquipmentAsync(CreateEquipmentDto dto)
@@ -120,21 +138,27 @@ public class EquipmentService : IEquipmentService
         var equipment = await _unitOfWork.Equipments.GetQueryable()
             .Include(e => e.MaintenanceLogs)
             .Include(e => e.IncidentLogs)
+            .Include(e => e.Transactions)
+            .Include(e => e.Depreciations)
             .FirstOrDefaultAsync(e => e.Id == id && !e.IsDeleted);
 
-        if (equipment == null) return ResponseDto<bool>.FailureResult("Không tìm thấy");
+        if (equipment == null) return ResponseDto<bool>.FailureResult("Thiết bị không tồn tại");
 
-        // Nếu có lịch sử, chuyển sang trạng thái Thanh lý thay vì xóa
-        var hasHistory = equipment.MaintenanceLogs.Count > 0 || equipment.IncidentLogs.Count > 0;
+        // Kiểm tra tất cả các loại lịch sử
+        bool hasHistory = equipment.MaintenanceLogs.Any() || 
+                         equipment.IncidentLogs.Any() || 
+                         equipment.Transactions.Any() || 
+                         equipment.Depreciations.Any();
+
         if (hasHistory)
         {
-            return ResponseDto<bool>.FailureResult("Thiết bị đã có lịch sử, vui lòng sử dụng chức năng Thanh lý");
+            return ResponseDto<bool>.FailureResult("Thiết bị này đã có dữ liệu lịch sử (giao dịch, bảo trì, sự cố hoặc khấu hao). Không thể xóa vĩnh viễn, vui lòng sử dụng chức năng 'Thanh lý'.");
         }
 
         equipment.IsDeleted = true;
         _unitOfWork.Equipments.Update(equipment);
         await _unitOfWork.SaveChangesAsync();
-        return ResponseDto<bool>.SuccessResult(true, "Đã xóa thiết bị");
+        return ResponseDto<bool>.SuccessResult(true, "Đã xóa thiết bị thành công");
     }
 
     public async Task<ResponseDto<bool>> LiquidateEquipmentAsync(Guid id)
@@ -215,11 +239,18 @@ public class EquipmentService : IEquipmentService
         var log = _mapper.Map<MaintenanceLog>(dto);
         await _unitOfWork.MaintenanceLogs.AddAsync(log);
 
-        // Update equipment maintenance dates if completed
+        // Update equipment maintenance dates and status if completed
         if (dto.Status == MaintenanceStatus.Completed)
         {
             equipment.LastMaintenanceDate = dto.Date;
             equipment.NextMaintenanceDate = dto.Date.AddDays(equipment.MaintenanceIntervalDays);
+            
+            // Nếu thiết bị đang hỏng hoặc đang bảo trì, đưa về trạng thái hoạt động
+            if (equipment.Status == EquipmentStatus.Broken || equipment.Status == EquipmentStatus.Maintenance)
+            {
+                equipment.Status = EquipmentStatus.Active;
+            }
+            
             _unitOfWork.Equipments.Update(equipment);
         }
 
@@ -278,5 +309,59 @@ public class EquipmentService : IEquipmentService
             e.NextMaintenanceDate <= threshold || e.Status == EquipmentStatus.Broken);
             
         return ResponseDto<List<EquipmentDto>>.SuccessResult(_mapper.Map<List<EquipmentDto>>(equipments));
+    }
+
+    public async Task<ResponseDto<bool>> RecordDepreciationAsync(Guid equipmentId, int month, int year, string? note = null)
+    {
+        var equipment = await _unitOfWork.Equipments.GetByIdAsync(equipmentId);
+        if (equipment == null) return ResponseDto<bool>.FailureResult("Không tìm thấy thiết bị");
+
+        // Check if already recorded for this period
+        var exists = await _unitOfWork.Depreciations.GetQueryable()
+            .AnyAsync(d => d.EquipmentId == equipmentId && d.PeriodMonth == month && d.PeriodYear == year);
+        if (exists) return ResponseDto<bool>.FailureResult($"Đã ghi nhận khấu hao cho tháng {month}/{year}");
+
+        if (equipment.UsefulLifeMonths <= 0) return ResponseDto<bool>.FailureResult("Thời gian khấu hao chưa được cấu hình");
+
+        // Calculate monthly amount: (OriginalPrice - SalvageValue) / UsefulLife
+        decimal monthlyAmount = (equipment.PurchasePrice - equipment.SalvageValue) / equipment.UsefulLifeMonths;
+        
+        // Total already depreciated
+        var totalDepreciated = await _unitOfWork.Depreciations.GetQueryable()
+            .Where(d => d.EquipmentId == equipmentId)
+            .SumAsync(d => d.Amount);
+
+        if (totalDepreciated >= (equipment.PurchasePrice - equipment.SalvageValue))
+            return ResponseDto<bool>.FailureResult("Thiết bị đã khấu hao hết");
+
+        var dep = new Depreciation
+        {
+            EquipmentId = equipmentId,
+            Amount = monthlyAmount,
+            PeriodMonth = month,
+            PeriodYear = year,
+            RemainingValue = equipment.PurchasePrice - totalDepreciated - monthlyAmount,
+            Note = note ?? $"Khấu hao định kỳ tháng {month}/{year}",
+            Date = DateTime.UtcNow
+        };
+
+        await _unitOfWork.Depreciations.AddAsync(dep);
+        await _unitOfWork.SaveChangesAsync();
+        return ResponseDto<bool>.SuccessResult(true, "Ghi nhận khấu hao thành công");
+    }
+    public async Task<ResponseDto<int>> BulkRecordDepreciationAsync(int month, int year)
+    {
+        var activeEquipments = await _unitOfWork.Equipments.GetQueryable()
+            .Where(e => !e.IsDeleted && e.Status != EquipmentStatus.Liquidated)
+            .ToListAsync();
+
+        int count = 0;
+        foreach (var eq in activeEquipments)
+        {
+            var res = await RecordDepreciationAsync(eq.Id, month, year);
+            if (res.Success) count++;
+        }
+
+        return ResponseDto<int>.SuccessResult(count, $"Đã ghi nhận khấu hao cho {count}/{activeEquipments.Count} thiết bị.");
     }
 }

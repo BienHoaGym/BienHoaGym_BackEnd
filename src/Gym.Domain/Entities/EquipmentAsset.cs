@@ -25,6 +25,11 @@ public class Equipment : BaseEntity
     public EquipmentPriority Priority { get; set; } = EquipmentPriority.Medium;
     public string? Location { get; set; } // Vị trí lắp đặt/ Khu vực
     public string? Description { get; set; }
+    
+    // Depreciation settings
+    public int UsefulLifeMonths { get; set; } = 36; // Default 3 years
+    public decimal SalvageValue { get; set; } = 0; // Estimated value after useful life
+    public DateTime? DepreciationStartDate { get; set; }
 
     // Maintenance scheduling
     public int MaintenanceIntervalDays { get; set; } = 90; // Mặc định 3 tháng bảo trì 1 lần
@@ -82,7 +87,11 @@ public class Depreciation : BaseEntity
     public Guid EquipmentId { get; set; }
     public virtual Equipment Equipment { get; set; } = null!;
 
-    public decimal Value { get; set; } // Giá trị khấu hao ghi nhận
+    public decimal Amount { get; set; } // Depreciation amount for the period
+    public int PeriodMonth { get; set; } // Monthly depreciation period
+    public int PeriodYear { get; set; } // Yearly depreciation period
+    public decimal RemainingValue { get; set; } // Book value after this depreciation
+    public string? Note { get; set; }
     public DateTime Date { get; set; } = DateTime.UtcNow;
 }
 

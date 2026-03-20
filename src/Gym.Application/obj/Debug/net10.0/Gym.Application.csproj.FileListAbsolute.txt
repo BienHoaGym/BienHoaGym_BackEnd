@@ -28,3 +28,4 @@ C:\Users\ADMIN\OneDrive\Tài liệu\Gym_Project\GymManagement\src\Gym.Applicat
 C:\Users\ADMIN\OneDrive\Tài liệu\Gym_Project\GymManagement\src\Gym.Application\obj\Debug\net10.0\refint\Gym.Application.dll
 C:\Users\ADMIN\OneDrive\Tài liệu\Gym_Project\GymManagement\src\Gym.Application\obj\Debug\net10.0\Gym.Application.pdb
 C:\Users\ADMIN\OneDrive\Tài liệu\Gym_Project\GymManagement\src\Gym.Application\obj\Debug\net10.0\ref\Gym.Application.dll
+C:\Users\ADMIN\OneDrive\Tài liệu\Gym_Project\GymManagement\src\Gym.Application\obj\Debug\net10.0\Gym.Application.sourcelink.json

@@ -51,7 +51,6 @@ public class EquipmentController : ControllerBase
     public async Task<IActionResult> Update(Guid id, [FromBody] CreateEquipmentDto dto)
     {
         var result = await _equipmentService.UpdateEquipmentAsync(id, dto);
-        if (!result.Success) return BadRequest(result);
         return Ok(result);
     }
 
@@ -60,7 +59,7 @@ public class EquipmentController : ControllerBase
     public async Task<IActionResult> Delete(Guid id)
     {
         var result = await _equipmentService.DeleteEquipmentAsync(id);
-        return result.Success ? Ok(result) : BadRequest(result);
+        return Ok(result);
     }
 
     [HttpPost("{id}/liquidate")]
@@ -68,7 +67,7 @@ public class EquipmentController : ControllerBase
     public async Task<IActionResult> Liquidate(Guid id)
     {
         var result = await _equipmentService.LiquidateEquipmentAsync(id);
-        return result.Success ? Ok(result) : BadRequest(result);
+        return Ok(result);
     }
 
     [HttpGet("{id}/provider-history")]
@@ -131,6 +130,14 @@ public class EquipmentController : ControllerBase
     public async Task<IActionResult> GetMaintenancePlan()
     {
         var result = await _equipmentService.GetMaintenancePlanAsync();
+        return Ok(result);
+    }
+
+    [HttpPost("{id}/depreciation")]
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<IActionResult> RecordDepreciation(Guid id, [FromQuery] int month, [FromQuery] int year, [FromQuery] string? note)
+    {
+        var result = await _equipmentService.RecordDepreciationAsync(id, month, year, note);
         return Ok(result);
     }
 }

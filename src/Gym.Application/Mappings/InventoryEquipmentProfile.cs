@@ -10,12 +10,20 @@ public class InventoryEquipmentProfile : Profile
 {
     public InventoryEquipmentProfile()
     {
+        // Warehouse
+        CreateMap<Warehouse, WarehouseDto>().ReverseMap();
+        CreateMap<CreateWarehouseDto, Warehouse>();
+
         // Inventory
         CreateMap<Inventory, InventoryDto>()
-            .ForMember(d => d.ProductName, o => o.MapFrom(s => s.Product != null ? s.Product.Name : ""));
+            .ForMember(d => d.ProductName, o => o.MapFrom(s => s.Product != null ? s.Product.Name : ""))
+            .ForMember(d => d.ProductSKU, o => o.MapFrom(s => s.Product != null ? s.Product.SKU : ""))
+            .ForMember(d => d.WarehouseName, o => o.MapFrom(s => s.Warehouse != null ? s.Warehouse.Name : ""));
         
         CreateMap<StockTransaction, StockTransactionDto>()
             .ForMember(d => d.ProductName, o => o.MapFrom(s => s.Product != null ? s.Product.Name : ""))
+            .ForMember(d => d.FromWarehouseName, o => o.MapFrom(s => s.FromWarehouse != null ? s.FromWarehouse.Name : ""))
+            .ForMember(d => d.ToWarehouseName, o => o.MapFrom(s => s.ToWarehouse != null ? s.ToWarehouse.Name : ""))
             .ForMember(d => d.ProviderName, o => o.MapFrom(s => s.Provider != null ? s.Provider.Name : ""));
         CreateMap<CreateStockTransactionDto, StockTransaction>();
 

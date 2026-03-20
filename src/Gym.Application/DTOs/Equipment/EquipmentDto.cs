@@ -21,6 +21,12 @@ public class EquipmentDto
     public string? Location { get; set; }
     public string? Description { get; set; }
     public int MaintenanceIntervalDays { get; set; }
+    public int UsefulLifeMonths { get; set; }
+    public decimal SalvageValue { get; set; }
+    public DateTime? DepreciationStartDate { get; set; }
+    public decimal AccumulatedDepreciation { get; set; }
+    public decimal CurrentBookValue { get; set; }
+    public bool IsFullyDepreciated { get; set; }
     public DateTime? LastMaintenanceDate { get; set; }
     public DateTime? NextMaintenanceDate { get; set; }
 }
@@ -41,6 +47,9 @@ public class CreateEquipmentDto
     public string? Location { get; set; }
     public string? Description { get; set; }
     public int MaintenanceIntervalDays { get; set; } = 90;
+    public int UsefulLifeMonths { get; set; } = 36;
+    public decimal SalvageValue { get; set; } = 0;
+    public DateTime? DepreciationStartDate { get; set; }
 }
 
 public class EquipmentTransactionDto
@@ -98,7 +107,11 @@ public class DepreciationDto
     public Guid Id { get; set; }
     public Guid EquipmentId { get; set; }
     public string EquipmentName { get; set; } = string.Empty;
-    public decimal Value { get; set; }
+    public decimal Amount { get; set; }
+    public int PeriodMonth { get; set; }
+    public int PeriodYear { get; set; }
+    public decimal RemainingValue { get; set; }
+    public string? Note { get; set; }
     public DateTime Date { get; set; }
 }
 

@@ -169,3 +169,4 @@ C:\Users\ADMIN\OneDrive\Tài liệu\Gym_Project\GymManagement\src\Gym.Manageme
 C:\Users\ADMIN\OneDrive\Tài liệu\Gym_Project\GymManagement\src\Gym.ManagementAPI\obj\Debug\net10.0\Gym.ManagementAPI.pdb
 C:\Users\ADMIN\OneDrive\Tài liệu\Gym_Project\GymManagement\src\Gym.ManagementAPI\obj\Debug\net10.0\Gym.ManagementAPI.genruntimeconfig.cache
 C:\Users\ADMIN\OneDrive\Tài liệu\Gym_Project\GymManagement\src\Gym.ManagementAPI\obj\Debug\net10.0\ref\Gym.ManagementAPI.dll
+C:\Users\ADMIN\OneDrive\Tài liệu\Gym_Project\GymManagement\src\Gym.ManagementAPI\obj\Debug\net10.0\Gym.ManagementAPI.sourcelink.json

@@ -4,6 +4,7 @@ using Gym.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Gym.Infrastructure.Migrations
 {
     [DbContext(typeof(GymDbContext))]
-    partial class GymDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260320092400_AddNewColumns_Providers_Equipments")]
+    partial class AddNewColumns_Providers_Equipments
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -264,10 +267,6 @@ namespace Gym.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<decimal>("Amount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -280,21 +279,12 @@ namespace Gym.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<string>("Note")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("PeriodMonth")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PeriodYear")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("RemainingValue")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<decimal>("Value")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
 
@@ -313,9 +303,6 @@ namespace Gym.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("DepreciationStartDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
@@ -360,10 +347,6 @@ namespace Gym.Infrastructure.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("SalvageValue")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<string>("SerialNumber")
                         .HasColumnType("nvarchar(max)");
 
@@ -372,9 +355,6 @@ namespace Gym.Infrastructure.Migrations
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<int>("UsefulLifeMonths")
-                        .HasColumnType("int");
 
                     b.Property<DateTime?>("WarrantyExpiryDate")
                         .HasColumnType("datetime2");
@@ -395,7 +375,6 @@ namespace Gym.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal?>("AvgMaintenanceCost")
-                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Code")
@@ -868,14 +847,12 @@ namespace Gym.Infrastructure.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<decimal>("DiscountApplied")
-                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
 
                     b.Property<decimal>("FinalPrice")
-                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<bool>("IsDeleted")
@@ -889,7 +866,6 @@ namespace Gym.Infrastructure.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("OriginalPrice")
-                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<Guid>("PackageId")
@@ -1656,7 +1632,7 @@ namespace Gym.Infrastructure.Migrations
                             Email = "admin@gym.com",
                             FullName = "System Administrator",
                             IsActive = true,
-                            PasswordHash = "AQAAAAIAAYagAAAAEJJX4eCcy37xmbLfqP6J2nKnD2P+HsShv5BN0qUH38waSPWSKdLtanzXFPem4YpA6Q==",
+                            PasswordHash = "AQAAAAIAAYagAAAAENzARoStWlBQ9YMWcFMnf/gnMY4HugHW9/zoQpbC3lRr/N8pZcrT6H0J0Zr1iKTmLw==",
                             PhoneNumber = "0901234567",
                             RoleId = 1,
                             Username = "admin"
@@ -1668,7 +1644,7 @@ namespace Gym.Infrastructure.Migrations
                             Email = "manager@gym.com",
                             FullName = "Nguyễn Văn Manager",
                             IsActive = true,
-                            PasswordHash = "AQAAAAIAAYagAAAAEMam6QNHoHrtRVCwlmaohFLNGH9+r/l+fkBl3IXe3qW2R0/sny45Jvs/ggO8tMdxEA==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEKOXqHHPQsXSo9dPO4ohwBmywDYbRSoKmKSVbL+NlTNCvltjwDvMhtRjtivJSlwyNQ==",
                             PhoneNumber = "0902345678",
                             RoleId = 2,
                             Username = "manager"
@@ -1680,7 +1656,7 @@ namespace Gym.Infrastructure.Migrations
                             Email = "trainer1@gym.com",
                             FullName = "Trần Thị Hương",
                             IsActive = true,
-                            PasswordHash = "AQAAAAIAAYagAAAAEKmYaF7cq9tMRTKdtXWihrUS9/evRo5qGXkzPbC0FepltyCZ3dbvqYs8tsiFrx1b1A==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEH5BICOi9Cy1YGR4p8ECfDNeD6j6j/83aAcHJB7VOEIOidxnv6p3aS3/GSoP3sgZJg==",
                             PhoneNumber = "0903456789",
                             RoleId = 3,
                             Username = "trainer1"
@@ -1692,7 +1668,7 @@ namespace Gym.Infrastructure.Migrations
                             Email = "trainer2@gym.com",
                             FullName = "Lê Văn Nam",
                             IsActive = true,
-                            PasswordHash = "AQAAAAIAAYagAAAAEFwUZq1IeLOaJOXljIFJDIAP9WULe8/1liyPKZL1DAfbKVey+hSfJNxG59jkBExaxQ==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEBaA44d8Eb5cRGb2jqQlCWMW8qPBtNDCumZNTdo/1j5Qq7ws8WFil19L6rgEoIR3KQ==",
                             PhoneNumber = "0904567890",
                             RoleId = 3,
                             Username = "trainer2"
@@ -1704,7 +1680,7 @@ namespace Gym.Infrastructure.Migrations
                             Email = "receptionist@gym.com",
                             FullName = "Phạm Thị Lan",
                             IsActive = true,
-                            PasswordHash = "AQAAAAIAAYagAAAAEMiu1x74kGgmkXfFE1RrO89ZVamk+ZhQgoWtqlnsQ8YMOb35tdFwlqrMwht7jWUPqQ==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEF4MR0HyFXJQY9aLj7L3EbVS3+UvLxmyZt8maeY9z0qmWWiPJsQ29LVpbXpZ6m3ucw==",
                             PhoneNumber = "0905678901",
                             RoleId = 4,
                             Username = "receptionist"
@@ -1716,7 +1692,7 @@ namespace Gym.Infrastructure.Migrations
                             Email = "nguyenvana@gmail.com",
                             FullName = "Nguyễn Văn A",
                             IsActive = true,
-                            PasswordHash = "AQAAAAIAAYagAAAAEOhvAp455sqOLdMVhP9nEB08HKdJ7BU1NOmK86BebbUKzf4Yx/Z+cncou+RsYrrqkw==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEIeqLMxQCApiGGrl8bTJDSfWzw+sHQhfbqLE2JSVT6CHOsiQ5YdvGI6snLVkhUn+LQ==",
                             PhoneNumber = "0906789012",
                             RoleId = 4,
                             Username = "member001"
@@ -1728,7 +1704,7 @@ namespace Gym.Infrastructure.Migrations
                             Email = "tranthib@gmail.com",
                             FullName = "Trần Thị B",
                             IsActive = true,
-                            PasswordHash = "AQAAAAIAAYagAAAAEC58v2ZIQkOUNyTvRxo0AGEsy8HZPWrdZ0ywOv/Q7fSqrXzRidEw/06gL+DBR2D8Sg==",
+                            PasswordHash = "AQAAAAIAAYagAAAAELmMsDmZhSGudT4Sq7rNJI6DHsfTCde7Q33GXD2L0fKVQ8dRj6WxduXEbQny5/xb7g==",
                             PhoneNumber = "0907890123",
                             RoleId = 4,
                             Username = "member002"
@@ -1740,7 +1716,7 @@ namespace Gym.Infrastructure.Migrations
                             Email = "levanc@gmail.com",
                             FullName = "Lê Văn C",
                             IsActive = true,
-                            PasswordHash = "AQAAAAIAAYagAAAAEKCgatpTmIhTcIap7+rm2gUsVv1txr7ljUJ6pOnTa1Tvq2yWyzEZ/IC4/hWM0Jlr9Q==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEOks+Rk/eEdNb2Nspr0i/LdVVDfEsLhzPxIhNwTu4KXEtLk/Z7PoODhnaumIVZq71Q==",
                             PhoneNumber = "0908901234",
                             RoleId = 4,
                             Username = "member003"

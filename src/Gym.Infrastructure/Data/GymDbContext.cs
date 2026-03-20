@@ -43,6 +43,7 @@ public class GymDbContext : DbContext
     public DbSet<InvoiceDetail> InvoiceDetails => Set<InvoiceDetail>();
     
     // Inventory
+    public DbSet<Warehouse> Warehouses => Set<Warehouse>();
     public DbSet<Inventory> Inventories => Set<Inventory>();
     public DbSet<StockTransaction> StockTransactions => Set<StockTransaction>();
     
@@ -91,6 +92,7 @@ public class GymDbContext : DbContext
         modelBuilder.Entity<Invoice>().ToTable("Invoices");
         modelBuilder.Entity<InvoiceDetail>().ToTable("InvoiceDetails");
         
+        modelBuilder.Entity<Warehouse>().ToTable("Warehouses");
         modelBuilder.Entity<Inventory>().ToTable("Inventories");
         modelBuilder.Entity<StockTransaction>().ToTable("StockTransactions");
         
@@ -286,6 +288,18 @@ public class GymDbContext : DbContext
             .WithMany()
             .HasForeignKey(h => h.NewProviderId)
             .OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<StockTransaction>(entity =>
+        {
+            entity.HasOne(t => t.FromWarehouse)
+                .WithMany()
+                .HasForeignKey(t => t.FromWarehouseId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(t => t.ToWarehouse)
+                .WithMany()
+                .HasForeignKey(t => t.ToWarehouseId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
     }
 
     private static void ConfigureIndexes(ModelBuilder modelBuilder)
@@ -352,8 +366,16 @@ public class GymDbContext : DbContext
         modelBuilder.Entity<OrderDetail>().Property(d => d.Price).HasPrecision(18, 2);
         
         modelBuilder.Entity<Equipment>().Property(e => e.PurchasePrice).HasPrecision(18, 2);
+        modelBuilder.Entity<Equipment>().Property(e => e.SalvageValue).HasPrecision(18, 2);
         modelBuilder.Entity<MaintenanceLog>().Property(m => m.Cost).HasPrecision(18, 2);
-        modelBuilder.Entity<Depreciation>().Property(d => d.Value).HasPrecision(18, 2);
+        modelBuilder.Entity<Depreciation>().Property(d => d.Amount).HasPrecision(18, 2);
+        modelBuilder.Entity<Depreciation>().Property(d => d.RemainingValue).HasPrecision(18, 2);
+        
+        modelBuilder.Entity<EquipmentCategory>().Property(ec => ec.AvgMaintenanceCost).HasPrecision(18, 2);
+        
+        modelBuilder.Entity<MemberSubscription>().Property(s => s.OriginalPrice).HasPrecision(18, 2);
+        modelBuilder.Entity<MemberSubscription>().Property(s => s.DiscountApplied).HasPrecision(18, 2);
+        modelBuilder.Entity<MemberSubscription>().Property(s => s.FinalPrice).HasPrecision(18, 2);
     }
 
     private static void SeedData(ModelBuilder modelBuilder)
@@ -450,6 +472,12 @@ public class GymDbContext : DbContext
         modelBuilder.Entity<Payment>().HasData(
             new() { Id = Guid.Parse("a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1"), MemberSubscriptionId = subscriptionId1, Amount = 750000m, Method = PaymentMethod.BankTransfer, PaymentDate = new DateTime(2024, 2, 1, 10, 30, 0, DateTimeKind.Utc), Status = PaymentStatus.Completed, TransactionId = "TXN20240201001", Note = "Thanh toán gói Premium 1 tháng", CreatedAt = new DateTime(2024, 2, 1, 10, 30, 0, DateTimeKind.Utc) },
             new() { Id = Guid.Parse("b2b2b2b2-b2b2-b2b2-b2b2-b2b2b2b2b2b2"), MemberSubscriptionId = subscriptionId2, Amount = 450000m, Method = PaymentMethod.Cash, PaymentDate = new DateTime(2024, 2, 5, 14, 15, 0, DateTimeKind.Utc), Status = PaymentStatus.Completed, Note = "Thanh toán gói 10 buổi tập", CreatedAt = new DateTime(2024, 2, 5, 14, 15, 0, DateTimeKind.Utc) }
+        );
+
+        modelBuilder.Entity<Warehouse>().HasData(
+            new() { Id = Guid.Parse("10000000-0000-0000-0000-000000000001"), Name = "Kho Tổng (Main)", Description = "Kho lưu trữ chính của phòng gym", Location = "Tầng hầm", IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+            new() { Id = Guid.Parse("20000000-0000-0000-0000-000000000002"), Name = "Quầy Lễ Tân (Counter)", Description = "Kho bán lẻ tại quầy tiếp khách", Location = "Sảnh chính", IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+            new() { Id = Guid.Parse("30000000-0000-0000-0000-000000000003"), Name = "Kho Vật Tư (Supplies)", Description = "Kho vật tư vận hành & vệ sinh", Location = "Phòng kho tầng 1", IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
         );
     }
 

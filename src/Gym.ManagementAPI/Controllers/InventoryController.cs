@@ -3,6 +3,9 @@ using Gym.Application.Interfaces.Services;
 using Gym.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Gym.ManagementAPI.Controllers;
 
@@ -18,17 +21,32 @@ public class InventoryController : ControllerBase
         _inventoryService = inventoryService;
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetInventories()
+    [HttpGet("warehouses")]
+    public async Task<IActionResult> GetWarehouses()
     {
-        var result = await _inventoryService.GetInventoriesAsync();
+        var result = await _inventoryService.GetWarehousesAsync();
+        return Ok(result);
+    }
+
+    [HttpPost("warehouses")]
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<IActionResult> CreateWarehouse([FromBody] CreateWarehouseDto dto)
+    {
+        var result = await _inventoryService.CreateWarehouseAsync(dto);
+        return Ok(result);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetInventories([FromQuery] Guid? warehouseId)
+    {
+        var result = await _inventoryService.GetInventoriesAsync(warehouseId);
         return Ok(result);
     }
 
     [HttpGet("transactions")]
-    public async Task<IActionResult> GetTransactions([FromQuery] Guid? productId)
+    public async Task<IActionResult> GetTransactions([FromQuery] Guid? productId, [FromQuery] Guid? warehouseId)
     {
-        var result = await _inventoryService.GetStockTransactionsAsync(productId);
+        var result = await _inventoryService.GetStockTransactionsAsync(productId, warehouseId);
         return Ok(result);
     }
 
@@ -37,7 +55,6 @@ public class InventoryController : ControllerBase
     public async Task<IActionResult> ImportStock([FromBody] CreateStockTransactionDto dto)
     {
         var result = await _inventoryService.ImportStockAsync(dto);
-        if (!result.Success) return BadRequest(result);
         return Ok(result);
     }
 
@@ -46,7 +63,22 @@ public class InventoryController : ControllerBase
     public async Task<IActionResult> ExportStock([FromBody] CreateStockTransactionDto dto)
     {
         var result = await _inventoryService.ExportStockAsync(dto);
-        if (!result.Success) return BadRequest(result);
+        return Ok(result);
+    }
+
+    [HttpPost("transfer")]
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<IActionResult> TransferStock([FromBody] CreateStockTransactionDto dto)
+    {
+        var result = await _inventoryService.TransferStockAsync(dto);
+        return Ok(result);
+    }
+
+    [HttpPost("internal-use")]
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<IActionResult> InternalUseStock([FromBody] CreateStockTransactionDto dto)
+    {
+        var result = await _inventoryService.InternalUseStockAsync(dto);
         return Ok(result);
     }
 
@@ -55,7 +87,6 @@ public class InventoryController : ControllerBase
     public async Task<IActionResult> StockAdjustment([FromBody] CreateStockTransactionDto dto)
     {
         var result = await _inventoryService.StockAdjustmentAsync(dto);
-        if (!result.Success) return BadRequest(result);
         return Ok(result);
     }
 
@@ -67,14 +98,13 @@ public class InventoryController : ControllerBase
     }
 
     [HttpPost("orders")]
-    public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto dto)
+    public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto dto, [FromQuery] Guid warehouseId)
     {
         var order = new Order { MemberId = dto.MemberId };
         foreach (var d in dto.Details) 
             order.OrderDetails.Add(new OrderDetail { ProductId = d.ProductId, Quantity = d.Quantity });
             
-        var result = await _inventoryService.CreateOrderAsync(order);
-        if (!result.Success) return BadRequest(result);
+        var result = await _inventoryService.CreateOrderAsync(order, warehouseId);
         return Ok(result);
     }
 }

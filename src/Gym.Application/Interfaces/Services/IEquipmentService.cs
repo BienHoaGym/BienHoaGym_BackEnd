@@ -13,6 +13,7 @@ public interface IEquipmentService
     Task<ResponseDto<EquipmentDto>> UpdateEquipmentAsync(Guid id, CreateEquipmentDto dto);
     Task<ResponseDto<bool>> DeleteEquipmentAsync(Guid id);
     Task<ResponseDto<bool>> LiquidateEquipmentAsync(Guid id);
+
     
     // Transactions & History
     Task<ResponseDto<List<EquipmentTransactionDto>>> GetTransactionsAsync(Guid? equipmentId = null);
@@ -27,7 +28,7 @@ public interface IEquipmentService
     
     // Depreciation
     Task<ResponseDto<List<DepreciationDto>>> GetDepreciationsAsync(Guid? equipmentId = null);
-
-    // Planning
+    Task<ResponseDto<int>> BulkRecordDepreciationAsync(int month, int year);
+    Task<ResponseDto<bool>> RecordDepreciationAsync(Guid equipmentId, int month, int year, string? note = null);
     Task<ResponseDto<List<EquipmentDto>>> GetMaintenancePlanAsync();
 }
