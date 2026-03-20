@@ -19,6 +19,7 @@ public interface IUnitOfWork : IDisposable
     IGenericRepository<Invoice> Invoices { get; }
     
     // Inventory module
+    IGenericRepository<Warehouse> Warehouses { get; }
     IGenericRepository<Inventory> Inventories { get; }
     IGenericRepository<StockTransaction> StockTransactions { get; }
     IGenericRepository<Order> Orders { get; }

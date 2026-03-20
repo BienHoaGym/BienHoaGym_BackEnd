@@ -57,6 +57,7 @@ public class UnitOfWork : IUnitOfWork
     public IGenericRepository<Invoice> Invoices => new GenericRepository<Invoice>(_context);
 
     // Inventory module
+    public IGenericRepository<Warehouse> Warehouses => new GenericRepository<Warehouse>(_context);
     public IGenericRepository<Inventory> Inventories => new GenericRepository<Inventory>(_context);
     public IGenericRepository<StockTransaction> StockTransactions => new GenericRepository<StockTransaction>(_context);
     public IGenericRepository<Order> Orders => new GenericRepository<Order>(_context);

@@ -376,6 +376,7 @@ public class GymDbContext : DbContext
         modelBuilder.Entity<MemberSubscription>().Property(s => s.OriginalPrice).HasPrecision(18, 2);
         modelBuilder.Entity<MemberSubscription>().Property(s => s.DiscountApplied).HasPrecision(18, 2);
         modelBuilder.Entity<MemberSubscription>().Property(s => s.FinalPrice).HasPrecision(18, 2);
+        modelBuilder.Entity<StockTransaction>().Property(t => t.UnitPrice).HasPrecision(18, 2);
     }
 
     private static void SeedData(ModelBuilder modelBuilder)

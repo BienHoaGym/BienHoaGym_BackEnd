@@ -1,4 +1,5 @@
 using Gym.Domain.Common;
+using Gym.Domain.Enums;
 
 namespace Gym.Domain.Entities;
 
