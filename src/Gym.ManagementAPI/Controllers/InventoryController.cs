@@ -1,5 +1,6 @@
 using Gym.Application.DTOs.Inventory;
 using Gym.Application.Interfaces.Services;
+using Gym.Domain.Constants;
 using Gym.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -29,21 +30,31 @@ public class InventoryController : ControllerBase
     }
 
     [HttpPost("warehouses")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Policy = PermissionConstants.InventoryCreate)]
     public async Task<IActionResult> CreateWarehouse([FromBody] CreateWarehouseDto dto)
     {
         var result = await _inventoryService.CreateWarehouseAsync(dto);
         return Ok(result);
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetInventories([FromQuery] Guid? warehouseId)
+    [HttpPost("internal-supply")]
+    [Authorize(Policy = PermissionConstants.InventoryUpdate)]
+    public async Task<IActionResult> CreateInternalSupply([FromBody] CreateInternalSupplyDto dto)
     {
-        var result = await _inventoryService.GetInventoriesAsync(warehouseId);
+        var result = await _inventoryService.CreateInternalSupplyAsync(dto);
+        return Ok(result);
+    }
+
+    [HttpGet]
+    [Authorize(Policy = PermissionConstants.InventoryRead)]
+    public async Task<IActionResult> GetInventories([FromQuery] Guid? warehouseId, [FromQuery] bool includeAssets = false)
+    {
+        var result = await _inventoryService.GetInventoriesAsync(warehouseId, includeAssets);
         return Ok(result);
     }
 
     [HttpGet("transactions")]
+    [Authorize(Policy = PermissionConstants.InventoryRead)]
     public async Task<IActionResult> GetTransactions([FromQuery] Guid? productId, [FromQuery] Guid? warehouseId)
     {
         var result = await _inventoryService.GetStockTransactionsAsync(productId, warehouseId);
@@ -51,7 +62,7 @@ public class InventoryController : ControllerBase
     }
 
     [HttpPost("import")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Policy = PermissionConstants.InventoryUpdate)]
     public async Task<IActionResult> ImportStock([FromBody] CreateStockTransactionDto dto)
     {
         var result = await _inventoryService.ImportStockAsync(dto);
@@ -59,7 +70,7 @@ public class InventoryController : ControllerBase
     }
 
     [HttpPost("export")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Policy = PermissionConstants.InventoryUpdate)]
     public async Task<IActionResult> ExportStock([FromBody] CreateStockTransactionDto dto)
     {
         var result = await _inventoryService.ExportStockAsync(dto);
@@ -67,7 +78,7 @@ public class InventoryController : ControllerBase
     }
 
     [HttpPost("transfer")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Policy = PermissionConstants.InventoryUpdate)]
     public async Task<IActionResult> TransferStock([FromBody] CreateStockTransactionDto dto)
     {
         var result = await _inventoryService.TransferStockAsync(dto);
@@ -75,7 +86,7 @@ public class InventoryController : ControllerBase
     }
 
     [HttpPost("internal-use")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Policy = PermissionConstants.InventoryConsume)]
     public async Task<IActionResult> InternalUseStock([FromBody] CreateStockTransactionDto dto)
     {
         var result = await _inventoryService.InternalUseStockAsync(dto);
@@ -83,7 +94,7 @@ public class InventoryController : ControllerBase
     }
 
     [HttpPost("adjustment")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Policy = PermissionConstants.InventoryUpdate)]
     public async Task<IActionResult> StockAdjustment([FromBody] CreateStockTransactionDto dto)
     {
         var result = await _inventoryService.StockAdjustmentAsync(dto);
@@ -91,6 +102,7 @@ public class InventoryController : ControllerBase
     }
 
     [HttpGet("alerts")]
+    [Authorize(Policy = PermissionConstants.InventoryRead)]
     public async Task<IActionResult> GetStockAlerts()
     {
         var result = await _inventoryService.GetStockAlertsAsync();
@@ -98,6 +110,7 @@ public class InventoryController : ControllerBase
     }
 
     [HttpPost("orders")]
+    [Authorize(Policy = PermissionConstants.BillingCreate)]
     public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto dto, [FromQuery] Guid warehouseId)
     {
         var order = new Order { MemberId = dto.MemberId };

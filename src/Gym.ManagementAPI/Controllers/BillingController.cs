@@ -1,5 +1,6 @@
 using Gym.Application.DTOs.Billing;
 using Gym.Application.Interfaces.Services;
+using Gym.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -26,7 +27,7 @@ public class BillingController : ControllerBase
     }
 
     [HttpPost("products")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Policy = PermissionConstants.ProductCreate)]
     public async Task<IActionResult> CreateProduct([FromBody] CreateProductDto dto)
     {
         var result = await _billingService.CreateProductAsync(dto);
@@ -35,6 +36,7 @@ public class BillingController : ControllerBase
 
     // Invoices
     [HttpGet("invoices")]
+    [Authorize(Policy = PermissionConstants.BillingRead)]
     public async Task<IActionResult> GetInvoices()
     {
         var result = await _billingService.GetInvoicesAsync();
@@ -42,6 +44,7 @@ public class BillingController : ControllerBase
     }
 
     [HttpGet("invoices/{id}")]
+    [Authorize(Policy = PermissionConstants.BillingRead)]
     public async Task<IActionResult> GetInvoice(Guid id)
     {
         var result = await _billingService.GetInvoiceByIdAsync(id);
@@ -50,6 +53,7 @@ public class BillingController : ControllerBase
     }
 
     [HttpPost("invoices")]
+    [Authorize(Policy = PermissionConstants.BillingCreate)]
     public async Task<IActionResult> CreateInvoice([FromBody] CreateInvoiceDto dto)
     {
         var result = await _billingService.CreateInvoiceAsync(dto);

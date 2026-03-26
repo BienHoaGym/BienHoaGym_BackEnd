@@ -9,9 +9,10 @@ public interface IInventoryService
     // Warehouse management
     Task<ResponseDto<List<WarehouseDto>>> GetWarehousesAsync();
     Task<ResponseDto<WarehouseDto>> CreateWarehouseAsync(CreateWarehouseDto dto);
+    Task<ResponseDto<InventoryDto>> CreateInternalSupplyAsync(CreateInternalSupplyDto dto);
     
     // Inventory tracking
-    Task<ResponseDto<List<InventoryDto>>> GetInventoriesAsync(Guid? warehouseId = null);
+    Task<ResponseDto<List<InventoryDto>>> GetInventoriesAsync(Guid? warehouseId = null, bool includeAssets = false);
     Task<ResponseDto<InventoryDto>> GetByProductAndWarehouseAsync(Guid productId, Guid warehouseId);
     
     // Movement log

@@ -14,6 +14,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Authorization;
+using Gym.Infrastructure.Auth;
 using System.Security.Claims; // Cần cái này cho ClaimTypes
 using System.Text;
 
@@ -139,6 +141,9 @@ builder.Services.AddScoped<IInventoryService, InventoryService>();
 builder.Services.AddScoped<IEquipmentService, EquipmentService>();
 builder.Services.AddScoped<IEquipmentCategoryService, EquipmentCategoryService>();
 builder.Services.AddScoped<IProviderService, ProviderService>();
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 // ĐĂNG KÝ CHO AUDIT LOG: Cho phép DbContext lấy được thông tin người dùng từ request hiện tại
 builder.Services.AddHttpContextAccessor();
@@ -169,6 +174,10 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
+
+// --- ĐĂNG KÝ PHÂN QUYỀN ĐỘNG (RBAC) ---
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+builder.Services.AddScoped<IAuthorizationHandler, PermissionHandler>();
 
 // Configure CORS (Cho phép Frontend gọi vào)
 builder.Services.AddCors(options =>
@@ -245,7 +254,4 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Lấy PORT từ môi trường (Render cấp)
-var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
-
-app.Run($"http://0.0.0.0:{port}");
+app.Run();

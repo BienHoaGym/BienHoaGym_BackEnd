@@ -203,4 +203,71 @@ public class TrainerService : ITrainerService
 
         return ResponseDto<bool>.SuccessResult(true, "Assignment removed successfully");
     }
+
+    public async Task<ResponseDto<PersonalScheduleDto>> GetPersonalScheduleAsync(Guid userId)
+    {
+        var trainer = await _unitOfWork.Trainers.GetByUserIdAsync(userId);
+        if (trainer == null)
+            return ResponseDto<PersonalScheduleDto>.FailureResult("Tài khoản người dùng này chưa được liên kết với hồ sơ Huấn luyện viên.");
+
+        var dto = new PersonalScheduleDto
+        {
+            UserInfo = _mapper.Map<TrainerDto>(trainer),
+            Classes = _mapper.Map<List<Gym.Application.DTOs.Classes.ClassDto>>(trainer.Classes.Where(c => !c.IsDeleted && c.IsActive).OrderBy(c => c.ScheduleDay).ThenBy(c => c.StartTime)),
+            PersonalClients = _mapper.Map<List<TrainerAssignmentDto>>(trainer.TrainerMemberAssignments.Where(a => !a.IsDeleted && a.IsActive))
+        };
+
+        return ResponseDto<PersonalScheduleDto>.SuccessResult(dto);
+    }
+    public async Task<ResponseDto<PersonalScheduleDto>> GetTrainerScheduleAsync(Guid trainerId)
+    {
+        var trainer = await _unitOfWork.Trainers.GetQueryable()
+            .Include(t => t.Classes)
+            .Include(t => t.TrainerMemberAssignments)
+                .ThenInclude(a => a.Member)
+            .FirstOrDefaultAsync(t => t.Id == trainerId && !t.IsDeleted);
+
+        if (trainer == null)
+            return ResponseDto<PersonalScheduleDto>.FailureResult("Trainer not found.");
+
+        var dto = new PersonalScheduleDto
+        {
+            UserInfo = _mapper.Map<TrainerDto>(trainer),
+            Classes = _mapper.Map<List<Gym.Application.DTOs.Classes.ClassDto>>(trainer.Classes.Where(c => !c.IsDeleted && c.IsActive).OrderBy(c => c.ScheduleDay).ThenBy(c => c.StartTime)),
+            PersonalClients = _mapper.Map<List<TrainerAssignmentDto>>(trainer.TrainerMemberAssignments.Where(a => !a.IsDeleted && a.IsActive))
+        };
+
+        return ResponseDto<PersonalScheduleDto>.SuccessResult(dto);
+    }
+
+    public async Task<ResponseDto<PersonalScheduleDto>> GetGlobalScheduleAsync()
+    {
+        try 
+        {
+            var classes = await _unitOfWork.Classes.GetQueryable()
+                .Include(c => c.Trainer)
+                .Where(c => !c.IsDeleted && c.IsActive)
+                .OrderBy(c => c.ScheduleDay).ThenBy(c => c.StartTime)
+                .ToListAsync();
+
+            var assignments = await _unitOfWork.TrainerMemberAssignments.GetQueryable()
+                .Include(a => a.Member)
+                .Include(a => a.Trainer)
+                .Where(a => !a.IsDeleted && a.IsActive)
+                .ToListAsync();
+
+            var dto = new PersonalScheduleDto
+            {
+                UserInfo = new TrainerDto { FullName = "Tất cả Hệ thống" },
+                Classes = _mapper.Map<List<Gym.Application.DTOs.Classes.ClassDto>>(classes),
+                PersonalClients = _mapper.Map<List<TrainerAssignmentDto>>(assignments)
+            };
+
+            return ResponseDto<PersonalScheduleDto>.SuccessResult(dto);
+        }
+        catch (Exception ex)
+        {
+            return ResponseDto<PersonalScheduleDto>.FailureResult($"Global schedule error: {ex.Message} - Inner: {ex.InnerException?.Message}");
+        }
+    }
 }

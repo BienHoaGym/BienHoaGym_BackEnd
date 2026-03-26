@@ -1,5 +1,6 @@
-﻿using Gym.Application.DTOs.Members;
+using Gym.Application.DTOs.Members;
 using Gym.Application.Interfaces.Services;
+using Gym.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,7 +21,7 @@ public class MembersController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [Authorize(Policy = PermissionConstants.MemberRead)]
     public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         var result = await _memberService.GetAllAsync(page, pageSize);
@@ -28,7 +29,7 @@ public class MembersController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [Authorize(Policy = PermissionConstants.MemberRead)]
     public async Task<IActionResult> GetById(Guid id)
     {
         var result = await _memberService.GetByIdAsync(id);
@@ -37,7 +38,7 @@ public class MembersController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Policy = PermissionConstants.MemberCreate)]
     public async Task<IActionResult> Create([FromBody] CreateMemberDto dto)
     {
         var result = await _memberService.CreateAsync(dto);
@@ -46,7 +47,7 @@ public class MembersController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Policy = PermissionConstants.MemberUpdate)]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateMemberDto dto)
     {
         // Kiểm tra tính nhất quán của ID
@@ -61,7 +62,7 @@ public class MembersController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = PermissionConstants.MemberDelete)]
     public async Task<IActionResult> Delete(Guid id)
     {
         var result = await _memberService.DeleteAsync(id);
@@ -70,9 +71,10 @@ public class MembersController : ControllerBase
     }
 
     [HttpGet("search")]
+    [Authorize(Policy = PermissionConstants.MemberRead)]
     public async Task<IActionResult> Search([FromQuery] string keyword)
     {
         var result = await _memberService.SearchAsync(keyword);
         return Ok(result);
     }
-}
+}

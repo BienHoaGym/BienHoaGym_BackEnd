@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\ADMIN\\OneDrive\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.ManagementAPI\\Gym.ManagementAPI.csproj": {}
+    "D:\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.ManagementAPI\\Gym.ManagementAPI.csproj": {}
   },
   "projects": {
-    "C:\\Users\\ADMIN\\OneDrive\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Application\\Gym.Application.csproj": {
+    "D:\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Application\\Gym.Application.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\ADMIN\\OneDrive\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Application\\Gym.Application.csproj",
+        "projectUniqueName": "D:\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Application\\Gym.Application.csproj",
         "projectName": "Gym.Application",
-        "projectPath": "C:\\Users\\ADMIN\\OneDrive\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Application\\Gym.Application.csproj",
+        "projectPath": "D:\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Application\\Gym.Application.csproj",
         "packagesPath": "C:\\Users\\ADMIN\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\ADMIN\\OneDrive\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Application\\obj\\",
+        "outputPath": "D:\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Application\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -33,8 +33,8 @@
           "net10.0": {
             "targetAlias": "net10.0",
             "projectReferences": {
-              "C:\\Users\\ADMIN\\OneDrive\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Domain\\Gym.Domain.csproj": {
-                "projectPath": "C:\\Users\\ADMIN\\OneDrive\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Domain\\Gym.Domain.csproj"
+              "D:\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Domain\\Gym.Domain.csproj": {
+                "projectPath": "D:\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Domain\\Gym.Domain.csproj"
               }
             }
           }
@@ -58,6 +58,10 @@
             "AutoMapper": {
               "target": "Package",
               "version": "[16.1.1, )"
+            },
+            "BCrypt.Net-Next": {
+              "target": "Package",
+              "version": "[4.1.0, )"
             },
             "FluentValidation": {
               "target": "Package",
@@ -390,14 +394,14 @@
         }
       }
     },
-    "C:\\Users\\ADMIN\\OneDrive\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Domain\\Gym.Domain.csproj": {
+    "D:\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Domain\\Gym.Domain.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\ADMIN\\OneDrive\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Domain\\Gym.Domain.csproj",
+        "projectUniqueName": "D:\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Domain\\Gym.Domain.csproj",
         "projectName": "Gym.Domain",
-        "projectPath": "C:\\Users\\ADMIN\\OneDrive\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Domain\\Gym.Domain.csproj",
+        "projectPath": "D:\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Domain\\Gym.Domain.csproj",
         "packagesPath": "C:\\Users\\ADMIN\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\ADMIN\\OneDrive\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Domain\\obj\\",
+        "outputPath": "D:\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Domain\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -730,14 +734,14 @@
         }
       }
     },
-    "C:\\Users\\ADMIN\\OneDrive\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Infrastructure\\Gym.Infrastructure.csproj": {
+    "D:\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Infrastructure\\Gym.Infrastructure.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\ADMIN\\OneDrive\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Infrastructure\\Gym.Infrastructure.csproj",
+        "projectUniqueName": "D:\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Infrastructure\\Gym.Infrastructure.csproj",
         "projectName": "Gym.Infrastructure",
-        "projectPath": "C:\\Users\\ADMIN\\OneDrive\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Infrastructure\\Gym.Infrastructure.csproj",
+        "projectPath": "D:\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Infrastructure\\Gym.Infrastructure.csproj",
         "packagesPath": "C:\\Users\\ADMIN\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\ADMIN\\OneDrive\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Infrastructure\\obj\\",
+        "outputPath": "D:\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Infrastructure\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -759,11 +763,11 @@
           "net10.0": {
             "targetAlias": "net10.0",
             "projectReferences": {
-              "C:\\Users\\ADMIN\\OneDrive\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Application\\Gym.Application.csproj": {
-                "projectPath": "C:\\Users\\ADMIN\\OneDrive\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Application\\Gym.Application.csproj"
+              "D:\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Application\\Gym.Application.csproj": {
+                "projectPath": "D:\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Application\\Gym.Application.csproj"
               },
-              "C:\\Users\\ADMIN\\OneDrive\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Domain\\Gym.Domain.csproj": {
-                "projectPath": "C:\\Users\\ADMIN\\OneDrive\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Domain\\Gym.Domain.csproj"
+              "D:\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Domain\\Gym.Domain.csproj": {
+                "projectPath": "D:\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Domain\\Gym.Domain.csproj"
               }
             }
           }
@@ -1097,14 +1101,14 @@
         }
       }
     },
-    "C:\\Users\\ADMIN\\OneDrive\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.ManagementAPI\\Gym.ManagementAPI.csproj": {
+    "D:\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.ManagementAPI\\Gym.ManagementAPI.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\ADMIN\\OneDrive\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.ManagementAPI\\Gym.ManagementAPI.csproj",
+        "projectUniqueName": "D:\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.ManagementAPI\\Gym.ManagementAPI.csproj",
         "projectName": "Gym.ManagementAPI",
-        "projectPath": "C:\\Users\\ADMIN\\OneDrive\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.ManagementAPI\\Gym.ManagementAPI.csproj",
+        "projectPath": "D:\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.ManagementAPI\\Gym.ManagementAPI.csproj",
         "packagesPath": "C:\\Users\\ADMIN\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\ADMIN\\OneDrive\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.ManagementAPI\\obj\\",
+        "outputPath": "D:\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.ManagementAPI\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -1126,11 +1130,11 @@
           "net10.0": {
             "targetAlias": "net10.0",
             "projectReferences": {
-              "C:\\Users\\ADMIN\\OneDrive\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Application\\Gym.Application.csproj": {
-                "projectPath": "C:\\Users\\ADMIN\\OneDrive\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Application\\Gym.Application.csproj"
+              "D:\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Application\\Gym.Application.csproj": {
+                "projectPath": "D:\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Application\\Gym.Application.csproj"
               },
-              "C:\\Users\\ADMIN\\OneDrive\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Infrastructure\\Gym.Infrastructure.csproj": {
-                "projectPath": "C:\\Users\\ADMIN\\OneDrive\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Infrastructure\\Gym.Infrastructure.csproj"
+              "D:\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Infrastructure\\Gym.Infrastructure.csproj": {
+                "projectPath": "D:\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Infrastructure\\Gym.Infrastructure.csproj"
               }
             }
           }

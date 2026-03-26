@@ -16,4 +16,7 @@ public interface ITrainerService
     Task<ResponseDto<List<TrainerAssignmentDto>>> GetAssignedMembersAsync(Guid trainerId);
     Task<ResponseDto<TrainerAssignmentDto>> AssignMemberAsync(CreateTrainerAssignmentDto dto);
     Task<ResponseDto<bool>> RemoveAssignmentAsync(Guid assignmentId);
+    Task<ResponseDto<PersonalScheduleDto>> GetPersonalScheduleAsync(Guid userId);
+    Task<ResponseDto<PersonalScheduleDto>> GetTrainerScheduleAsync(Guid trainerId);
+    Task<ResponseDto<PersonalScheduleDto>> GetGlobalScheduleAsync();
 }

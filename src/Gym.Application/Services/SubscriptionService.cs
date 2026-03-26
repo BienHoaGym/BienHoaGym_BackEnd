@@ -17,21 +17,24 @@ public class SubscriptionService : ISubscriptionService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
-    private readonly IAuditLogService _auditLogService; // Thêm Service Nhật ký hệ thống
+    private readonly IAuditLogService _auditLogService;
+    private readonly Microsoft.AspNetCore.Http.IHttpContextAccessor _httpContextAccessor;
 
-    public SubscriptionService(IUnitOfWork unitOfWork, IMapper mapper, IAuditLogService auditLogService)
+    public SubscriptionService(IUnitOfWork unitOfWork, IMapper mapper, IAuditLogService auditLogService, Microsoft.AspNetCore.Http.IHttpContextAccessor httpContextAccessor)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _auditLogService = auditLogService;
+        _httpContextAccessor = httpContextAccessor;
     }
 
-    // --- Tự động quét và hủy gói hết hạn ---
+    // --- Tự động quét và hủy gói hết hạn / Giao dịch treo ---
     private async Task ScanAndExpireAsync()
     {
         var today = DateTime.UtcNow.Date;
+        var now = DateTime.UtcNow;
 
-        // Tìm các gói đang Active nhưng ngày kết thúc đã qua
+        // 1. Tìm các gói đang Active nhưng ngày kết thúc đã qua
         var expiredSubs = await _unitOfWork.Subscriptions.GetQueryable()
             .Where(s => s.Status == SubscriptionStatus.Active && s.EndDate < today && !s.IsDeleted)
             .ToListAsync();
@@ -42,13 +45,36 @@ public class SubscriptionService : ISubscriptionService
             {
                 var oldStatus = sub.Status;
                 sub.Status = SubscriptionStatus.Expired;
-                sub.UpdatedAt = DateTime.UtcNow;
+                sub.UpdatedAt = now;
 
-                // Ghi log tự động hết hạn (System thực hiện)
                 await _auditLogService.LogAsync("System", "AUTO_EXPIRE_SUBSCRIPTION", "MemberSubscriptions",
                     new { Status = oldStatus.ToString() },
                     new { Status = sub.Status.ToString() });
             }
+        }
+
+        // 2. NGHIỆP VỤ (WF - 2.1): Tự động hủy giao dịch Pending quá 30 phút
+        var pendingExpiryLimit = now.AddMinutes(-30);
+        var stalledPendingSubs = await _unitOfWork.Subscriptions.GetQueryable()
+            .Where(s => s.Status == SubscriptionStatus.Pending && s.CreatedAt < pendingExpiryLimit && !s.IsDeleted)
+            .ToListAsync();
+
+        if (stalledPendingSubs.Any())
+        {
+            foreach (var sub in stalledPendingSubs)
+            {
+                sub.Status = SubscriptionStatus.Cancelled;
+                sub.UpdatedAt = now;
+                // sub.Note = "Hủy tự động do quá thời hạn thanh toán (30p)";
+
+                await _auditLogService.LogAsync("System", "AUTO_CANCEL_STALLED_PAYMENT", "MemberSubscriptions",
+                    new { Status = SubscriptionStatus.Pending.ToString() },
+                    new { Status = sub.Status.ToString(), Reason = "Timeout 30m" });
+            }
+        }
+
+        if (expiredSubs.Any() || stalledPendingSubs.Any())
+        {
             await _unitOfWork.SaveChangesAsync();
         }
     }
@@ -175,9 +201,27 @@ public class SubscriptionService : ISubscriptionService
         subscription.OriginalPackageName = package.Name;
         subscription.OriginalPrice = package.Price;
 
-        // Xử lý giảm giá (nếu DTO có truyền mã giảm giá/số tiền giảm)
-        subscription.DiscountApplied = 0;
-        subscription.FinalPrice = package.Price - subscription.DiscountApplied;
+        // NGHIỆP VỤ (WF - 2.2): Kiểm soát quyền Lễ tân (Receptionist)
+        var userRole = _httpContextAccessor.HttpContext?.User?.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+        if (userRole == "Receptionist")
+        {
+            // Lễ tân không được tự ý sửa giá gốc của gói
+            if (dto.FinalPrice.HasValue && dto.FinalPrice != package.Price)
+            {
+                 var discountAmount = package.Price - dto.FinalPrice.Value;
+                 var discountPercent = (discountAmount / package.Price) * 100;
+                 
+                 // Giới hạn giảm giá tối đa 10%
+                 if (discountPercent > 10)
+                 {
+                     return ResponseDto<SubscriptionDto>.FailureResult("Lễ tân chỉ được phép giảm giá tối đa 10%. Vui lòng liên hệ Quản lý.");
+                 }
+            }
+        }
+
+        // Xử lý giảm giá
+        subscription.DiscountApplied = package.Price - (dto.FinalPrice ?? package.Price);
+        subscription.FinalPrice = dto.FinalPrice ?? package.Price;
 
         await _unitOfWork.Subscriptions.AddAsync(subscription);
         await _unitOfWork.SaveChangesAsync();

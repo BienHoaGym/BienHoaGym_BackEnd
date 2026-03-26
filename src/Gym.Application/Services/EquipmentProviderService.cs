@@ -30,7 +30,7 @@ public class ProviderService : IProviderService
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
-            query = query.Where(p => p.Name.Contains(searchTerm) || p.Code.Contains(searchTerm) || (p.Address != null && p.Address.Contains(searchTerm)));
+            query = query.Where(p => p.Name.Contains(searchTerm) || (p.Code != null && p.Code.Contains(searchTerm)) || (p.Address != null && p.Address.Contains(searchTerm)));
         }
 
         if (!string.IsNullOrWhiteSpace(supplyType))
@@ -44,10 +44,12 @@ public class ProviderService : IProviderService
         {
             Id = p.Id,
             Name = p.Name,
-            Code = p.Code,
+            Code = p.Code ?? "",
             PhoneNumber = p.PhoneNumber,
             Email = p.Email,
             Address = p.Address,
+            ContactPerson = p.ContactPerson,
+            TaxCode = p.TaxCode,
             SupplyType = p.SupplyType,
             IsActive = p.IsActive,
             EquipmentCount = p.Equipments.Count(e => !e.IsDeleted),
@@ -85,8 +87,11 @@ public class ProviderService : IProviderService
         var p = await _unitOfWork.Providers.GetByIdAsync(id);
         if (p == null || p.IsDeleted) return ResponseDto<ProviderDto>.FailureResult("Không tìm thấy");
 
-        // Không cho phép sửa mã nếu đã có giao dịch
-        if (p.Code != dto.Code)
+        // Không cho phép sửa mã nếu đã có giao dịch (nhưng cho phép gán lần đầu nếu đang trống)
+        string currentCode = (p.Code ?? "").Trim();
+        string newCode = (dto.Code ?? "").Trim();
+        
+        if (!string.IsNullOrEmpty(currentCode) && !string.Equals(currentCode, newCode, StringComparison.OrdinalIgnoreCase))
         {
             var hasUsage = await _unitOfWork.Equipments.GetQueryable().AnyAsync(e => e.ProviderId == id && !e.IsDeleted) ||
                            await _unitOfWork.Products.GetQueryable().AnyAsync(pr => pr.ProviderId == id && !pr.IsDeleted);
@@ -153,5 +158,24 @@ public class ProviderService : IProviderService
         }
 
         return ResponseDto<List<ProviderTransactionHistoryDto>>.SuccessResult(history.OrderByDescending(h => h.Date).ToList());
+    }
+
+    public async Task<ResponseDto<List<Gym.Application.DTOs.Billing.ProductDto>>> GetProductsAsync(Guid providerId)
+    {
+        var products = await _unitOfWork.Products.GetQueryable()
+            .Where(p => p.ProviderId == providerId && !p.IsDeleted)
+            .ToListAsync();
+        
+        return ResponseDto<List<Gym.Application.DTOs.Billing.ProductDto>>.SuccessResult(_mapper.Map<List<Gym.Application.DTOs.Billing.ProductDto>>(products));
+    }
+
+    public async Task<ResponseDto<List<Gym.Application.DTOs.Equipment.EquipmentDto>>> GetEquipmentsAsync(Guid providerId)
+    {
+        var equipments = await _unitOfWork.Equipments.GetQueryable()
+            .Include(e => e.EquipmentCategory)
+            .Where(e => e.ProviderId == providerId && !e.IsDeleted)
+            .ToListAsync();
+        
+        return ResponseDto<List<Gym.Application.DTOs.Equipment.EquipmentDto>>.SuccessResult(_mapper.Map<List<Gym.Application.DTOs.Equipment.EquipmentDto>>(equipments));
     }
 }

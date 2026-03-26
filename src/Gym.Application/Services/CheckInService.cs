@@ -45,6 +45,11 @@ public class CheckInService : ICheckInService
             result.IsValid = false;
             result.Message = "Không tìm thấy hội viên";
             result.Errors.Add("Mã hội viên không hợp lệ");
+            
+            // ✅ GHI AUDIT LOG: Thử check-in sai mã
+            await _auditLogService.LogAsync("System", "CHECKIN_FAILED", "CheckIns", null, 
+                new { MemberCode = memberCode, Reason = "Invalid Member Code" });
+                
             return ResponseDto<CheckInValidationResultDto>.SuccessResult(result);
         }
 
@@ -56,6 +61,11 @@ public class CheckInService : ICheckInService
             result.IsValid = false;
             result.Message = "Hội viên không ở trạng thái hoạt động";
             result.Errors.Add($"Trạng thái hiện tại: {member.Status}");
+
+            // ✅ GHI AUDIT LOG: Check-in khi tài khoản bị khóa/inactive
+            await _auditLogService.LogAsync("System", "CHECKIN_FAILED", "CheckIns", null,
+                new { MemberCode = memberCode, Status = member.Status.ToString(), Reason = "Account not Active" });
+
             return ResponseDto<CheckInValidationResultDto>.SuccessResult(result);
         }
 
@@ -74,6 +84,11 @@ public class CheckInService : ICheckInService
             result.IsValid = false;
             result.Message = "Không tìm thấy gói tập đang hoạt động";
             result.Errors.Add("Vui lòng gia hạn gói tập");
+
+            // ✅ GHI AUDIT LOG: Thử check-in khi không có gói tập
+            await _auditLogService.LogAsync("System", "CHECKIN_FAILED", "CheckIns", null,
+                new { MemberCode = memberCode, Reason = "No Active Subscription found" });
+
             return ResponseDto<CheckInValidationResultDto>.SuccessResult(result);
         }
 
@@ -85,6 +100,11 @@ public class CheckInService : ICheckInService
             result.IsValid = false;
             result.Message = "Gói tập đã hết hạn";
             result.Errors.Add($"Ngày hết hạn: {activeSubscription.EndDate:dd/MM/yyyy}");
+
+            // ✅ GHI AUDIT LOG: Check-in khi gói hết hạn
+            await _auditLogService.LogAsync("System", "CHECKIN_FAILED", "CheckIns", null,
+                new { MemberCode = memberCode, SubscriptionId = activeSubscription.Id, Reason = "Sub Expired" });
+
             return ResponseDto<CheckInValidationResultDto>.SuccessResult(result);
         }
 

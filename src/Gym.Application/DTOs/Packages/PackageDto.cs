@@ -1,4 +1,4 @@
-﻿namespace Gym.Application.DTOs.Packages;
+namespace Gym.Application.DTOs.Packages;
 
 public class PackageDto
 {
@@ -10,5 +10,6 @@ public class PackageDto
     public int DurationInDays { get; set; }
     public int DurationInMonths { get; set; }
     public int? SessionLimit { get; set; }
+    public bool HasPT { get; set; }
     public bool IsActive { get; set; }
 }

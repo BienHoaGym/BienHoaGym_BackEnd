@@ -1,4 +1,4 @@
-﻿    using Gym.Application.DTOs.Auth;
+    using Gym.Application.DTOs.Auth;
     using Gym.Application.Interfaces.Services;
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Mvc;
@@ -8,7 +8,7 @@
 
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize]
 public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;

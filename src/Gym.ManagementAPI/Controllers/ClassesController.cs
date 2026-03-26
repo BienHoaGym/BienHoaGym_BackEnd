@@ -119,7 +119,7 @@ public class ClassesController : ControllerBase
     /// Enroll member to class
     /// </summary>
     [HttpPost("{id}/enroll")]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [Authorize(Roles = "Admin,Manager,Receptionist,Trainer")]
     public async Task<IActionResult> EnrollMember(Guid id, [FromBody] EnrollClassDto dto)
     {
         _logger.LogInformation("Enrolling member {MemberId} to class {ClassId}", dto.MemberId, id);
@@ -136,7 +136,7 @@ public class ClassesController : ControllerBase
     /// Unenroll member from class
     /// </summary>
     [HttpPost("{classId}/unenroll/{memberId}")]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [Authorize(Roles = "Admin,Manager,Receptionist,Trainer")]
     public async Task<IActionResult> UnenrollMember(Guid classId, Guid memberId)
     {
         _logger.LogInformation("Unenrolling member {MemberId} from class {ClassId}", memberId, classId);

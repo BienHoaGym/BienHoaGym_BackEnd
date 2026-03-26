@@ -1,4 +1,4 @@
-﻿using Gym.Application.Interfaces.Repositories;
+using Gym.Application.Interfaces.Repositories;
 using Gym.Domain.Entities;
 using Gym.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -15,5 +15,14 @@ public class TrainerRepository : Repository<Trainer>, ITrainerRepository
     {
         var allTrainers = await GetAllAsync();
         return allTrainers.Where(t => !t.IsDeleted && t.IsActive).OrderBy(t => t.FullName).ToList();
+    }
+
+    public async Task<Trainer?> GetByUserIdAsync(Guid userId)
+    {
+        return await _dbSet
+            .Include(t => t.Classes)
+            .Include(t => t.TrainerMemberAssignments)
+                .ThenInclude(a => a.Member)
+            .FirstOrDefaultAsync(t => t.UserId == userId && !t.IsDeleted);
     }
 }

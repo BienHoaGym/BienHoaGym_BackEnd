@@ -2,6 +2,7 @@ using Gym.Application.Interfaces;
 using Gym.Application.Interfaces.Repositories;
 using Gym.Domain.Entities;
 using Gym.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace Gym.Infrastructure.Repositories;
 
@@ -16,6 +17,7 @@ public class UnitOfWork : IUnitOfWork
     private ITrainerRepository? _trainerRepository;
     private IClassRepository? _classRepository;
     private IUserRepository? _userRepository;
+    private IRoleRepository? _roleRepository;
     private IClassEnrollmentRepository? _classEnrollmentRepository;
 
     public UnitOfWork(GymDbContext context)
@@ -46,6 +48,9 @@ public class UnitOfWork : IUnitOfWork
 
     public IUserRepository Users =>
         _userRepository ??= new UserRepository(_context);
+
+    public IRoleRepository Roles =>
+        _roleRepository ??= new RoleRepository(_context);
 
     public IClassEnrollmentRepository ClassEnrollments =>
         _classEnrollmentRepository ??= new ClassEnrollmentRepository(_context);
@@ -82,6 +87,12 @@ public class UnitOfWork : IUnitOfWork
     public async Task CommitAsync() => await _context.Database.CommitTransactionAsync();
 
     public async Task RollbackAsync() => await _context.Database.RollbackTransactionAsync();
+    
+    public async Task ExecuteStrategyAsync(Func<Task> action)
+    {
+        var strategy = _context.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(action);
+    }
 
     public void Dispose() => _context.Dispose();
 }

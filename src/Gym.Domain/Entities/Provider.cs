@@ -9,12 +9,13 @@ namespace Gym.Domain.Entities;
 public class Provider : BaseEntity
 {
     public string Name { get; set; } = string.Empty;
-    public string Code { get; set; } = string.Empty; // Mã NCC (e.g. NCC001)
+    public string? Code { get; set; } // Mã NCC (e.g. NCC001)
+    public string? ContactPerson { get; set; }
     public string? Address { get; set; }
     public string? PhoneNumber { get; set; }
     public string? Email { get; set; }
-    public string? VATCode { get; set; }
-    public string? SupplyType { get; set; } // Thiết bị, dụng cụ, phụ kiện, thực phẩm...
+    public string? TaxCode { get; set; } // Thay cho VATCode để khớp SQL
+    public string? SupplyType { get; set; } 
     public string? BankAccountNumber { get; set; }
     public string? BankName { get; set; }
     public string? Note { get; set; }

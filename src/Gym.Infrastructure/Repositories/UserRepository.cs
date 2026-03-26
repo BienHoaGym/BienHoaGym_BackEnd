@@ -1,4 +1,4 @@
-﻿using Gym.Application.Interfaces.Repositories;
+using Gym.Application.Interfaces.Repositories;
 using Gym.Domain.Entities;
 using Gym.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -14,7 +14,8 @@ public class UserRepository : Repository<User>, IUserRepository
     public async Task<User?> GetByUsernameAsync(string username)
     {
         return await _context.Users
-                .Include(u => u.Role) // <--- BẮT BUỘC PHẢI CÓ DÒNG NÀY
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
                 .FirstOrDefaultAsync(u => u.Username == username);
     }
 

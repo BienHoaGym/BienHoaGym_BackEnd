@@ -1,5 +1,6 @@
 using Gym.Application.DTOs.CheckIns;
 using Gym.Application.Interfaces.Services;
+using Gym.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -23,7 +24,7 @@ public class CheckInsController : ControllerBase
     /// Validate if member can check-in
     /// </summary>
     [HttpPost("validate")]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [Authorize(Policy = PermissionConstants.CheckInRead)]
     public async Task<IActionResult> ValidateCheckIn([FromBody] ValidateCheckInRequest request)
     {
         var result = await _checkInService.ValidateCheckInAsync(request.MemberCode);
@@ -34,7 +35,7 @@ public class CheckInsController : ControllerBase
     /// Check-in member
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [Authorize(Policy = PermissionConstants.CheckInCreate)]
     public async Task<IActionResult> CheckIn([FromBody] CreateCheckInDto dto)
     {
         _logger.LogInformation("Check-in request for member: {MemberCode}", dto.MemberCode);
@@ -51,7 +52,7 @@ public class CheckInsController : ControllerBase
     /// Check-in via QR Code
     /// </summary>
     [HttpPost("qr")]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [Authorize(Policy = PermissionConstants.CheckInCreate)]
     public async Task<IActionResult> CheckInWithQRCode([FromBody] string qrCode)
     {
         _logger.LogInformation("QR Check-in request");
@@ -64,7 +65,7 @@ public class CheckInsController : ControllerBase
     /// Check-in via Face Recognition
     /// </summary>
     [HttpPost("face")]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [Authorize(Policy = PermissionConstants.CheckInCreate)]
     public async Task<IActionResult> CheckInWithFace([FromBody] FaceCheckInDto dto)
     {
         _logger.LogInformation("Face Check-in request");
@@ -77,7 +78,7 @@ public class CheckInsController : ControllerBase
     /// Check-out member
     /// </summary>
     [HttpPut("{id}/checkout")]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [Authorize(Policy = PermissionConstants.CheckInCreate)]
     public async Task<IActionResult> CheckOut(Guid id)
     {
         _logger.LogInformation("Check-out request for check-in: {CheckInId}", id);
@@ -94,7 +95,7 @@ public class CheckInsController : ControllerBase
     /// Get today's check-ins
     /// </summary>
     [HttpGet("today")]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [Authorize(Policy = PermissionConstants.CheckInRead)]
     public async Task<IActionResult> GetTodayCheckIns()
     {
         _logger.LogInformation("Getting today's check-ins");
@@ -108,7 +109,7 @@ public class CheckInsController : ControllerBase
     /// Get member check-in history
     /// </summary>
     [HttpGet("member/{memberId}")]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [Authorize(Policy = PermissionConstants.CheckInRead)]
     public async Task<IActionResult> GetMemberHistory(Guid memberId, [FromQuery] int take = 10)
     {
         _logger.LogInformation("Getting check-in history for member: {MemberId}", memberId);

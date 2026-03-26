@@ -1,4 +1,4 @@
-﻿using Gym.Application.DTOs.Auth;
+using Gym.Application.DTOs.Auth;
 using Gym.Application.DTOs.Common;
 using Gym.Application.DTOs.Users;
 using Gym.Application.Interfaces;
@@ -66,6 +66,24 @@ public class AuthService : IAuthService
         // KHU VỰC SỬA LỖI: MAP THỦ CÔNG (MANUAL MAPPING)
         // Thay vì dùng _mapper.Map, ta tự gán từng trường một.
         // ====================================================================
+        var roles = user.UserRoles.Select(ur => ur.Role.RoleName).ToList();
+        var permissions = new HashSet<string>();
+        foreach (var ur in user.UserRoles)
+        {
+            if (!string.IsNullOrEmpty(ur.Role.Permissions))
+            {
+                try
+                {
+                    var perms = System.Text.Json.JsonSerializer.Deserialize<List<string>>(ur.Role.Permissions);
+                    if (perms != null)
+                    {
+                        foreach (var p in perms) permissions.Add(p);
+                    }
+                }
+                catch { /* Ignore invalid JSON */ }
+            }
+        }
+
         var userDto = new UserDto
         {
             Id = user.Id,
@@ -74,10 +92,9 @@ public class AuthService : IAuthService
             FullName = user.FullName,
             IsActive = user.IsActive,
             LastLoginAt = user.LastLoginAt,
-
-            // Xử lý Role: Lấy tên Role từ bảng Role (nếu có), nếu null thì để chuỗi rỗng
-            // Lưu ý: Đảm bảo hàm GetByUsernameAsync của bạn có .Include(u => u.Role)
-            Role = user.Role != null ? user.Role.RoleName : string.Empty
+            Roles = roles,
+            Permissions = permissions.ToList(),
+            Role = roles.FirstOrDefault() ?? string.Empty
         };
 
         var response = new LoginResponseDto

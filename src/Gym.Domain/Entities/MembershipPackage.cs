@@ -1,4 +1,4 @@
-﻿using Gym.Domain.Common;
+using Gym.Domain.Common;
 
 namespace Gym.Domain.Entities;
 
@@ -16,6 +16,7 @@ public class MembershipPackage : BaseEntity
     public int DurationInMonths { get; set; } // Giữ lại nếu cần tính theo tháng
 
     public int? SessionLimit { get; set; }
+    public bool HasPT { get; set; } = false; // "Có PT hay không có PT"
     public bool IsActive { get; set; } = true;
 
     // Navigation Property

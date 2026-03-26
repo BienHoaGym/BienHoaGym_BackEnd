@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Text;
@@ -21,9 +21,7 @@ public class User
     public string FullName { get; set; } = string.Empty;
 
     public string? PhoneNumber { get; set; }
-
-    public int RoleId { get; set; }
-
+    
     public bool IsActive { get; set; } = true;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -33,7 +31,7 @@ public class User
     public DateTime? LastLoginAt { get; set; }
 
     // Navigation properties
-    public virtual Role Role { get; set; } = null!;
+    public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
 
     public virtual Member? Member { get; set; }
 

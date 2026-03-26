@@ -1,4 +1,4 @@
-﻿namespace Gym.Domain.Common;
+namespace Gym.Domain.Common;
 
 public abstract class BaseEntity
 {
@@ -7,4 +7,9 @@ public abstract class BaseEntity
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
     public bool IsDeleted { get; set; } = false;
+
+    public void CheckId()
+    {
+        if (Id == Guid.Empty) Id = Guid.NewGuid();
+    }
 }

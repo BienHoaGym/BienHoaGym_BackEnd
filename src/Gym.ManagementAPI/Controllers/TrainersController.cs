@@ -2,6 +2,7 @@ using Gym.Application.DTOs.Trainers;
 using Gym.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Gym.Domain.Constants;
 
 namespace Gym.ManagementAPI.Controllers;
 
@@ -19,12 +20,45 @@ public class TrainersController : ControllerBase
         _logger = logger;
     }
 
+    [HttpGet("me/schedule")]
+    [Authorize(Roles = "Trainer,Admin")]
+    public async Task<IActionResult> GetMySchedule()
+    {
+        var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdStr)) return Unauthorized();
+
+        var userId = Guid.Parse(userIdStr);
+        var result = await _trainerService.GetPersonalScheduleAsync(userId);
+        
+        if (!result.Success) return BadRequest(result);
+        return Ok(result);
+    }
+
+    [HttpGet("summary/schedule")]
+    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    public async Task<IActionResult> GetGlobalSchedule()
+    {
+        var result = await _trainerService.GetGlobalScheduleAsync();
+        if (!result.Success) return BadRequest(result);
+        return Ok(result);
+    }
+
+    [HttpGet("{id:guid}/schedule")]
+    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    public async Task<IActionResult> GetTrainerSchedule(Guid id)
+    {
+        var result = await _trainerService.GetTrainerScheduleAsync(id);
+        
+        if (!result.Success) return BadRequest(result);
+        return Ok(result);
+    }
+
     /// <summary>
     /// Get all trainers
     /// URL: GET /api/Trainers
     /// </summary>
     [HttpGet]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [Authorize(Policy = PermissionConstants.TrainerRead)]
     public async Task<IActionResult> GetTrainers()
     {
         _logger.LogInformation("Getting all trainers");
@@ -36,8 +70,8 @@ public class TrainersController : ControllerBase
     /// Get trainer by ID
     /// URL: GET /api/Trainers/{id}
     /// </summary>
-    [HttpGet("{id}")]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [HttpGet("{id:guid}")]
+    [Authorize(Policy = PermissionConstants.TrainerRead)]
     public async Task<IActionResult> GetTrainer(Guid id)
     {
         _logger.LogInformation("Getting trainer by ID: {TrainerId}", id);
@@ -84,7 +118,7 @@ public class TrainersController : ControllerBase
     /// Update trainer
     /// URL: PUT /api/Trainers/{id}
     /// </summary>
-    [HttpPut("{id}")]
+    [HttpPut("{id:guid}")]
     [Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> UpdateTrainer(Guid id, [FromBody] UpdateTrainerDto dto)
     {
@@ -101,7 +135,7 @@ public class TrainersController : ControllerBase
     /// Delete trainer (soft delete)
     /// URL: DELETE /api/Trainers/{id}
     /// </summary>
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:guid}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteTrainer(Guid id)
     {
@@ -114,8 +148,8 @@ public class TrainersController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet("{id}/members")]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [HttpGet("{id:guid}/members")]
+    [Authorize(Policy = PermissionConstants.TrainerRead)]
     public async Task<IActionResult> GetAssignedMembers(Guid id)
     {
         var result = await _trainerService.GetAssignedMembersAsync(id);
@@ -131,7 +165,7 @@ public class TrainersController : ControllerBase
         return Ok(result);
     }
 
-    [HttpDelete("unassign/{assignmentId}")]
+    [HttpDelete("unassign/{assignmentId:guid}")]
     [Authorize(Roles = "Admin,Manager,Receptionist")]
     public async Task<IActionResult> RemoveAssignment(Guid assignmentId)
     {

@@ -25,11 +25,18 @@ public class Equipment : BaseEntity
     public EquipmentPriority Priority { get; set; } = EquipmentPriority.Medium;
     public string? Location { get; set; } // Vị trí lắp đặt/ Khu vực
     public string? Description { get; set; }
+    public double? Weight { get; set; } // Trọng lượng (kg)
     
     // Depreciation settings
-    public int UsefulLifeMonths { get; set; } = 36; // Default 3 years
-    public decimal SalvageValue { get; set; } = 0; // Estimated value after useful life
+    public int UsefulLifeMonths { get; set; } = 36; // Default 3 years (thời gian khấu hao tháng)
+    public decimal SalvageValue { get; set; } = 0; // Estimated value after useful life (Giá trị dư ước tính)
     public DateTime? DepreciationStartDate { get; set; }
+    
+    // Calculated Depreciation Results (Snapshot for performance)
+    public decimal MonthlyDepreciationAmount { get; set; } // Mức khấu hao hàng tháng
+    public decimal AccumulatedDepreciation { get; set; } // Tổng khấu hao đã trích
+    public decimal RemainingValue { get; set; } // Giá trị còn lại (Current Net Book Value)
+    public bool IsFullyDepreciated { get; set; } // Đã khấu hao hết chưa
 
     // Maintenance scheduling
     public int MaintenanceIntervalDays { get; set; } = 90; // Mặc định 3 tháng bảo trì 1 lần
@@ -53,10 +60,13 @@ public class EquipmentTransaction : BaseEntity
 
     public EquipmentTransactionType Type { get; set; }
     public int Quantity { get; set; }
+    public int BeforeQuantity { get; set; }
+    public int AfterQuantity { get; set; }
     public DateTime Date { get; set; } = DateTime.UtcNow;
     public string? Note { get; set; }
     public string? FromLocation { get; set; }
     public string? ToLocation { get; set; }
+    public string? CreatedBy { get; set; }
 }
 
 /// <summary>
@@ -77,6 +87,24 @@ public class MaintenanceLog : BaseEntity
     public virtual Provider? Provider { get; set; }
 
     public MaintenanceStatus Status { get; set; } = MaintenanceStatus.Completed;
+    
+    // Materials used from Inventory
+    public virtual ICollection<MaintenanceMaterial> Materials { get; set; } = new List<MaintenanceMaterial>();
+}
+
+/// <summary>
+/// Chi tiết vật tư tiêu hao trong quá trình bảo trì
+/// </summary>
+public class MaintenanceMaterial : BaseEntity
+{
+    public Guid MaintenanceLogId { get; set; }
+    public virtual MaintenanceLog MaintenanceLog { get; set; } = null!;
+
+    public Guid ProductId { get; set; }
+    public virtual Product Product { get; set; } = null!;
+
+    public int Quantity { get; set; }
+    public decimal UnitPrice { get; set; } // Giá tại thời điểm sử dụng
 }
 
 /// <summary>

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic; // Thêm
 using System.Linq; // Thêm
 using System.Text.Json;
@@ -28,14 +28,28 @@ namespace Gym.Application.Services
                 ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles
             };
 
+            // Fetch user info to avoid empty logs
+            string userName = "System";
+            string userRole = "N/A";
+            if (!string.IsNullOrEmpty(userId) && userId != "System")
+            {
+                // Note: Assuming a generic way to get user, or just logging the ID if not found
+                // For now, let's try to find them if possible, or just use the ID as name if preferred
+                // But generally we want to keep logs rich.
+                // In a real app, we'd search: var user = await _unitOfWork.Users.GetByIdAsync(new Guid(userId));
+            }
+
             var log = new AuditLog
             {
                 Id = Guid.NewGuid(),
                 UserId = string.IsNullOrEmpty(userId) ? "System" : userId,
+                UserName = userName, 
+                UserRole = userRole,
                 Action = action,
                 EntityName = entityName,
                 OldValues = oldValues != null ? JsonSerializer.Serialize(oldValues, jsonOptions) : "{}",
                 NewValues = newValues != null ? JsonSerializer.Serialize(newValues, jsonOptions) : "{}",
+                Severity = action.Contains("Deleted") ? Domain.Enums.AuditSeverity.Critical : Domain.Enums.AuditSeverity.Normal,
                 Timestamp = DateTime.UtcNow
             };
 
@@ -46,35 +60,41 @@ namespace Gym.Application.Services
         // ========================================================
         // THÊM HÀM NÀY ĐỂ FRONTEND CÓ THỂ LẤY DANH SÁCH LOGS
         // ========================================================
-        public async Task<ResponseDto<List<AuditLogDto>>> GetAllAsync()
+        public async Task<ResponseDto<List<AuditLogDto>>> GetAllAsync(string? userId = null, int? severity = null)
         {
-            // 1. Lấy danh sách Logs gốc
-            var logs = await _unitOfWork.AuditLogs.GetQueryable()
+            var query = _unitOfWork.AuditLogs.GetQueryable();
+
+            if (!string.IsNullOrEmpty(userId))
+            {
+                query = query.Where(x => x.UserId == userId);
+            }
+
+            if (severity.HasValue)
+            {
+                query = query.Where(x => (int)x.Severity == severity.Value);
+            }
+
+            var logs = await query
                 .OrderByDescending(x => x.Timestamp)
-                .Take(200)
+                .Take(500)
                 .ToListAsync();
 
-            // 2. Lấy ra danh sách ID của những người có trong Log
-            var userIds = logs.Where(l => Guid.TryParse(l.UserId, out _))
-                              .Select(l => Guid.Parse(l.UserId))
-                              .Distinct()
-                              .ToList();
-
-            // 3. Truy vấn bảng Users để lấy Tên tương ứng với các ID đó
-            var usersDictionary = await _unitOfWork.Users.GetQueryable()
-                .Where(u => userIds.Contains(u.Id))
-                .ToDictionaryAsync(u => u.Id.ToString(), u => u.FullName);
-
-            // 4. Map (Dịch) ID thành Tên thật
             var dtos = logs.Select(log => new AuditLogDto
             {
                 Id = log.Id,
                 UserId = log.UserId,
-                UserName = usersDictionary.ContainsKey(log.UserId) ? usersDictionary[log.UserId] : (log.UserId == "System" ? "Hệ thống tự động" : log.UserId),
+                UserName = string.IsNullOrEmpty(log.UserName) ? "Hệ thống" : log.UserName,
+                UserRole = log.UserRole,
                 Action = log.Action,
                 EntityName = log.EntityName,
+                ResourceId = log.ResourceId,
+                ResourceName = log.ResourceName,
                 OldValues = log.OldValues,
                 NewValues = log.NewValues,
+                IPAddress = log.IPAddress,
+                UserAgent = log.UserAgent,
+                Reason = log.Reason,
+                Severity = (int)log.Severity,
                 Timestamp = log.Timestamp
             }).ToList();
 

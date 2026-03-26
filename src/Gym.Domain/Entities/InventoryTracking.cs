@@ -47,6 +47,10 @@ public class StockTransaction : BaseEntity
 
     public StockTransactionType Type { get; set; } // Import, Export, Transfer...
     public int Quantity { get; set; }
+    public int BeforeQuantity { get; set; } // Số lượng trước khi giao dịch
+    public int AfterQuantity { get; set; }  // Số lượng sau khi giao dịch
+    public string? PerformedBy { get; set; } // Người thực hiện
+    
     public decimal UnitPrice { get; set; } // Giá nhập/xuất tại thời điểm giao dịch
     public DateTime Date { get; set; } = DateTime.UtcNow;
     

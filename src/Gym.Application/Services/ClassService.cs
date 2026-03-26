@@ -11,20 +11,26 @@ public class ClassService : IClassService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
+    private readonly IAuditLogService _auditLogService;
+    private readonly Microsoft.AspNetCore.Http.IHttpContextAccessor _httpContextAccessor;
 
-    public ClassService(IUnitOfWork unitOfWork, IMapper mapper)
+    public ClassService(IUnitOfWork unitOfWork, IMapper mapper, IAuditLogService auditLogService, Microsoft.AspNetCore.Http.IHttpContextAccessor httpContextAccessor)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
+        _auditLogService = auditLogService;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public async Task<ResponseDto<ClassDto>> GetByIdAsync(Guid id)
     {
-        var classEntity = await _unitOfWork.Classes.GetByIdAsync(id);
+        var classEntity = await _unitOfWork.Classes.GetQueryable()
+            .Include(c => c.Trainer)
+            .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
 
-        if (classEntity == null || classEntity.IsDeleted)
+        if (classEntity == null)
         {
-            return ResponseDto<ClassDto>.FailureResult("Class not found");
+            return ResponseDto<ClassDto>.FailureResult("Không tìm thấy lớp học.");
         }
 
         var classDto = _mapper.Map<ClassDto>(classEntity);
@@ -33,12 +39,31 @@ public class ClassService : IClassService
 
     public async Task<ResponseDto<List<ClassDto>>> GetAllAsync()
     {
-        var classes = await _unitOfWork.Classes.GetAllAsync();
-        var activeClasses = classes
-            .Where(c => !c.IsDeleted)
+        var classesQuery = _unitOfWork.Classes.GetQueryable()
+            .Include(c => c.Trainer)
+            .Where(c => !c.IsDeleted);
+
+        // NGHIỆP VỤ (WF - 2.4): HLV chỉ thấy lớp của chính mình
+        var user = _httpContextAccessor.HttpContext?.User;
+        var role = user?.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+        if (role == "Trainer")
+        {
+            var userIdStr = user?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (Guid.TryParse(userIdStr, out var userId))
+            {
+                var trainers = await _unitOfWork.Trainers.FindAsync(t => t.UserId == userId);
+                var trainer = trainers.FirstOrDefault();
+                if (trainer != null)
+                {
+                    classesQuery = classesQuery.Where(c => c.TrainerId == trainer.Id);
+                }
+            }
+        }
+
+        var activeClasses = await classesQuery
             .OrderBy(c => c.ScheduleDay)
             .ThenBy(c => c.StartTime)
-            .ToList();
+            .ToListAsync();
 
         var classDtos = _mapper.Map<List<ClassDto>>(activeClasses);
         return ResponseDto<List<ClassDto>>.SuccessResult(classDtos);
@@ -46,12 +71,12 @@ public class ClassService : IClassService
 
     public async Task<ResponseDto<List<ClassDto>>> GetActiveClassesAsync()
     {
-        var classes = await _unitOfWork.Classes.GetAllAsync();
-        var activeClasses = classes
+        var activeClasses = await _unitOfWork.Classes.GetQueryable()
+            .Include(c => c.Trainer)
             .Where(c => !c.IsDeleted && c.IsActive)
             .OrderBy(c => c.ScheduleDay)
             .ThenBy(c => c.StartTime)
-            .ToList();
+            .ToListAsync();
 
         var classDtos = _mapper.Map<List<ClassDto>>(activeClasses);
         return ResponseDto<List<ClassDto>>.SuccessResult(classDtos);
@@ -59,6 +84,12 @@ public class ClassService : IClassService
 
     public async Task<ResponseDto<ClassDto>> CreateAsync(CreateClassDto dto)
     {
+        // NGHIỆP VỤ (WF - 2.4): Chỉ Admin/Manager được tạo lớp
+        var role = _httpContextAccessor.HttpContext?.User?.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+        if (role != "Admin" && role != "Manager")
+        {
+            return ResponseDto<ClassDto>.FailureResult("Chỉ Quản lý mới có quyền tạo lịch lớp học.");
+        }
         // Validate trainer exists
         var trainer = await _unitOfWork.Trainers.GetByIdAsync(dto.TrainerId);
         if (trainer == null || trainer.IsDeleted)
@@ -84,8 +115,8 @@ public class ClassService : IClassService
         await _unitOfWork.Classes.AddAsync(classEntity);
         await _unitOfWork.SaveChangesAsync();
 
-        var classDto = _mapper.Map<ClassDto>(classEntity);
-        return ResponseDto<ClassDto>.SuccessResult(classDto, "Class created successfully");
+        // Refetch with trainer name
+        return await GetByIdAsync(classEntity.Id);
     }
 
     public async Task<ResponseDto<ClassDto>> UpdateAsync(Guid id, UpdateClassDto dto)
@@ -122,8 +153,7 @@ public class ClassService : IClassService
         _unitOfWork.Classes.Update(classEntity);
         await _unitOfWork.SaveChangesAsync();
 
-        var classDto = _mapper.Map<ClassDto>(classEntity);
-        return ResponseDto<ClassDto>.SuccessResult(classDto, "Class updated successfully");
+        return await GetByIdAsync(classEntity.Id);
     }
 
     public async Task<ResponseDto<bool>> DeleteAsync(Guid id)
@@ -132,23 +162,30 @@ public class ClassService : IClassService
 
         if (classEntity == null || classEntity.IsDeleted)
         {
-            return ResponseDto<bool>.FailureResult("Class not found");
+            return ResponseDto<bool>.FailureResult("Không tìm thấy lớp học.");
         }
 
-        // Check if class has enrollments
-        if (classEntity.CurrentEnrollment > 0)
+        // --- TỰ ĐỘNG GỠ HỌC VIÊN (SOFT DELETE ENROLLMENTS) ---
+        var enrollments = await _unitOfWork.ClassEnrollments.FindAsync(ce => ce.ClassId == id && !ce.IsDeleted);
+        if (enrollments.Any())
         {
-            return ResponseDto<bool>.FailureResult("Cannot delete class with active enrollments. Please unenroll all members first.");
+            foreach (var enrollment in enrollments)
+            {
+                enrollment.IsDeleted = true;
+                enrollment.UpdatedAt = DateTime.UtcNow;
+                _unitOfWork.ClassEnrollments.Update(enrollment);
+            }
         }
 
-        // Soft delete
+        // Soft delete class
         classEntity.IsDeleted = true;
+        classEntity.CurrentEnrollment = 0; // Đưa về 0
         classEntity.UpdatedAt = DateTime.UtcNow;
 
         _unitOfWork.Classes.Update(classEntity);
         await _unitOfWork.SaveChangesAsync();
 
-        return ResponseDto<bool>.SuccessResult(true, "Class deleted successfully");
+        return ResponseDto<bool>.SuccessResult(true, "Đã xóa lớp học thành công (đã tự động gỡ các học viên cũ).");
     }
 
     public async Task<ResponseDto<List<ClassDto>>> GetUpcomingClassesAsync()
@@ -260,10 +297,32 @@ public class ClassService : IClassService
 
     public async Task<ResponseDto<bool>> MarkAttendanceAsync(MarkAttendanceDto dto)
     {
-        var enrollment = await _unitOfWork.ClassEnrollments.GetByIdAsync(dto.EnrollmentId);
+        // NGHIỆP VỤ (WF - 2.4): Chỉ HLV của lớp hoặc Quản lý được điểm danh
+        var user = _httpContextAccessor.HttpContext?.User;
+        var role = user?.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+        
+        var enrollment = await _unitOfWork.ClassEnrollments
+            .GetQueryable()
+            .Include(ce => ce.Class)
+            .FirstOrDefaultAsync(ce => ce.Id == dto.EnrollmentId);
+
         if (enrollment == null || enrollment.IsDeleted)
         {
-            return ResponseDto<bool>.FailureResult("Enrollment not found");
+            return ResponseDto<bool>.FailureResult("Không tìm thấy thông tin đăng ký lớp.");
+        }
+
+        if (role == "Trainer")
+        {
+             var userIdStr = user?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+             if (Guid.TryParse(userIdStr, out var userId))
+             {
+                 var trainers = await _unitOfWork.Trainers.FindAsync(t => t.UserId == userId);
+                 var trainer = trainers.FirstOrDefault();
+                 if (trainer != null && enrollment.Class != null && enrollment.Class.TrainerId != trainer.Id)
+                 {
+                     return ResponseDto<bool>.FailureResult("Bạn chỉ có quyền điểm danh cho lớp học do bạn phụ trách.");
+                 }
+             }
         }
 
         enrollment.IsAttended = dto.IsPresent;

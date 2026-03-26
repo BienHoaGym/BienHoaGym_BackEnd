@@ -26,6 +26,9 @@ public class InventoryDto
     public Guid WarehouseId { get; set; }
     public string WarehouseName { get; set; } = string.Empty;
     public int Quantity { get; set; }
+    public int MinStockThreshold { get; set; } // Ngưỡng tồn tối thiểu
+    public decimal Price { get; set; } // Giá bán lẻ hiện tại
+    public decimal CostPrice { get; set; } // Giá nhập hiện tại
     public DateTime LastUpdated { get; set; }
 }
 
@@ -40,6 +43,9 @@ public class StockTransactionDto
     public string? ToWarehouseName { get; set; }
     public StockTransactionType Type { get; set; }
     public int Quantity { get; set; }
+    public int BeforeQuantity { get; set; }
+    public int AfterQuantity { get; set; }
+    public string? PerformedBy { get; set; }
     public decimal UnitPrice { get; set; }
     public DateTime Date { get; set; }
     public string? Note { get; set; }
@@ -59,4 +65,5 @@ public class CreateStockTransactionDto
     public string? Note { get; set; }
     public string? ReferenceNumber { get; set; }
     public Guid? ProviderId { get; set; }
+    public bool IsAsset { get; set; } // Phân biệt Hàng hóa vs Thiết bị
 }
