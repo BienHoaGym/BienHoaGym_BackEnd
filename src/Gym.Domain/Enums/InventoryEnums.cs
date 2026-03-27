@@ -24,7 +24,9 @@ public enum EquipmentTransactionType
 {
     Purchase = 1,  // Mua mới
     Transfer = 2,  // Điều chuyển
-    Liquidation = 3    // Thanh lý
+    Liquidation = 3,   // Thanh lý
+    Maintenance = 4,   // Bảo trì
+    Relocation = 5     // Di chuyển vị trí
 }
 
 public enum MaintenanceStatus
@@ -45,7 +47,7 @@ public enum EquipmentPriority
 
 public enum ProductType
 {
-    Retail = 1,       // Hàng bán lẻ (nước, đồ tập, phụ kiện)
-    Supplement = 2,   // Thực phẩm bổ sung (Whey, Gain...)
-    Supply = 3        // Vật tư vận hành (khăn, nước rửa tay, giấy...)
+    Service = 1,      // Gói tập / Dịch vụ PT (Không tồn kho)
+    Supply = 2,       // Vật tư vận hành (Khăn, xà bông...) - Quản lý tồn kho
+    Retail = 3        // Hàng bán lẻ (Nước, Whey...) - Quản lý tồn kho đơn giản
 }

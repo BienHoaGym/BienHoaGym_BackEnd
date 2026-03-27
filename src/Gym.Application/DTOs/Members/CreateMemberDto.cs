@@ -15,4 +15,5 @@ public class CreateMemberDto
     public string? Note { get; set; }
     public string? EmergencyContact { get; set; }
     public string? EmergencyPhone { get; set; }
+    public string? FaceEncoding { get; set; }
 }

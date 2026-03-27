@@ -20,10 +20,12 @@ public class EquipmentDto
     public EquipmentPriority Priority { get; set; }
     public string? Location { get; set; }
     public string? Description { get; set; }
+    public double? Weight { get; set; }
     public int MaintenanceIntervalDays { get; set; }
     public int UsefulLifeMonths { get; set; }
     public decimal SalvageValue { get; set; }
     public DateTime? DepreciationStartDate { get; set; }
+    public decimal MonthlyDepreciationAmount { get; set; }
     public decimal AccumulatedDepreciation { get; set; }
     public decimal CurrentBookValue { get; set; }
     public bool IsFullyDepreciated { get; set; }
@@ -46,9 +48,11 @@ public class CreateEquipmentDto
     public EquipmentPriority Priority { get; set; } = EquipmentPriority.Medium;
     public string? Location { get; set; }
     public string? Description { get; set; }
+    public double? Weight { get; set; }
     public int MaintenanceIntervalDays { get; set; } = 90;
     public int UsefulLifeMonths { get; set; } = 36;
     public decimal SalvageValue { get; set; } = 0;
+    public decimal MonthlyDepreciationAmount { get; set; } = 0;
     public DateTime? DepreciationStartDate { get; set; }
 }
 
@@ -88,6 +92,15 @@ public class MaintenanceLogDto
     public Guid? ProviderId { get; set; }
     public string? ProviderName { get; set; }
     public MaintenanceStatus Status { get; set; }
+    public List<MaintenanceMaterialDto> Materials { get; set; } = new();
+}
+
+public class MaintenanceMaterialDto
+{
+    public Guid ProductId { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public int Quantity { get; set; }
+    public decimal UnitPrice { get; set; }
 }
 
 public class CreateMaintenanceLogDto
@@ -100,6 +113,14 @@ public class CreateMaintenanceLogDto
     public string? Technician { get; set; }
     public Guid? ProviderId { get; set; }
     public MaintenanceStatus Status { get; set; } = MaintenanceStatus.Completed;
+    public List<CreateMaintenanceMaterialDto> UsedMaterials { get; set; } = new();
+}
+
+public class CreateMaintenanceMaterialDto
+{
+    public Guid ProductId { get; set; }
+    public int Quantity { get; set; }
+    public Guid WarehouseId { get; set; } // Kho để xuất vật tư (thường là Kho Quầy hoặc Kho Tổng)
 }
 
 public class DepreciationDto

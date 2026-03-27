@@ -1,10 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "fNtsg9EBS5o=",
+  "dgSpecHash": "t7GGLLAQRzM=",
   "success": true,
-  "projectFilePath": "C:\\Users\\ADMIN\\OneDrive\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Application\\Gym.Application.csproj",
+  "projectFilePath": "D:\\Tài liệu - Copy\\Gym_Project\\GymManagement\\src\\Gym.Application\\Gym.Application.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\ADMIN\\.nuget\\packages\\automapper\\16.1.1\\automapper.16.1.1.nupkg.sha512",
+    "C:\\Users\\ADMIN\\.nuget\\packages\\bcrypt.net-next\\4.1.0\\bcrypt.net-next.4.1.0.nupkg.sha512",
     "C:\\Users\\ADMIN\\.nuget\\packages\\fluentvalidation\\12.1.1\\fluentvalidation.12.1.1.nupkg.sha512",
     "C:\\Users\\ADMIN\\.nuget\\packages\\fluentvalidation.dependencyinjectionextensions\\12.1.1\\fluentvalidation.dependencyinjectionextensions.12.1.1.nupkg.sha512",
     "C:\\Users\\ADMIN\\.nuget\\packages\\microsoft.aspnetcore.authentication\\2.3.0\\microsoft.aspnetcore.authentication.2.3.0.nupkg.sha512",

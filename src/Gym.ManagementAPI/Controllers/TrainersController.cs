@@ -2,6 +2,7 @@ using Gym.Application.DTOs.Trainers;
 using Gym.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Gym.Domain.Constants;
 
 namespace Gym.ManagementAPI.Controllers;
 
@@ -19,12 +20,30 @@ public class TrainersController : ControllerBase
         _logger = logger;
     }
 
+    [HttpGet("me/schedule")]
+    [Authorize(Roles = "Trainer,Admin")]
+    public async Task<IActionResult> GetMySchedule()
+    {
+        var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdStr)) return Unauthorized();
+
+        var userId = Guid.Parse(userIdStr);
+        var email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
+        var fullName = User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value;
+
+        var isAdmin = User.IsInRole("Admin");
+        var result = await _trainerService.GetPersonalScheduleAsync(userId, email, fullName, isAdmin);
+        
+        if (!result.Success) return BadRequest(result);
+        return Ok(result);
+    }
+
     /// <summary>
     /// Get all trainers
     /// URL: GET /api/Trainers
     /// </summary>
     [HttpGet]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [Authorize(Policy = PermissionConstants.TrainerRead)]
     public async Task<IActionResult> GetTrainers()
     {
         _logger.LogInformation("Getting all trainers");
@@ -37,7 +56,7 @@ public class TrainersController : ControllerBase
     /// URL: GET /api/Trainers/{id}
     /// </summary>
     [HttpGet("{id}")]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [Authorize(Policy = PermissionConstants.TrainerRead)]
     public async Task<IActionResult> GetTrainer(Guid id)
     {
         _logger.LogInformation("Getting trainer by ID: {TrainerId}", id);
@@ -115,7 +134,7 @@ public class TrainersController : ControllerBase
     }
 
     [HttpGet("{id}/members")]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [Authorize(Policy = PermissionConstants.TrainerRead)]
     public async Task<IActionResult> GetAssignedMembers(Guid id)
     {
         var result = await _trainerService.GetAssignedMembersAsync(id);

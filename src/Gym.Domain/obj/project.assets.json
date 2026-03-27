@@ -14,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\ADMIN\\OneDrive\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Domain\\Gym.Domain.csproj",
+      "projectUniqueName": "D:\\Tài liệu - Copy\\Gym_Project\\GymManagement\\src\\Gym.Domain\\Gym.Domain.csproj",
       "projectName": "Gym.Domain",
-      "projectPath": "C:\\Users\\ADMIN\\OneDrive\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Domain\\Gym.Domain.csproj",
+      "projectPath": "D:\\Tài liệu - Copy\\Gym_Project\\GymManagement\\src\\Gym.Domain\\Gym.Domain.csproj",
       "packagesPath": "C:\\Users\\ADMIN\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\ADMIN\\OneDrive\\Tài liệu\\Gym_Project\\GymManagement\\src\\Gym.Domain\\obj\\",
+      "outputPath": "D:\\Tài liệu - Copy\\Gym_Project\\GymManagement\\src\\Gym.Domain\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

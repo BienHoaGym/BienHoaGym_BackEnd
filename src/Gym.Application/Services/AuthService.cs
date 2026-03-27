@@ -1,4 +1,4 @@
-﻿using Gym.Application.DTOs.Auth;
+using Gym.Application.DTOs.Auth;
 using Gym.Application.DTOs.Common;
 using Gym.Application.DTOs.Users;
 using Gym.Application.Interfaces;
@@ -36,7 +36,7 @@ public class AuthService : IAuthService
 
         if (user == null)
         {
-            return ResponseDto<LoginResponseDto>.FailureResult("Invalid username or password");
+            return ResponseDto<LoginResponseDto>.FailureResult("Tên đăng nhập hoặc mật khẩu không chính xác");
         }
 
         // 2. So khớp mật khẩu (Dùng Hash)
@@ -44,13 +44,13 @@ public class AuthService : IAuthService
 
         if (verificationResult == PasswordVerificationResult.Failed)
         {
-            return ResponseDto<LoginResponseDto>.FailureResult("Invalid username or password");
+            return ResponseDto<LoginResponseDto>.FailureResult("Tên đăng nhập hoặc mật khẩu không chính xác");
         }
 
         // 3. Kiểm tra Active
         if (!user.IsActive)
         {
-            return ResponseDto<LoginResponseDto>.FailureResult("Account is inactive");
+            return ResponseDto<LoginResponseDto>.FailureResult("Tài khoản đã bị tạm khóa");
         }
 
         // 4. Tạo Token
@@ -66,6 +66,24 @@ public class AuthService : IAuthService
         // KHU VỰC SỬA LỖI: MAP THỦ CÔNG (MANUAL MAPPING)
         // Thay vì dùng _mapper.Map, ta tự gán từng trường một.
         // ====================================================================
+        var roles = user.UserRoles.Select(ur => ur.Role.RoleName).ToList();
+        var permissions = new HashSet<string>();
+        foreach (var ur in user.UserRoles)
+        {
+            if (!string.IsNullOrEmpty(ur.Role.Permissions))
+            {
+                try
+                {
+                    var perms = System.Text.Json.JsonSerializer.Deserialize<List<string>>(ur.Role.Permissions);
+                    if (perms != null)
+                    {
+                        foreach (var p in perms) permissions.Add(p);
+                    }
+                }
+                catch { /* Ignore invalid JSON */ }
+            }
+        }
+
         var userDto = new UserDto
         {
             Id = user.Id,
@@ -74,10 +92,9 @@ public class AuthService : IAuthService
             FullName = user.FullName,
             IsActive = user.IsActive,
             LastLoginAt = user.LastLoginAt,
-
-            // Xử lý Role: Lấy tên Role từ bảng Role (nếu có), nếu null thì để chuỗi rỗng
-            // Lưu ý: Đảm bảo hàm GetByUsernameAsync của bạn có .Include(u => u.Role)
-            Role = user.Role != null ? user.Role.RoleName : string.Empty
+            Roles = roles,
+            Permissions = permissions.ToList(),
+            Role = roles.FirstOrDefault() ?? string.Empty
         };
 
         var response = new LoginResponseDto
@@ -88,11 +105,11 @@ public class AuthService : IAuthService
             User = userDto // Gán đối tượng vừa tạo vào đây
         };
 
-        return ResponseDto<LoginResponseDto>.SuccessResult(response, "Login successful");
+        return ResponseDto<LoginResponseDto>.SuccessResult(response, "Đăng nhập thành công");
     }
 
     public async Task<ResponseDto<bool>> LogoutAsync(Guid userId)
     {
-        return ResponseDto<bool>.SuccessResult(true, "Logout successful");
+        return ResponseDto<bool>.SuccessResult(true, "Đăng xuất thành công");
     }
 }

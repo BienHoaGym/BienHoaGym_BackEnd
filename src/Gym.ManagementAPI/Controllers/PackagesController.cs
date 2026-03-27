@@ -1,5 +1,6 @@
-﻿using Gym.Application.DTOs.Packages;
+using Gym.Application.DTOs.Packages;
 using Gym.Application.Interfaces.Services;
+using Gym.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -68,7 +69,7 @@ public class PackagesController : ControllerBase
     /// Create new package
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Policy = PermissionConstants.PackageCreate)]
     public async Task<IActionResult> CreatePackage([FromBody] CreatePackageDto dto)
     {
         _logger.LogInformation("Creating new package: {PackageName}", dto.Name);
@@ -85,7 +86,7 @@ public class PackagesController : ControllerBase
     /// Update package
     /// </summary>
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Policy = PermissionConstants.PackageUpdate)]
     public async Task<IActionResult> UpdatePackage(Guid id, [FromBody] UpdatePackageDto dto)
     {
         _logger.LogInformation("Updating package: {PackageId}", id);
@@ -102,7 +103,7 @@ public class PackagesController : ControllerBase
     /// Delete package (soft delete)
     /// </summary>
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = PermissionConstants.PackageDelete)]
     public async Task<IActionResult> DeletePackage(Guid id)
     {
         _logger.LogInformation("Deleting package: {PackageId}", id);

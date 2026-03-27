@@ -1,5 +1,6 @@
-﻿using Gym.Application.DTOs.Payments;
+using Gym.Application.DTOs.Payments;
 using Gym.Application.Interfaces.Services;
+using Gym.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,7 +21,7 @@ public class PaymentsController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "Admin,Manager,Accountant")]
+    [Authorize(Policy = PermissionConstants.PaymentRead)]
     public async Task<IActionResult> GetPayments()
     {
         var result = await _paymentService.GetAllAsync();
@@ -28,7 +29,7 @@ public class PaymentsController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    [Authorize(Roles = "Admin,Manager,Accountant,Receptionist")]
+    [Authorize(Policy = PermissionConstants.PaymentRead)]
     public async Task<IActionResult> GetPayment(Guid id)
     {
         var result = await _paymentService.GetByIdAsync(id);
@@ -37,7 +38,7 @@ public class PaymentsController : ControllerBase
     }
 
     [HttpGet("subscription/{subscriptionId}")]
-    [Authorize(Roles = "Admin,Manager,Accountant,Receptionist")]
+    [Authorize(Policy = PermissionConstants.PaymentRead)]
     public async Task<IActionResult> GetSubscriptionPayments(Guid subscriptionId)
     {
         var result = await _paymentService.GetBySubscriptionIdAsync(subscriptionId);
@@ -45,7 +46,7 @@ public class PaymentsController : ControllerBase
     }
 
     [HttpPost("process")]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [Authorize(Policy = PermissionConstants.PaymentCreate)]
     public async Task<IActionResult> ProcessPayment([FromBody] ProcessPaymentDto dto)
     {
         var result = await _paymentService.ProcessPaymentAsync(dto);
@@ -54,7 +55,7 @@ public class PaymentsController : ControllerBase
     }
 
     [HttpPost("{id}/refund")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Policy = PermissionConstants.PaymentCreate)]
     public async Task<IActionResult> RefundPayment(Guid id, [FromBody] RefundPaymentRequest request)
     {
         var result = await _paymentService.RefundAsync(id, request.Reason);

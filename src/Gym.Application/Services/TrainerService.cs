@@ -203,4 +203,78 @@ public class TrainerService : ITrainerService
 
         return ResponseDto<bool>.SuccessResult(true, "Assignment removed successfully");
     }
+
+    public async Task<ResponseDto<PersonalScheduleDto>> GetPersonalScheduleAsync(Guid userId, string? email = null, string? fullName = null, bool isAdmin = false)
+    {
+        var trainer = await _unitOfWork.Trainers.GetByUserIdAsync(userId);
+        
+        // --- FALLBACK LÀM MỀM LUỒNG DỮ LIỆU ---
+        // 1. Thử tìm theo Email (Ưu tiên nhất)
+        if (trainer == null && !string.IsNullOrEmpty(email))
+        {
+            var normalizedEmail = email.Trim().ToLower();
+            var trainersByEmail = await _unitOfWork.Trainers.FindAsync(t => 
+                t.Email != null && t.Email.Trim().ToLower() == normalizedEmail && !t.IsDeleted);
+            
+            trainer = trainersByEmail.FirstOrDefault();
+        }
+
+        // 2. Thử tìm theo Tên đầy đủ (Nếu email không khớp)
+        if (trainer == null && !string.IsNullOrEmpty(fullName))
+        {
+            var normalizedName = fullName.Trim().ToLower();
+            var trainersByName = await _unitOfWork.Trainers.FindAsync(t => 
+                t.FullName != null && t.FullName.Trim().ToLower() == normalizedName && !t.IsDeleted);
+            
+            trainer = trainersByName.FirstOrDefault();
+        }
+
+        // Nếu tìm thấy qua bất kỳ fallback nào, thực hiện liên kết UserId cho các lần sau
+        if (trainer != null && trainer.UserId == null)
+        {
+            trainer.UserId = userId;
+            _unitOfWork.Trainers.Update(trainer);
+            await _unitOfWork.SaveChangesAsync();
+            
+            // Nạp lại dữ liệu đầy đủ (Includes) sau khi link
+            trainer = await _unitOfWork.Trainers.GetByUserIdAsync(userId);
+        }
+
+        // --- CHO PHÉP ADMIN TRUY CẬP VÀ XEM TOÀN BỘ DỮ LIỆU ---
+        if (isAdmin)
+        {
+            var adminSchedule = new PersonalScheduleDto
+            {
+                UserInfo = trainer != null ? _mapper.Map<TrainerDto>(trainer) : new TrainerDto { FullName = "Quản trị viên hệ thống", TrainerCode = "ADMIN", IsActive = true },
+                Classes = _mapper.Map<List<Gym.Application.DTOs.Classes.ClassDto>>(
+                    await _unitOfWork.Classes.GetQueryable()
+                        .Include(c => c.Trainer)
+                        .Where(c => !c.IsDeleted && c.IsActive)
+                        .OrderBy(c => c.ScheduleDay).ThenBy(c => c.StartTime)
+                        .ToListAsync()
+                ),
+                PersonalClients = _mapper.Map<List<TrainerAssignmentDto>>(
+                    await _unitOfWork.TrainerMemberAssignments.GetQueryable()
+                        .Include(a => a.Member)
+                        .Include(a => a.Trainer)
+                        .Where(a => !a.IsDeleted && a.IsActive)
+                        .ToListAsync()
+                )
+            };
+            return ResponseDto<PersonalScheduleDto>.SuccessResult(adminSchedule, trainer != null ? "Tải lịch cá nhân (Chế độ Admin)" : "Tải toàn bộ lịch hệ thống (Chế độ Admin)");
+        }
+
+        if (trainer == null)
+            return ResponseDto<PersonalScheduleDto>.FailureResult("Tài khoản người dùng này chưa được liên kết với hồ sơ Huấn luyện viên. " + 
+                $"Vui lòng kiểm tra Email ({email}) hoặc Tên ({fullName}) có khớp với hồ sơ PT trong Quản lý Huấn luyện viên không.");
+
+        var dto = new PersonalScheduleDto
+        {
+            UserInfo = _mapper.Map<TrainerDto>(trainer),
+            Classes = _mapper.Map<List<Gym.Application.DTOs.Classes.ClassDto>>(trainer.Classes.Where(c => !c.IsDeleted && c.IsActive).OrderBy(c => c.ScheduleDay).ThenBy(c => c.StartTime)),
+            PersonalClients = _mapper.Map<List<TrainerAssignmentDto>>(trainer.TrainerMemberAssignments.Where(a => !a.IsDeleted && a.IsActive))
+        };
+
+        return ResponseDto<PersonalScheduleDto>.SuccessResult(dto);
+    }
 }

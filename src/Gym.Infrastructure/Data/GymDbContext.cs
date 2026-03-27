@@ -63,6 +63,7 @@ public class GymDbContext : DbContext
     public DbSet<Provider> Providers => Set<Provider>();
     public DbSet<IncidentLog> IncidentLogs => Set<IncidentLog>();
     public DbSet<EquipmentProviderHistory> EquipmentProviderHistories => Set<EquipmentProviderHistory>();
+    public DbSet<MaintenanceMaterial> MaintenanceMaterials => Set<MaintenanceMaterial>();
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -79,6 +80,7 @@ public class GymDbContext : DbContext
         // Configure table names
         modelBuilder.Entity<User>().ToTable("Users");
         modelBuilder.Entity<Role>().ToTable("Roles");
+        modelBuilder.Entity<UserRole>().ToTable("UserRoles");
         modelBuilder.Entity<Member>().ToTable("Members");
         modelBuilder.Entity<MembershipPackage>().ToTable("MembershipPackages");
         modelBuilder.Entity<MemberSubscription>().ToTable("MemberSubscriptions");
@@ -107,9 +109,17 @@ public class GymDbContext : DbContext
         modelBuilder.Entity<Provider>().ToTable("Providers");
         modelBuilder.Entity<IncidentLog>().ToTable("IncidentLogs");
         modelBuilder.Entity<EquipmentProviderHistory>().ToTable("EquipmentProviderHistories");
-
-        // Cấu hình tên bảng cho AuditLog
         modelBuilder.Entity<AuditLog>().ToTable("AuditLogs");
+
+        modelBuilder.Entity<UserRole>().HasKey(ur => new { ur.UserId, ur.RoleId });
+        modelBuilder.Entity<UserRole>()
+            .HasOne(ur => ur.User)
+            .WithMany(u => u.UserRoles)
+            .HasForeignKey(ur => ur.UserId);
+        modelBuilder.Entity<UserRole>()
+            .HasOne(ur => ur.Role)
+            .WithMany(r => r.UserRoles)
+            .HasForeignKey(ur => ur.RoleId);
 
         // --- CẤU HÌNH THUỘC TÍNH CHI TIẾT ---
         modelBuilder.Entity<Member>(entity =>
@@ -122,7 +132,63 @@ public class GymDbContext : DbContext
                 .IsRequired()
                 .HasMaxLength(20);
 
+            entity.Property(e => e.FaceEncoding)
+                .HasColumnType("nvarchar(max)");
+
             entity.HasIndex(e => e.FullName);
+        });
+
+        modelBuilder.Entity<MemberSubscription>(entity =>
+        {
+            entity.Property(s => s.OriginalPackageName)
+                .IsRequired()
+                .HasMaxLength(255)
+                .HasDefaultValue("");
+
+            entity.Property(s => s.OriginalPrice).HasPrecision(18, 2);
+            entity.Property(s => s.DiscountApplied).HasPrecision(18, 2);
+            entity.Property(s => s.FinalPrice).HasPrecision(18, 2);
+        });
+
+        modelBuilder.Entity<Product>(entity =>
+        {
+            entity.Property(p => p.SKU)
+                .IsRequired()
+                .HasMaxLength(50);
+            
+            entity.HasIndex(p => p.SKU).IsUnique();
+            
+            entity.Property(p => p.Price).HasPrecision(18, 2);
+            entity.Property(p => p.CostPrice).HasPrecision(18, 2);
+        });
+
+        modelBuilder.Entity<Invoice>(entity =>
+        {
+            entity.Property(i => i.InvoiceNumber)
+                .IsRequired()
+                .HasMaxLength(50);
+            
+            entity.Property(i => i.TotalAmount).HasPrecision(18, 2);
+            entity.Property(i => i.DiscountAmount).HasPrecision(18, 2);
+            
+            entity.HasOne(i => i.Member)
+                .WithMany()
+                .HasForeignKey(i => i.MemberId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<InvoiceDetail>(entity =>
+        {
+            entity.Property(d => d.ItemName)
+                .IsRequired()
+                .HasMaxLength(255);
+            
+            entity.Property(d => d.UnitPrice).HasPrecision(18, 2);
+            
+            entity.HasOne(d => d.Invoice)
+                .WithMany(i => i.Details)
+                .HasForeignKey(d => d.InvoiceId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // Configure relationships & indexes
@@ -132,6 +198,7 @@ public class GymDbContext : DbContext
         ConfigureTrainerRelationships(modelBuilder);
         ConfigureClassRelationships(modelBuilder);
         ConfigureAssignmentRelationships(modelBuilder);
+        ConfigureEquipmentRelationships(modelBuilder); // Tách riêng equipment
         ConfigureIndexes(modelBuilder);
         ConfigureEnums(modelBuilder);
         ConfigureDecimalPrecision(modelBuilder);
@@ -140,15 +207,55 @@ public class GymDbContext : DbContext
         SeedData(modelBuilder);
     }
 
+    private static void ConfigureEquipmentRelationships(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Equipment>()
+            .HasOne(e => e.EquipmentCategory)
+            .WithMany(c => c.Equipments)
+            .HasForeignKey(e => e.CategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Equipment>()
+            .HasOne(e => e.Provider)
+            .WithMany(p => p.Equipments)
+            .HasForeignKey(e => e.ProviderId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<MaintenanceLog>()
+            .HasOne(m => m.Equipment)
+            .WithMany(e => e.MaintenanceLogs)
+            .HasForeignKey(m => m.EquipmentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<IncidentLog>()
+            .HasOne(i => i.Equipment)
+            .WithMany(e => e.IncidentLogs)
+            .HasForeignKey(i => i.EquipmentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<EquipmentProviderHistory>()
+            .HasOne(h => h.Equipment)
+            .WithMany(e => e.ProviderHistories)
+            .HasForeignKey(h => h.EquipmentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<MaintenanceMaterial>(entity =>
+        {
+            entity.HasOne(m => m.MaintenanceLog)
+                .WithMany(l => l.Materials)
+                .HasForeignKey(m => m.MaintenanceLogId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(m => m.Product)
+                .WithMany()
+                .HasForeignKey(m => m.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+    }
+
     // Đã chuyển các hàm cấu hình thành static theo khuyến nghị của IDE để tối ưu bộ nhớ
     private static void ConfigureUserRelationships(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<User>()
-            .HasOne(u => u.Role)
-            .WithMany(r => r.Users)
-            .HasForeignKey(u => u.RoleId)
-            .OnDelete(DeleteBehavior.Restrict);
-
         modelBuilder.Entity<User>()
             .HasOne(u => u.Member)
             .WithOne(m => m.User)
@@ -240,56 +347,19 @@ public class GymDbContext : DbContext
             .HasForeignKey(a => a.MemberId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Equipment Categories & Providers
-        modelBuilder.Entity<Equipment>()
-            .HasOne(e => e.EquipmentCategory)
-            .WithMany(c => c.Equipments)
-            .HasForeignKey(e => e.CategoryId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        modelBuilder.Entity<Equipment>()
-            .HasOne(e => e.Provider)
-            .WithMany(p => p.Equipments)
-            .HasForeignKey(e => e.ProviderId)
-            .OnDelete(DeleteBehavior.Restrict);
-
         modelBuilder.Entity<Product>()
             .HasOne(p => p.Provider)
             .WithMany(u => u.Products)
             .HasForeignKey(p => p.ProviderId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        modelBuilder.Entity<MaintenanceLog>()
-            .HasOne(m => m.Equipment)
-            .WithMany(e => e.MaintenanceLogs)
-            .HasForeignKey(m => m.EquipmentId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<IncidentLog>()
-            .HasOne(i => i.Equipment)
-            .WithMany(e => e.IncidentLogs)
-            .HasForeignKey(i => i.EquipmentId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<EquipmentProviderHistory>()
-            .HasOne(h => h.Equipment)
-            .WithMany(e => e.ProviderHistories)
-            .HasForeignKey(h => h.EquipmentId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<EquipmentProviderHistory>()
-            .HasOne(h => h.OldProvider)
-            .WithMany()
-            .HasForeignKey(h => h.OldProviderId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        modelBuilder.Entity<EquipmentProviderHistory>()
-            .HasOne(h => h.NewProvider)
-            .WithMany()
-            .HasForeignKey(h => h.NewProviderId)
-            .OnDelete(DeleteBehavior.Restrict);
         modelBuilder.Entity<StockTransaction>(entity =>
         {
+            entity.HasOne(t => t.Product)
+                .WithMany()
+                .HasForeignKey(t => t.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             entity.HasOne(t => t.FromWarehouse)
                 .WithMany()
                 .HasForeignKey(t => t.FromWarehouseId)
@@ -300,13 +370,25 @@ public class GymDbContext : DbContext
                 .HasForeignKey(t => t.ToWarehouseId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
+
+        modelBuilder.Entity<OrderDetail>(entity =>
+        {
+            entity.HasOne(d => d.Order)
+                .WithMany(o => o.OrderDetails)
+                .HasForeignKey(d => d.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(d => d.Product)
+                .WithMany()
+                .HasForeignKey(d => d.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
     }
 
     private static void ConfigureIndexes(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<User>().HasIndex(u => u.Email).IsUnique();
         modelBuilder.Entity<User>().HasIndex(u => u.Username).IsUnique();
-        modelBuilder.Entity<User>().HasIndex(u => u.RoleId);
         modelBuilder.Entity<Member>().HasIndex(m => m.MemberCode).IsUnique().HasFilter("[IsDeleted] = 0");
         modelBuilder.Entity<Member>().HasIndex(m => m.Email);
         modelBuilder.Entity<Member>().HasIndex(m => m.PhoneNumber);
@@ -335,6 +417,8 @@ public class GymDbContext : DbContext
         modelBuilder.Entity<ClassEnrollment>().HasIndex(ce => ce.MemberId);
         modelBuilder.Entity<ClassEnrollment>().HasIndex(ce => ce.ClassId);
         modelBuilder.Entity<ClassEnrollment>().HasIndex(ce => ce.EnrolledDate);
+        modelBuilder.Entity<Product>().HasIndex(p => p.SKU).IsUnique().HasFilter("[IsDeleted] = 0");
+        modelBuilder.Entity<Invoice>().HasIndex(i => i.InvoiceNumber).IsUnique().HasFilter("[IsDeleted] = 0");
     }
 
     private static void ConfigureEnums(ModelBuilder modelBuilder)
@@ -343,6 +427,7 @@ public class GymDbContext : DbContext
         modelBuilder.Entity<MemberSubscription>().Property(s => s.Status).HasConversion<int>();
         modelBuilder.Entity<Payment>().Property(p => p.Status).HasConversion<int>();
         modelBuilder.Entity<Payment>().Property(p => p.Method).HasConversion<int>();
+        modelBuilder.Entity<AuditLog>().Property(a => a.Severity).HasConversion<int>();
         modelBuilder.Entity<Equipment>().Property(e => e.Status).HasConversion<int>();
         modelBuilder.Entity<Equipment>().Property(e => e.Priority).HasConversion<int>();
         modelBuilder.Entity<MaintenanceLog>().Property(m => m.Status).HasConversion<int>();
@@ -357,10 +442,6 @@ public class GymDbContext : DbContext
         modelBuilder.Entity<Payment>().Property(p => p.Amount).HasPrecision(18, 2);
         modelBuilder.Entity<Trainer>().Property(t => t.Salary).HasPrecision(18, 2);
         modelBuilder.Entity<Trainer>().Property(t => t.SessionRate).HasPrecision(18, 2);
-        modelBuilder.Entity<Product>().Property(p => p.Price).HasPrecision(18, 2);
-        modelBuilder.Entity<Invoice>().Property(i => i.TotalAmount).HasPrecision(18, 2);
-        modelBuilder.Entity<Invoice>().Property(i => i.DiscountAmount).HasPrecision(18, 2);
-        modelBuilder.Entity<InvoiceDetail>().Property(d => d.UnitPrice).HasPrecision(18, 2);
         
         modelBuilder.Entity<Order>().Property(o => o.TotalAmount).HasPrecision(18, 2);
         modelBuilder.Entity<OrderDetail>().Property(d => d.Price).HasPrecision(18, 2);
@@ -371,11 +452,13 @@ public class GymDbContext : DbContext
         modelBuilder.Entity<Depreciation>().Property(d => d.Amount).HasPrecision(18, 2);
         modelBuilder.Entity<Depreciation>().Property(d => d.RemainingValue).HasPrecision(18, 2);
         
+        modelBuilder.Entity<Equipment>().Property(e => e.MonthlyDepreciationAmount).HasPrecision(18, 2);
+        modelBuilder.Entity<Equipment>().Property(e => e.AccumulatedDepreciation).HasPrecision(18, 2);
+        modelBuilder.Entity<Equipment>().Property(e => e.RemainingValue).HasPrecision(18, 2);
+        modelBuilder.Entity<MaintenanceMaterial>().Property(m => m.UnitPrice).HasPrecision(18, 2);
+        
         modelBuilder.Entity<EquipmentCategory>().Property(ec => ec.AvgMaintenanceCost).HasPrecision(18, 2);
         
-        modelBuilder.Entity<MemberSubscription>().Property(s => s.OriginalPrice).HasPrecision(18, 2);
-        modelBuilder.Entity<MemberSubscription>().Property(s => s.DiscountApplied).HasPrecision(18, 2);
-        modelBuilder.Entity<MemberSubscription>().Property(s => s.FinalPrice).HasPrecision(18, 2);
         modelBuilder.Entity<StockTransaction>().Property(t => t.UnitPrice).HasPrecision(18, 2);
     }
 
@@ -384,12 +467,57 @@ public class GymDbContext : DbContext
         var hasher = new PasswordHasher<User>();
         string defaultPassword = "Admin@123";
 
-        // Sử dụng Target-typed new expression để rút gọn code theo gợi ý của IDE
+        // Đảm bảo CreatedAt có giá trị cố định để tránh tạo migration thừa
+        DateTime seedDate = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
         modelBuilder.Entity<Role>().HasData(
-            new() { Id = 1, RoleName = "Admin", Description = "Full system access", Permissions = "[\"*\"]", CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new() { Id = 2, RoleName = "Manager", Description = "Manage gym operations", Permissions = "[\"members.*\", \"packages.*\", \"subscriptions.*\", \"payments.*\", \"checkins.*\", \"reports.*\"]", CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new() { Id = 3, RoleName = "Trainer", Description = "Manage classes and view members", Permissions = "[\"classes.*\", \"members.view\", \"checkins.view\"]", CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new() { Id = 4, RoleName = "Receptionist", Description = "Check-in and basic operations", Permissions = "[\"checkins.*\", \"members.view\", \"subscriptions.view\"]", CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+            new Role 
+            { 
+                Id = 1, RoleName = "Admin", Description = "👑 Admin/Manager (Quản lý chủ gym) - TOÀN QUYỀN", 
+                Permissions = "[\"*\"]", CreatedAt = seedDate 
+            },
+            new Role 
+            { 
+                Id = 2, RoleName = "Manager", Description = "Tiểu quản lý vận hành", 
+                Permissions = System.Text.Json.JsonSerializer.Serialize(new List<string> { "*" }), 
+                CreatedAt = seedDate 
+            },
+            new Role 
+            { 
+                Id = 3, RoleName = "Trainer", Description = "🏋️ Trainer - Chuyên môn", 
+                Permissions = System.Text.Json.JsonSerializer.Serialize(new List<string> 
+                { 
+                    "member.read", "class.manage", "equipment.read", "equipment.report", "inventory.consume", "product.read", "trainer.read" 
+                }), 
+                CreatedAt = seedDate 
+            },
+            new Role 
+            { 
+                Id = 4, RoleName = "Receptionist", Description = "👩💼 Receptionist - Vận hành hàng ngày", 
+                Permissions = System.Text.Json.JsonSerializer.Serialize(new List<string> 
+                { 
+                    "member.read", "member.create", "member.update", "checkin.create", "checkin.read", "package.read", "inventory.read", "inventory.consume", "report.read", "subscription.read", "subscription.create", "subscription.update", "payment.read", "payment.create", "billing.read", "billing.create", "product.read", "class.read", "trainer.read"
+                }), 
+                CreatedAt = seedDate 
+            },
+            new Role 
+            { 
+                Id = 5, RoleName = "Member", Description = "👤 Member - Tự phục vụ", 
+                Permissions = System.Text.Json.JsonSerializer.Serialize(new List<string> 
+                { 
+                    "member.read", "checkin.self", "class.read", "subscription.read" 
+                }), 
+                CreatedAt = seedDate 
+            },
+            new Role
+            {
+                Id = 6, RoleName = "Accountant", Description = "💰 Accountant - Quản lý tài chính",
+                Permissions = System.Text.Json.JsonSerializer.Serialize(new List<string>
+                {
+                    "billing.read", "billing.create", "payment.read", "payment.create", "report.read", "package.read", "member.read", "subscription.read", "subscription.create", "subscription.update", "checkin.read", "product.read", "class.read", "trainer.read"
+                }),
+                CreatedAt = seedDate
+            }
         );
 
         var adminUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
@@ -397,20 +525,22 @@ public class GymDbContext : DbContext
         var trainerUserId1 = Guid.Parse("33333333-3333-3333-3333-333333333333");
         var trainerUserId2 = Guid.Parse("44444444-4444-4444-4444-444444444444");
         var receptionistUserId = Guid.Parse("55555555-5555-5555-5555-555555555555");
+        var multiRoleUserId = Guid.Parse("99999999-9999-9999-9999-999999999999"); // Lê Văn C - Multi Role
         var memberUserId1 = Guid.Parse("66666666-6666-6666-6666-666666666666");
-        var memberUserId2 = Guid.Parse("77777777-7777-7777-7777-777777777777");
-        var memberUserId3 = Guid.Parse("88888888-8888-8888-8888-888888888888");
+        var memberUserId2 = Guid.Parse("77777777-7777-7777-7777-777777777777"); // Added back
+        var memberUserId3 = Guid.Parse("88888888-8888-8888-8888-888888888888"); // Added back
 
         var users = new List<User>
         {
-            new() { Id = adminUserId, Username = "admin", Email = "admin@gym.com", FullName = "System Administrator", PhoneNumber = "0901234567", RoleId = 1, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new() { Id = managerUserId, Username = "manager", Email = "manager@gym.com", FullName = "Nguyễn Văn Manager", PhoneNumber = "0902345678", RoleId = 2, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new() { Id = trainerUserId1, Username = "trainer1", Email = "trainer1@gym.com", FullName = "Trần Thị Hương", PhoneNumber = "0903456789", RoleId = 3, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new() { Id = trainerUserId2, Username = "trainer2", Email = "trainer2@gym.com", FullName = "Lê Văn Nam", PhoneNumber = "0904567890", RoleId = 3, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new() { Id = receptionistUserId, Username = "receptionist", Email = "receptionist@gym.com", FullName = "Phạm Thị Lan", PhoneNumber = "0905678901", RoleId = 4, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new() { Id = memberUserId1, Username = "member001", Email = "nguyenvana@gmail.com", FullName = "Nguyễn Văn A", PhoneNumber = "0906789012", RoleId = 4, IsActive = true, CreatedAt = new DateTime(2024, 2, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new() { Id = memberUserId2, Username = "member002", Email = "tranthib@gmail.com", FullName = "Trần Thị B", PhoneNumber = "0907890123", RoleId = 4, IsActive = true, CreatedAt = new DateTime(2024, 2, 5, 0, 0, 0, DateTimeKind.Utc) },
-            new() { Id = memberUserId3, Username = "member003", Email = "levanc@gmail.com", FullName = "Lê Văn C", PhoneNumber = "0908901234", RoleId = 4, IsActive = true, CreatedAt = new DateTime(2024, 2, 10, 0, 0, 0, DateTimeKind.Utc) }
+            new User { Id = adminUserId, Username = "admin", Email = "admin@gym.com", FullName = "System Administrator", PhoneNumber = "0901234567", IsActive = true, CreatedAt = seedDate },
+            new User { Id = managerUserId, Username = "manager", Email = "manager@gym.com", FullName = "Nguyễn Văn Manager", PhoneNumber = "0902345678", IsActive = true, CreatedAt = seedDate },
+            new User { Id = trainerUserId1, Username = "trainer1", Email = "trainer1@gym.com", FullName = "Trần Thị Hương", PhoneNumber = "0903456789", IsActive = true, CreatedAt = seedDate },
+            new User { Id = trainerUserId2, Username = "trainer2", Email = "trainer2@gym.com", FullName = "Lê Văn Nam", PhoneNumber = "0904567890", IsActive = true, CreatedAt = seedDate },
+            new User { Id = receptionistUserId, Username = "receptionist", Email = "receptionist@gym.com", FullName = "Phạm Thị Lan", PhoneNumber = "0905678901", IsActive = true, CreatedAt = seedDate },
+            new User { Id = multiRoleUserId, Username = "levanc", Email = "levanc@gym.com", FullName = "Lê Văn C", PhoneNumber = "0909999999", IsActive = true, CreatedAt = seedDate },
+            new User { Id = memberUserId1, Username = "member001", Email = "nguyenvana@gmail.com", FullName = "Nguyễn Văn A", PhoneNumber = "0906789012", IsActive = true, CreatedAt = seedDate },
+            new User { Id = memberUserId2, Username = "member002", Email = "tranthib@gmail.com", FullName = "Trần Thị B", PhoneNumber = "0907890123", IsActive = true, CreatedAt = seedDate },
+            new User { Id = memberUserId3, Username = "member003", Email = "levanc_member@gmail.com", FullName = "Lê Văn C (Member)", PhoneNumber = "0908901234", IsActive = true, CreatedAt = seedDate }
         };
 
         foreach (var user in users)
@@ -419,6 +549,20 @@ public class GymDbContext : DbContext
         }
 
         modelBuilder.Entity<User>().HasData(users);
+
+        // Gán quyền cho User (Seed UserRoles)
+        modelBuilder.Entity<UserRole>().HasData(
+            new UserRole { UserId = adminUserId, RoleId = 1 },
+            new UserRole { UserId = managerUserId, RoleId = 2 },
+            new UserRole { UserId = trainerUserId1, RoleId = 3 },
+            new UserRole { UserId = trainerUserId2, RoleId = 3 },
+            new UserRole { UserId = receptionistUserId, RoleId = 4 },
+            new UserRole { UserId = multiRoleUserId, RoleId = 4 }, // Lễ tân
+            new UserRole { UserId = multiRoleUserId, RoleId = 3 }, // + Trainer (Multi-role)
+            new UserRole { UserId = memberUserId1, RoleId = 5 },
+            new UserRole { UserId = memberUserId2, RoleId = 5 },
+            new UserRole { UserId = memberUserId3, RoleId = 5 }
+        );
 
         var trainerId1 = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
         var trainerId2 = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
@@ -447,9 +591,9 @@ public class GymDbContext : DbContext
         var memberId3 = Guid.Parse("40404040-4040-4040-4040-404040404040");
 
         modelBuilder.Entity<Member>().HasData(
-            new() { Id = memberId1, UserId = memberUserId1, FullName = "Nguyễn Văn A", Email = "nguyenvana@gmail.com", PhoneNumber = "0906789012", DateOfBirth = new DateTime(1995, 5, 15), MemberCode = "GYM2024001", Status = MemberStatus.Active, JoinedDate = new DateTime(2024, 2, 1, 0, 0, 0, DateTimeKind.Utc), CreatedAt = new DateTime(2024, 2, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new() { Id = memberId2, UserId = memberUserId2, FullName = "Trần Thị B", Email = "tranthib@gmail.com", PhoneNumber = "0907890123", DateOfBirth = new DateTime(1992, 8, 20), MemberCode = "GYM2024002", Status = MemberStatus.Active, JoinedDate = new DateTime(2024, 2, 5, 0, 0, 0, DateTimeKind.Utc), CreatedAt = new DateTime(2024, 2, 5, 0, 0, 0, DateTimeKind.Utc) },
-            new() { Id = memberId3, UserId = memberUserId3, FullName = "Lê Văn C", Email = "levanc@gmail.com", PhoneNumber = "0908901234", DateOfBirth = new DateTime(1998, 12, 10), MemberCode = "GYM2024003", Status = MemberStatus.Active, JoinedDate = new DateTime(2024, 2, 10, 0, 0, 0, DateTimeKind.Utc), CreatedAt = new DateTime(2024, 2, 10, 0, 0, 0, DateTimeKind.Utc) }
+            new() { Id = memberId1, UserId = memberUserId1, FullName = "Nguyễn Văn A", Email = "nguyenvana@gmail.com", PhoneNumber = "0906789012", DateOfBirth = new DateTime(1995, 5, 15), MemberCode = "GYM2024001", Status = MemberStatus.Active, JoinedDate = new DateTime(2024, 2, 1, 0, 0, 0, DateTimeKind.Utc), CreatedAt = new DateTime(2024, 2, 1, 0, 0, 0, DateTimeKind.Utc), FaceEncoding = "MOCK_FACE_VECTOR_GYM2024001" },
+            new() { Id = memberId2, UserId = memberUserId2, FullName = "Trần Thị B", Email = "tranthib@gmail.com", PhoneNumber = "0907890123", DateOfBirth = new DateTime(1992, 8, 20), MemberCode = "GYM2024002", Status = MemberStatus.Active, JoinedDate = new DateTime(2024, 2, 5, 0, 0, 0, DateTimeKind.Utc), CreatedAt = new DateTime(2024, 2, 5, 0, 0, 0, DateTimeKind.Utc), FaceEncoding = "MOCK_FACE_VECTOR_GYM2024002" },
+            new() { Id = memberId3, UserId = memberUserId3, FullName = "Lê Văn C", Email = "levanc@gmail.com", PhoneNumber = "0908901234", DateOfBirth = new DateTime(1998, 12, 10), MemberCode = "GYM2024003", Status = MemberStatus.Active, JoinedDate = new DateTime(2024, 2, 10, 0, 0, 0, DateTimeKind.Utc), CreatedAt = new DateTime(2024, 2, 10, 0, 0, 0, DateTimeKind.Utc), FaceEncoding = "MOCK_FACE_VECTOR_GYM2024003" }
         );
 
         var classId1 = Guid.Parse("50505050-5050-5050-5050-505050505050");
@@ -476,9 +620,34 @@ public class GymDbContext : DbContext
         );
 
         modelBuilder.Entity<Warehouse>().HasData(
-            new() { Id = Guid.Parse("10000000-0000-0000-0000-000000000001"), Name = "Kho Tổng (Main)", Description = "Kho lưu trữ chính của phòng gym", Location = "Tầng hầm", IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new() { Id = Guid.Parse("20000000-0000-0000-0000-000000000002"), Name = "Quầy Lễ Tân (Counter)", Description = "Kho bán lẻ tại quầy tiếp khách", Location = "Sảnh chính", IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new() { Id = Guid.Parse("30000000-0000-0000-0000-000000000003"), Name = "Kho Vật Tư (Supplies)", Description = "Kho vật tư vận hành & vệ sinh", Location = "Phòng kho tầng 1", IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+            new Warehouse { Id = Guid.Parse("10000000-0000-0000-0000-000000000001"), Name = "Kho Tổng (Main)", Description = "Kho nhập hàng lớn và lưu trữ chính", Location = "Tầng hầm", IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+            new Warehouse { Id = Guid.Parse("20000000-0000-0000-0000-000000000002"), Name = "Kho Quầy", Description = "Kho bán lẻ & vật tư tại quầy", Location = "Sảnh chính", IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+        );
+
+        var providerId1 = Guid.Parse("e1e1e1e1-e1e1-e1e1-e1e1-e1e1e1e1e1e1");
+        modelBuilder.Entity<Provider>().HasData(
+            new Provider { Id = providerId1, Name = "Công ty Thiết bị Gym Toàn Cầu", ContactPerson = "Nguyễn Văn Cung", Email = "contact@gymglobal.com", PhoneNumber = "02838445566", Address = "123 Đường số 7, TP.HCM", TaxCode = "0314567890", IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+        );
+
+        var categoryId1 = Guid.Parse("f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1");
+        var categoryId2 = Guid.Parse("f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2");
+        var categoryId3 = Guid.Parse("f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3");
+        var categoryId4 = Guid.Parse("f4f4f4f4-f4f4-f4f4-f4f4-f4f4f4f4f4f4");
+
+        modelBuilder.Entity<EquipmentCategory>().HasData(
+            new EquipmentCategory { Id = categoryId1, Name = "Máy Cardio", Code = "CARDIO", Description = "Máy chạy bộ, xe đạp, trượt tuyết", Group = "Máy móc", AvgMaintenanceCost = 200000m, CreatedAt = seedDate },
+            new EquipmentCategory { Id = categoryId2, Name = "Máy Tập Khối (Strength)", Code = "STRENGTH", Description = "Máy tập cơ ngực, xô, vai, chân", Group = "Máy móc", AvgMaintenanceCost = 150000m, CreatedAt = seedDate },
+            new EquipmentCategory { Id = categoryId3, Name = "Tạ & Phụ kiện", Code = "FREEWEIGHT", Description = "Tạ tay, tạ đòn, bóng tập", Group = "Dụng cụ", AvgMaintenanceCost = 50000m, CreatedAt = seedDate },
+            new EquipmentCategory { Id = categoryId4, Name = "Thiết bị Điện tử", Code = "ELECTRONIC", Description = "Màn hình, hệ thống âm thanh, cổng từ", Group = "Nội thất", AvgMaintenanceCost = 300000m, CreatedAt = seedDate }
+        );
+
+        var productId1 = Guid.Parse("91919191-9191-9191-9191-919191919191");
+        modelBuilder.Entity<Product>().HasData(
+            new Product { Id = productId1, Name = "Nước suối Lavie 500ml", Description = "Nước khoáng thiên nhiên", SKU = "WTR-001", Price = 10000m, CostPrice = 5000m, Unit = "Chai", Type = ProductType.Retail, StockQuantity = 100, MinStockThreshold = 20, MaxStockThreshold = 200, TrackInventory = true, Category = "Đồ uống", IsActive = true, ProviderId = providerId1, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+        );
+
+        modelBuilder.Entity<Equipment>().HasData(
+            new Equipment { Id = Guid.Parse("d1d1d1d1-d1d1-d1d1-d1d1-d1d1d1d1d1d1"), EquipmentCode = "EQP-RUN-001", Name = "Máy chạy bộ Matrix T7", SerialNumber = "MTX7-2024-X1", CategoryId = categoryId1, ProviderId = providerId1, Quantity = 5, PurchaseDate = new DateTime(2024, 1, 1), PurchasePrice = 25000000m, SalvageValue = 5000000m, UsefulLifeMonths = 60, Status = EquipmentStatus.Active, Priority = EquipmentPriority.High, Location = "Khu Cardio Tầng 1", MaintenanceIntervalDays = 90, MonthlyDepreciationAmount = 333333m, RemainingValue = 25000000m, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
         );
     }
 
@@ -520,7 +689,13 @@ public class GymDbContext : DbContext
 
     private void ProcessAuditLogs()
     {
-        var userId = _httpContextAccessor?.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "System";
+        var context = _httpContextAccessor?.HttpContext;
+        var userId = context?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "System";
+        var userName = context?.User?.FindFirst(ClaimTypes.Name)?.Value ?? (context?.User?.Identity?.Name ?? "System");
+        var role = context?.User?.FindFirst(ClaimTypes.Role)?.Value ?? "N/A";
+        var ip = context?.Connection?.RemoteIpAddress?.ToString();
+        var ua = context?.Request?.Headers["User-Agent"].ToString();
+        var reason = context?.Request?.Headers["X-Audit-Reason"].ToString();
 
         var entries = ChangeTracker.Entries()
             .Where(e => e.Entity is not AuditLog &&
@@ -531,12 +706,47 @@ public class GymDbContext : DbContext
 
         foreach (var entry in entries)
         {
+            var entityType = entry.Entity.GetType();
+            var entityName = entityType.Name;
+
+            // XÁC ĐỊNH SEVERITY TỰ ĐỘNG
+            var severity = AuditSeverity.Normal;
+            if (entityName == "User" || entityName == "Role" || entityName == "MembershipPackage" || entityName == "Product")
+            {
+                severity = AuditSeverity.Critical; // Các thay đổi về người dùng, giá, quyền đều là Critical
+            }
+            else if (entry.State == EntityState.Deleted)
+            {
+                severity = AuditSeverity.Critical; // Mọi hành vi XÓA đều là Critical
+            }
+            else if (entityName == "Inventory" || entityName == "StockTransaction" || entityName == "Equipment")
+            {
+                severity = AuditSeverity.Important;
+            }
+
+            // Lấy ResourceId và ResourceName (dùng Reflection để linh hoạt)
+            string? resourceId = entry.Property("Id")?.CurrentValue?.ToString() ?? (entry.Property("Id")?.OriginalValue?.ToString());
+            string? resourceName = "";
+            var nameProp = entityType.GetProperty("Name") ?? entityType.GetProperty("FullName") ?? entityType.GetProperty("ClassName") ?? entityType.GetProperty("MemberCode");
+            if (nameProp != null)
+            {
+                resourceName = nameProp.GetValue(entry.Entity)?.ToString();
+            }
+
             var auditLog = new AuditLog
             {
                 UserId = userId,
-                EntityName = entry.Entity.GetType().Name,
-                Timestamp = DateTime.UtcNow,
-                Action = entry.State.ToString()
+                UserName = userName,
+                UserRole = role,
+                Action = $"{entry.State}.{entityName.ToLower()}",
+                EntityName = entityName,
+                ResourceId = resourceId,
+                ResourceName = resourceName,
+                IPAddress = ip,
+                UserAgent = ua,
+                Reason = reason,
+                Severity = severity,
+                Timestamp = DateTime.UtcNow
             };
 
             var oldValues = new Dictionary<string, object?>();
@@ -564,12 +774,15 @@ public class GymDbContext : DbContext
                 }
             }
 
-            // ĐÃ FIX: Sửa thành 'OldValues' và 'NewValues' (có chữ 's')
             auditLog.OldValues = oldValues.Count == 0 ? "{}" : JsonSerializer.Serialize(oldValues);
             auditLog.NewValues = newValues.Count == 0 ? "{}" : JsonSerializer.Serialize(newValues);
 
-            // Dùng .Count > 0 thay vì .Any() để tối ưu hiệu năng
-            if (oldValues.Count > 0 || newValues.Count > 0)
+            // GHI LOG: 
+            // 1. Critical ghi 100%
+            // 2. Important ghi 80% (tạm thời ghi 100% để debug dễ, sau này random)
+            // 3. Normal ghi 20% (tạm thời ghi 100%)
+            // Lưu ý: Trong môi trường thực tế sẽ dùng Random để giảm tải
+            if (oldValues.Count > 0 || newValues.Count > 0 || entry.State == EntityState.Deleted)
             {
                 auditLogs.Add(auditLog);
             }

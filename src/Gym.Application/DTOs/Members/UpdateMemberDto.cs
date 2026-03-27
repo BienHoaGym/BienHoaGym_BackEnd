@@ -12,6 +12,6 @@ public class UpdateMemberDto
     public string? EmergencyContact { get; set; }
     public string? EmergencyPhone { get; set; }
     public string? Notes { get; set; } // Map vào Member.Note
+
     public string? FaceEncoding { get; set; }
-    public string? QRCode { get; set; }
 }

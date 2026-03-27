@@ -1,4 +1,4 @@
-﻿using Gym.Application.Interfaces.Services;
+using Gym.Application.Interfaces.Services;
 using Gym.Domain.Entities;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -30,10 +30,31 @@ public class JwtService : IJwtService
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Name, user.Username),
             new(ClaimTypes.Email, user.Email),
-            new(ClaimTypes.Role, user.Role?.RoleName ?? "User"),
-            new Claim(ClaimTypes.Role, user.Role?.RoleName ?? ""),
-            new("RoleId", user.RoleId.ToString())
+            new(ClaimTypes.GivenName, user.FullName)
         };
+
+        // Add multiple roles
+        foreach (var ur in user.UserRoles)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, ur.Role.RoleName));
+
+            // Add permissions as specific claims
+            if (!string.IsNullOrEmpty(ur.Role.Permissions))
+            {
+                try
+                {
+                    var perms = System.Text.Json.JsonSerializer.Deserialize<List<string>>(ur.Role.Permissions);
+                    if (perms != null)
+                    {
+                        foreach (var p in perms)
+                        {
+                            claims.Add(new Claim("Permission", p));
+                        }
+                    }
+                }
+                catch { /* Ignore invalid JSON */ }
+            }
+        }
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

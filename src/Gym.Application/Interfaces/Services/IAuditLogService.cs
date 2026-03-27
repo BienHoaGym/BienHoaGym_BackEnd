@@ -1,4 +1,4 @@
-﻿using Gym.Application.DTOs.Common;
+using Gym.Application.DTOs.Common;
 using Gym.Domain.Entities;
 using System.Threading.Tasks;
 
@@ -15,6 +15,6 @@ namespace Gym.Application.Interfaces.Services
         /// <param name="oldValues">Dữ liệu cũ trước khi thay đổi (truyền ẩn danh object)</param>
         /// <param name="newValues">Dữ liệu mới sau khi thay đổi (truyền ẩn danh object)</param>
         Task LogAsync(string userId, string action, string entityName, object? oldValues, object? newValues);
-        Task<ResponseDto<List<AuditLogDto>>> GetAllAsync(); // Đổi AuditLog thành AuditLogDto    }
+        Task<ResponseDto<List<AuditLogDto>>> GetAllAsync(string? userId = null, int? severity = null);
     }
 }

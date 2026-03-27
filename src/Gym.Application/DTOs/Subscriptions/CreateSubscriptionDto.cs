@@ -9,5 +9,6 @@ public class CreateSubscriptionDto
     public string? UserId { get; set; } = null;
     public string? VoucherCode { get; set; } = null;
     public string? PaymentMethod { get; set; } = null;
+    public decimal? FinalPrice { get; set; }
 }
 

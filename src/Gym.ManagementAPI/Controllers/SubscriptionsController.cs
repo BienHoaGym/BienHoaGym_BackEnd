@@ -1,5 +1,6 @@
 using Gym.Application.DTOs.Subscriptions;
 using Gym.Application.Interfaces.Services;
+using Gym.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,7 +21,7 @@ public class SubscriptionsController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [Authorize(Policy = PermissionConstants.SubscriptionRead)]
     public async Task<IActionResult> GetSubscriptions()
     {
         var result = await _subscriptionService.GetAllAsync();
@@ -28,7 +29,7 @@ public class SubscriptionsController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [Authorize(Policy = PermissionConstants.SubscriptionRead)]
     public async Task<IActionResult> GetSubscription(Guid id)
     {
         var result = await _subscriptionService.GetByIdAsync(id);
@@ -37,7 +38,7 @@ public class SubscriptionsController : ControllerBase
     }
 
     [HttpGet("{id}/detail")]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [Authorize(Policy = PermissionConstants.SubscriptionRead)]
     public async Task<IActionResult> GetSubscriptionDetail(Guid id)
     {
         var result = await _subscriptionService.GetDetailAsync(id);
@@ -46,7 +47,7 @@ public class SubscriptionsController : ControllerBase
     }
 
     [HttpGet("member/{memberId}")]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [Authorize(Policy = PermissionConstants.SubscriptionRead)]
     public async Task<IActionResult> GetMemberSubscriptions(Guid memberId)
     {
         var result = await _subscriptionService.GetByMemberIdAsync(memberId);
@@ -54,7 +55,7 @@ public class SubscriptionsController : ControllerBase
     }
 
     [HttpGet("expiring")]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [Authorize(Policy = PermissionConstants.SubscriptionRead)]
     public async Task<IActionResult> GetExpiringSubscriptions([FromQuery] int days = 7)
     {
         var result = await _subscriptionService.GetExpiringAsync(days);
@@ -62,7 +63,7 @@ public class SubscriptionsController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [Authorize(Policy = PermissionConstants.SubscriptionCreate)]
     public async Task<IActionResult> CreateSubscription([FromBody] CreateSubscriptionDto dto)
     {
         var result = await _subscriptionService.CreateAsync(dto);
@@ -71,7 +72,7 @@ public class SubscriptionsController : ControllerBase
     }
 
     [HttpPut("{id}/activate")]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [Authorize(Policy = PermissionConstants.SubscriptionUpdate)]
     public async Task<IActionResult> ActivateSubscription(Guid id)
     {
         var result = await _subscriptionService.ActivateAsync(id);
@@ -81,7 +82,7 @@ public class SubscriptionsController : ControllerBase
 
     // --- FIX LỖI Ở ĐÂY: Dùng DTO cho Cancel ---
     [HttpPut("{id}/cancel")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Policy = PermissionConstants.SubscriptionUpdate)]
     public async Task<IActionResult> CancelSubscription(Guid id, [FromBody] CancelSubscriptionRequest request)
     {
         var result = await _subscriptionService.CancelAsync(id, request.Reason);
@@ -90,7 +91,7 @@ public class SubscriptionsController : ControllerBase
     }
 
     [HttpPost("{id}/renew")]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [Authorize(Policy = PermissionConstants.SubscriptionUpdate)]
     public async Task<IActionResult> RenewSubscription(Guid id, [FromBody] RenewSubscriptionRequest request)
     {
         var result = await _subscriptionService.RenewAsync(id, request.PackageId);
@@ -99,7 +100,7 @@ public class SubscriptionsController : ControllerBase
     }
 
     [HttpPut("{id}/pause")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Policy = PermissionConstants.SubscriptionUpdate)]
     public async Task<IActionResult> PauseSubscription(Guid id)
     {
         var result = await _subscriptionService.PauseAsync(id);

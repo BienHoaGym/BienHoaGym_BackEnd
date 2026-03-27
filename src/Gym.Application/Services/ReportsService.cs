@@ -31,107 +31,125 @@ public class ReportsService : IReportsService
         var start = startDate ?? today.AddDays(-29);
         var end = endDate ?? today.AddDays(1).AddSeconds(-1);
 
-        // Payments Query - Only completed and not deleted
+        // --- REVENUE DATA SOURCES ---
         var paymentsQuery = _unitOfWork.Payments.GetQueryable()
             .Where(p => p.Status == PaymentStatus.Completed && !p.IsDeleted)
-            .Include(p => p.Subscription).ThenInclude(s => s!.Package)
-            .Include(p => p.Subscription).ThenInclude(s => s!.Member);
+            .Include(p => p.Subscription).ThenInclude(s => s!.Package);
 
-        // 1. Overview
-        var revenueToday = await paymentsQuery.Where(p => p.PaymentDate.Date == today).SumAsync(p => p.Amount);
-        var revenueMonth = await paymentsQuery.Where(p => p.PaymentDate >= monthStart).SumAsync(p => p.Amount);
-        var revenueYear = await paymentsQuery.Where(p => p.PaymentDate >= yearStart).SumAsync(p => p.Amount);
+        var invoicesQuery = _unitOfWork.Invoices.GetQueryable()
+            .Where(i => i.Status == PaymentStatus.Completed && !i.IsDeleted)
+            .Include(i => i.Details);
+
+        // 1. Overview (Monthly/Yearly/Today)
+        var revToday = await paymentsQuery.Where(p => p.PaymentDate.Date == today).SumAsync(p => p.Amount) +
+                       await invoicesQuery.Where(i => i.CreatedAt.Date == today).SumAsync(i => i.TotalAmount - i.DiscountAmount);
+                       
+        var revMonth = await paymentsQuery.Where(p => p.PaymentDate >= monthStart).SumAsync(p => p.Amount) +
+                       await invoicesQuery.Where(i => i.CreatedAt >= monthStart).SumAsync(i => i.TotalAmount - i.DiscountAmount);
+                       
+        var revYear = await paymentsQuery.Where(p => p.PaymentDate >= yearStart).SumAsync(p => p.Amount) +
+                      await invoicesQuery.Where(i => i.CreatedAt >= yearStart).SumAsync(i => i.TotalAmount - i.DiscountAmount);
+
+        // Expenses for this month (Module Kho & Thiết bị)
+        var matExpense = await _unitOfWork.StockTransactions.GetQueryable()
+            .Include(t => t.Product)
+            .Where(t => t.Date >= monthStart && 
+                       (t.Type == StockTransactionType.InternalUse || 
+                        t.Type == StockTransactionType.Damage ||
+                        t.Type == StockTransactionType.Loss))
+            .SumAsync(t => t.Quantity * (t.Product != null ? t.Product.CostPrice : 0));
         
-        var newMembers = await _unitOfWork.Members.GetQueryable()
-            .CountAsync(m => m.JoinedDate >= start && m.JoinedDate <= end && !m.IsDeleted);
-        
-        var packagesSold = await _unitOfWork.Subscriptions.GetQueryable()
-            .CountAsync(s => s.CreatedAt >= start && s.CreatedAt <= end && !s.IsDeleted);
+        var maintExpense = await _unitOfWork.MaintenanceLogs.GetQueryable()
+            .Where(m => m.Date >= monthStart && m.Status == MaintenanceStatus.Completed)
+            .SumAsync(m => m.Cost);
+            
+        var depExpense = await _unitOfWork.Depreciations.GetQueryable()
+            .Where(d => d.PeriodMonth == monthStart.Month && d.PeriodYear == monthStart.Year)
+            .SumAsync(d => d.Amount);
 
         var overview = new RevenueOverviewDto
         {
-            RevenueToday = revenueToday,
-            RevenueThisMonth = revenueMonth,
-            RevenueThisYear = revenueYear,
-            NewMembersCount = newMembers,
-            TotalPackagesSold = packagesSold
+            RevenueToday = revToday,
+            RevenueThisMonth = revMonth,
+            RevenueThisYear = revYear,
+            TotalExpenseThisMonth = matExpense + maintExpense + depExpense,
+            NewMembersCount = await _unitOfWork.Members.GetQueryable().CountAsync(m => m.JoinedDate >= start && m.JoinedDate <= end),
+            TotalPackagesSold = await _unitOfWork.Subscriptions.GetQueryable().CountAsync(s => s.CreatedAt >= start && s.CreatedAt <= end)
         };
 
-        // 2. Revenue Chart (Daily for selected range)
-        // Grouping by Date and sorting
-        var rawChartData = await paymentsQuery
-            .Where(p => p.PaymentDate >= start && p.PaymentDate <= end)
+        // 2. Revenue Chart (Selected Range)
+        var pData = await paymentsQuery.Where(p => p.PaymentDate >= start && p.PaymentDate <= end)
             .GroupBy(p => p.PaymentDate.Date)
-            .Select(g => new { Date = g.Key, Revenue = g.Sum(p => p.Amount) })
-            .ToListAsync();
+            .Select(g => new { Date = g.Key, Amount = g.Sum(x => x.Amount) }).ToListAsync();
+            
+        var iData = await invoicesQuery.Where(i => i.CreatedAt >= start && i.CreatedAt <= end)
+            .GroupBy(i => i.CreatedAt.Date)
+            .Select(g => new { Date = g.Key, Amount = g.Sum(x => x.TotalAmount - x.DiscountAmount) }).ToListAsync();
 
-        // Ensure all dates in range have an entry
-        var chartData = Enumerable.Range(0, (end - start).Days + 1)
+        var chartItems = Enumerable.Range(0, (end - start).Days + 1)
             .Select(i => {
                 var d = start.AddDays(i).Date;
-                return new RevenueChartItemDto {
-                    Label = d.ToString("dd/MM"),
-                    Revenue = rawChartData.FirstOrDefault(x => x.Date == d)?.Revenue ?? 0
-                };
+                var rev = (pData.FirstOrDefault(x => x.Date == d)?.Amount ?? 0) + 
+                          (iData.FirstOrDefault(x => x.Date == d)?.Amount ?? 0);
+                return new RevenueChartItemDto { Label = d.ToString("dd/MM"), Revenue = rev };
             }).ToList();
 
-        // 3. Revenue by Package
-        var revenueByPackage = await paymentsQuery
+        // 3. Revenue by Package (Combining both systems)
+        var pByPkg = await paymentsQuery
             .Where(p => p.PaymentDate >= start && p.PaymentDate <= end)
             .GroupBy(p => p.Subscription!.Package!.Name)
-            .Select(g => new RevenueByPackageDto
-            {
-                PackageName = g.Key ?? "Khác",
-                Quantity = g.Count(),
-                TotalRevenue = g.Sum(p => p.Amount)
-            })
-            .OrderByDescending(x => x.TotalRevenue)
-            .ToListAsync();
+            .Select(g => new { Name = g.Key, Qty = g.Count(), Revenue = g.Sum(p => p.Amount) }).ToListAsync();
 
-        // 4. Revenue by Trainer
-        // Since revenue isn't direct, we attribute proportionally to classes taught and enrollment
+        var iByPkg = await invoicesQuery
+            .Where(i => i.CreatedAt >= start && i.CreatedAt <= end)
+            .SelectMany(i => i.Details)
+            .Where(d => d.ItemType == "Package")
+            .GroupBy(d => d.ItemName)
+            .Select(g => new { Name = g.Key, Qty = g.Sum(d => d.Quantity), Revenue = g.Sum(d => d.Quantity * d.UnitPrice) }).ToListAsync();
+
+        var allPkgNames = pByPkg.Select(x => x.Name).Union(iByPkg.Select(x => x.Name)).Distinct();
+        var revByPackage = allPkgNames.Select(name => new RevenueByPackageDto
+        {
+            PackageName = name ?? "Khác",
+            Quantity = (pByPkg.FirstOrDefault(x => x.Name == name)?.Qty ?? 0) + (iByPkg.FirstOrDefault(x => x.Name == name)?.Qty ?? 0),
+            TotalRevenue = (pByPkg.FirstOrDefault(x => x.Name == name)?.Revenue ?? 0) + (iByPkg.FirstOrDefault(x => x.Name == name)?.Revenue ?? 0)
+        }).OrderByDescending(x => x.TotalRevenue).ToList();
+
+        // 4 & 5. Proxy reports for Trainer/Class (could be improved with actual Schedule logs)
         var trainers = await _unitOfWork.Trainers.GetQueryable().Include(t => t.Classes).ToListAsync();
-        var revenueByTrainer = trainers.Select(t => new RevenueByTrainerDto
+        var revByTrainer = trainers.Select(t => new RevenueByTrainerDto
         {
             TrainerName = t.FullName,
             ClassesCount = t.Classes.Count,
-            TotalRevenue = t.Classes.Sum(c => c.CurrentEnrollment) * 50000 // Proxy value: 50k per member per class
-        }).OrderByDescending(x => x.TotalRevenue).ToList();
-
-        // 5. Revenue by Class
-        var classes = await _unitOfWork.Classes.GetQueryable().ToListAsync();
-        var revenueByClass = classes.Select(c => new RevenueByClassDto
-        {
-            ClassName = c.ClassName,
-            MembersCount = c.CurrentEnrollment,
-            TotalRevenue = c.CurrentEnrollment * 60000 // Proxy value
+            TotalRevenue = t.Classes.Sum(c => c.CurrentEnrollment) * 50000 
         }).OrderByDescending(x => x.TotalRevenue).ToList();
 
         // 6. Detailed Transactions
-        var transactions = await paymentsQuery
-            .Where(p => p.PaymentDate >= start && p.PaymentDate <= end)
-            .OrderByDescending(p => p.PaymentDate)
-            .Take(50)
-            .Select(p => new TransactionDetailDto
-            {
-                Id = p.Id,
-                Date = p.PaymentDate,
-                MemberName = p.Subscription!.Member!.FullName,
-                PackageName = p.Subscription!.Package!.Name,
-                Amount = p.Amount,
-                Status = p.Status.ToString(),
-                PaymentMethod = p.Method.ToString()
-            })
-            .ToListAsync();
+        var pTrans = await paymentsQuery.Where(p => p.PaymentDate >= start && p.PaymentDate <= end)
+            .OrderByDescending(p => p.PaymentDate).Take(30).ToListAsync();
+        var iTrans = await invoicesQuery.Where(i => i.CreatedAt >= start && i.CreatedAt <= end)
+            .OrderByDescending(i => i.CreatedAt).Take(30).ToListAsync();
+
+        var transactions = pTrans.Select(p => new TransactionDetailDto {
+            Id = p.Id, Date = p.PaymentDate, MemberName = p.Subscription?.Member?.FullName ?? "N/A",
+            PackageName = p.Subscription?.Package?.Name ?? "HV Cũ", Amount = p.Amount, Status = "Completed",
+            PaymentMethod = p.Method.ToString()
+        }).Concat(iTrans.Select(i => new TransactionDetailDto {
+            Id = i.Id, Date = i.CreatedAt, MemberName = i.Member?.FullName ?? "Khách lẻ/POS",
+            PackageName = string.Join(", ", i.Details.Select(d => d.ItemName)), Amount = i.FinalAmount, Status = "Completed",
+            PaymentMethod = i.PaymentMethod.ToString()
+        })).OrderByDescending(t => t.Date).Take(50).ToList();
 
         var report = new RevenueReportDto
         {
             Overview = overview,
-            RevenueChart = chartData,
-            RevenueByPackage = revenueByPackage,
-            RevenueByTrainer = revenueByTrainer,
-            RevenueByClass = revenueByClass,
-            RecentTransactions = transactions
+            RevenueChart = chartItems,
+            RevenueByPackage = revByPackage,
+            RevenueByTrainer = revByTrainer,
+            RecentTransactions = transactions,
+            TotalMaterialExpense = matExpense,
+            TotalMaintenanceExpense = maintExpense,
+            TotalDepreciationExpense = depExpense
         };
 
         return ResponseDto<RevenueReportDto>.SuccessResult(report);
@@ -172,8 +190,8 @@ public class ReportsService : IReportsService
                 .ToList()
         };
 
-        var totalDepreciation = equipments.Sum(e => e.Depreciations.Sum(d => d.Amount));
-        stats.TotalCurrentValue = stats.TotalOriginalValue - totalDepreciation;
+        var totalDepreciation = equipments.Sum(e => e.AccumulatedDepreciation);
+        stats.TotalCurrentValue = equipments.Sum(e => e.RemainingValue);
 
         return ResponseDto<AssetInventoryStatsDto>.SuccessResult(stats);
     }
@@ -219,6 +237,57 @@ public class ReportsService : IReportsService
         return ResponseDto<DepreciationReportDto>.SuccessResult(report);
     }
 
+
+    public async Task<ResponseDto<OperatingCostReportDto>> GetOperatingCostReportAsync(int month, int year)
+    {
+        var startDate = new DateTime(year, month, 1);
+        var endDate = startDate.AddMonths(1).AddSeconds(-1);
+
+        // 1. CHI PHÍ VẬT TƯ (Module Kho) - Lấy các giao dịch Xuất dùng, Hỏng, Hao hụt
+        var materialTransactions = await _unitOfWork.StockTransactions.GetQueryable()
+            .Include(t => t.Product)
+            .Where(t => t.Date >= startDate && t.Date <= endDate && 
+                       (t.Type == StockTransactionType.InternalUse || 
+                        t.Type == StockTransactionType.Damage || 
+                        t.Type == StockTransactionType.Loss))
+            .ToListAsync();
+
+        var materialDetails = materialTransactions
+            .GroupBy(t => t.Product?.Name ?? "Khác")
+            .Select(g => new MaterialCostDetailDto
+            {
+                ProductName = g.Key,
+                Quantity = g.Sum(t => t.Quantity),
+                Cost = g.Sum(t => t.Quantity * (t.Product?.CostPrice ?? 0))
+            }).ToList();
+
+        // 2. CHI PHÍ KHẤU HAO (Module Thiết bị)
+        var depreciations = await _unitOfWork.Depreciations.GetQueryable()
+            .Include(d => d.Equipment)
+            .Where(d => d.PeriodMonth == month && d.PeriodYear == year)
+            .ToListAsync();
+
+        var depreciationDetails = depreciations
+            .GroupBy(d => d.Equipment?.Name ?? "Khác")
+            .Select(g => new DepreciationCostDetailDto
+            {
+                EquipmentName = g.Key,
+                Count = g.Select(d => d.EquipmentId).Distinct().Count(),
+                Amount = g.Sum(d => d.Amount)
+            }).ToList();
+
+        var report = new OperatingCostReportDto
+        {
+            Month = month,
+            Year = year,
+            TotalMaterialCost = materialDetails.Sum(d => d.Cost),
+            MaterialDetails = materialDetails,
+            TotalDepreciationCost = depreciationDetails.Sum(d => d.Amount),
+            DepreciationDetails = depreciationDetails
+        };
+
+        return ResponseDto<OperatingCostReportDto>.SuccessResult(report);
+    }
 
     public async Task<ResponseDto<bool>> SeedReportDataAsync()
     {

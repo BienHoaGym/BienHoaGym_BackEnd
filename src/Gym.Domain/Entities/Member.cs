@@ -20,8 +20,8 @@ public class Member : BaseEntity
     public string? Note { get; set; }          // Ghi chú
     public string? EmergencyContact { get; set; } // Liên hệ khẩn cấp (Tên)
     public string? EmergencyPhone { get; set; }   // Liên hệ khẩn cấp (SĐT)
-    public string? FaceEncoding { get; set; }   // Dữ liệu mã hóa khuôn mặt (Base64 hoặc chuỗi vector)
-    public string? QRCode { get; set; }         // Mã QR riêng biệt nếu không dùng MemberCode
+
+    public string? FaceEncoding { get; set; }   // Vector đặc trưng khuôn mặt (JSON string/Base64)
     // ---------------------------------------------
 
     public Guid? UserId { get; set; }

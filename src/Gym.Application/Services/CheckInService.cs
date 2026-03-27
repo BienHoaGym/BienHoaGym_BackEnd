@@ -45,6 +45,11 @@ public class CheckInService : ICheckInService
             result.IsValid = false;
             result.Message = "Không tìm thấy hội viên";
             result.Errors.Add("Mã hội viên không hợp lệ");
+            
+            // ✅ GHI AUDIT LOG: Thử check-in sai mã
+            await _auditLogService.LogAsync("System", "CHECKIN_FAILED", "CheckIns", null, 
+                new { MemberCode = memberCode, Reason = "Invalid Member Code" });
+                
             return ResponseDto<CheckInValidationResultDto>.SuccessResult(result);
         }
 
@@ -56,6 +61,11 @@ public class CheckInService : ICheckInService
             result.IsValid = false;
             result.Message = "Hội viên không ở trạng thái hoạt động";
             result.Errors.Add($"Trạng thái hiện tại: {member.Status}");
+
+            // ✅ GHI AUDIT LOG: Check-in khi tài khoản bị khóa/inactive
+            await _auditLogService.LogAsync("System", "CHECKIN_FAILED", "CheckIns", null,
+                new { MemberCode = memberCode, Status = member.Status.ToString(), Reason = "Account not Active" });
+
             return ResponseDto<CheckInValidationResultDto>.SuccessResult(result);
         }
 
@@ -74,6 +84,11 @@ public class CheckInService : ICheckInService
             result.IsValid = false;
             result.Message = "Không tìm thấy gói tập đang hoạt động";
             result.Errors.Add("Vui lòng gia hạn gói tập");
+
+            // ✅ GHI AUDIT LOG: Thử check-in khi không có gói tập
+            await _auditLogService.LogAsync("System", "CHECKIN_FAILED", "CheckIns", null,
+                new { MemberCode = memberCode, Reason = "No Active Subscription found" });
+
             return ResponseDto<CheckInValidationResultDto>.SuccessResult(result);
         }
 
@@ -85,6 +100,11 @@ public class CheckInService : ICheckInService
             result.IsValid = false;
             result.Message = "Gói tập đã hết hạn";
             result.Errors.Add($"Ngày hết hạn: {activeSubscription.EndDate:dd/MM/yyyy}");
+
+            // ✅ GHI AUDIT LOG: Check-in khi gói hết hạn
+            await _auditLogService.LogAsync("System", "CHECKIN_FAILED", "CheckIns", null,
+                new { MemberCode = memberCode, SubscriptionId = activeSubscription.Id, Reason = "Sub Expired" });
+
             return ResponseDto<CheckInValidationResultDto>.SuccessResult(result);
         }
 
@@ -163,37 +183,27 @@ public class CheckInService : ICheckInService
         return await ExecuteCheckInAsync(validation.Data.Member!.Id, validation.Data.ActiveSubscription!.Id, dto.Notes);
     }
 
-    public async Task<ResponseDto<CheckInDto>> CheckInWithQRCodeAsync(string qrCode)
+    public async Task<ResponseDto<CheckInDto>> CheckInWithFaceAsync(string faceEncoding)
     {
-        // 1. Tìm hội viên bằng QRCode hoặc MemberCode
-        var members = await _unitOfWork.Members.FindAsync(m => (m.QRCode == qrCode || m.MemberCode == qrCode) && !m.IsDeleted);
+        // 1. Tìm hội viên khớp với khuôn mặt (Mô phỏng matching chính xác vector)
+        var members = await _unitOfWork.Members.FindAsync(m => m.FaceEncoding == faceEncoding && !m.IsDeleted);
         var member = members.FirstOrDefault();
 
         if (member == null)
-            return ResponseDto<CheckInDto>.FailureResult("Không tìm thấy hội viên với mã QR này");
+            return ResponseDto<CheckInDto>.FailureResult("Không nhận diện được khuôn mặt. Vui lòng thử lại!");
 
         var validation = await ValidateCheckInAsync(member.MemberCode);
         if (!validation.Data!.IsValid)
             return ResponseDto<CheckInDto>.FailureResult(validation.Data.Message, validation.Data.Errors);
 
-        return await ExecuteCheckInAsync(member.Id, validation.Data.ActiveSubscription!.Id, "Check-in qua QR Code");
+        // ✅ GHI AUDIT LOG: Nhận diện FaceID thành công
+        await _auditLogService.LogAsync("System", "FACE_RECOGNITION", "CheckIns", member.Id.ToString(), 
+            new { MemberName = member.FullName, Result = "Success" });
+
+        return await ExecuteCheckInAsync(member.Id, validation.Data.ActiveSubscription!.Id, "Check-in qua FaceID");
     }
 
-    public async Task<ResponseDto<CheckInDto>> CheckInWithFaceAsync(FaceCheckInDto dto)
-    {
-        // 2. Tìm hội viên bằng FaceEncoding (Trong thực tế sẽ dùng vector similarity search)
-        var members = await _unitOfWork.Members.FindAsync(m => m.FaceEncoding == dto.FaceEncoding && !m.IsDeleted);
-        var member = members.FirstOrDefault();
 
-        if (member == null)
-            return ResponseDto<CheckInDto>.FailureResult("Không nhận diện được khuôn mặt. Vui lòng thử lại hoặc đăng ký khuôn mặt.");
-
-        var validation = await ValidateCheckInAsync(member.MemberCode);
-        if (!validation.Data!.IsValid)
-            return ResponseDto<CheckInDto>.FailureResult(validation.Data.Message, validation.Data.Errors);
-
-        return await ExecuteCheckInAsync(member.Id, validation.Data.ActiveSubscription!.Id, "Check-in qua Nhận diện khuôn mặt");
-    }
 
     private async Task<ResponseDto<CheckInDto>> ExecuteCheckInAsync(Guid memberId, Guid subscriptionId, string? notes)
     {

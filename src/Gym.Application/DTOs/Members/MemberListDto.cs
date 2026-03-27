@@ -1,4 +1,4 @@
-﻿namespace Gym.Application.DTOs.Members;
+namespace Gym.Application.DTOs.Members;
 
 /// <summary>
 /// DTO for member list view (simplified)
@@ -23,4 +23,6 @@ public class MemberListDto
     /// Active subscription end date (if any)
     /// </summary>
     public DateTime? ActiveSubscriptionEndDate { get; set; }
+
+    public string? FaceEncoding { get; set; }
 }

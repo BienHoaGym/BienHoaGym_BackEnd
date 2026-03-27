@@ -8,6 +8,9 @@ public class RevenueOverviewDto
     public decimal RevenueToday { get; set; }
     public decimal RevenueThisMonth { get; set; }
     public decimal RevenueThisYear { get; set; }
+    public decimal TotalExpenseThisMonth { get; set; } // Tổng chi phí (Kho + Thiết bị)
+    public decimal NetProfitThisMonth => RevenueThisMonth - TotalExpenseThisMonth;
+
     public int NewMembersCount { get; set; }
     public int TotalPackagesSold { get; set; }
 }
@@ -58,4 +61,9 @@ public class RevenueReportDto
     public List<RevenueByTrainerDto> RevenueByTrainer { get; set; } = new();
     public List<RevenueByClassDto> RevenueByClass { get; set; } = new();
     public List<TransactionDetailDto> RecentTransactions { get; set; } = new();
+    
+    // NEW: Financial Analysis
+    public decimal TotalMaterialExpense { get; set; }
+    public decimal TotalMaintenanceExpense { get; set; }
+    public decimal TotalDepreciationExpense { get; set; }
 }

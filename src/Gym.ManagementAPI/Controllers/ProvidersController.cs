@@ -1,11 +1,15 @@
 using Gym.Application.DTOs.Providers;
 using Gym.Application.Interfaces.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Threading.Tasks;
 
 namespace Gym.ManagementAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "Admin,Manager,Receptionist")]
 public class ProvidersController : ControllerBase
 {
     private readonly IProviderService _providerService;
@@ -37,6 +41,7 @@ public class ProvidersController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> Create(CreateProviderDto dto)
     {
         var result = await _providerService.CreateAsync(dto);
@@ -44,6 +49,7 @@ public class ProvidersController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> Update(Guid id, CreateProviderDto dto)
     {
         var result = await _providerService.UpdateAsync(id, dto);
@@ -51,9 +57,24 @@ public class ProvidersController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> Delete(Guid id)
     {
         var result = await _providerService.DeleteAsync(id);
         return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpGet("{id}/products")]
+    public async Task<IActionResult> GetProducts(Guid id)
+    {
+        var result = await _providerService.GetProductsAsync(id);
+        return Ok(result);
+    }
+
+    [HttpGet("{id}/equipments")]
+    public async Task<IActionResult> GetEquipments(Guid id)
+    {
+        var result = await _providerService.GetEquipmentsAsync(id);
+        return Ok(result);
     }
 }

@@ -21,3 +21,15 @@ C:\Users\ADMIN\OneDrive\Tài liệu\Gym_Project\GymManagement\src\Gym.Domain\o
 C:\Users\ADMIN\OneDrive\Tài liệu\Gym_Project\GymManagement\src\Gym.Domain\obj\Debug\net10.0\Gym.Domain.pdb
 C:\Users\ADMIN\OneDrive\Tài liệu\Gym_Project\GymManagement\src\Gym.Domain\obj\Debug\net10.0\ref\Gym.Domain.dll
 C:\Users\ADMIN\OneDrive\Tài liệu\Gym_Project\GymManagement\src\Gym.Domain\obj\Debug\net10.0\Gym.Domain.sourcelink.json
+D:\Tài liệu - Copy\Gym_Project\GymManagement\src\Gym.Domain\bin\Debug\net10.0\Gym.Domain.deps.json
+D:\Tài liệu - Copy\Gym_Project\GymManagement\src\Gym.Domain\bin\Debug\net10.0\Gym.Domain.dll
+D:\Tài liệu - Copy\Gym_Project\GymManagement\src\Gym.Domain\bin\Debug\net10.0\Gym.Domain.pdb
+D:\Tài liệu - Copy\Gym_Project\GymManagement\src\Gym.Domain\obj\Debug\net10.0\Gym.Domain.GeneratedMSBuildEditorConfig.editorconfig
+D:\Tài liệu - Copy\Gym_Project\GymManagement\src\Gym.Domain\obj\Debug\net10.0\Gym.Domain.AssemblyInfoInputs.cache
+D:\Tài liệu - Copy\Gym_Project\GymManagement\src\Gym.Domain\obj\Debug\net10.0\Gym.Domain.AssemblyInfo.cs
+D:\Tài liệu - Copy\Gym_Project\GymManagement\src\Gym.Domain\obj\Debug\net10.0\Gym.Domain.csproj.CoreCompileInputs.cache
+D:\Tài liệu - Copy\Gym_Project\GymManagement\src\Gym.Domain\obj\Debug\net10.0\Gym.Domain.sourcelink.json
+D:\Tài liệu - Copy\Gym_Project\GymManagement\src\Gym.Domain\obj\Debug\net10.0\Gym.Domain.dll
+D:\Tài liệu - Copy\Gym_Project\GymManagement\src\Gym.Domain\obj\Debug\net10.0\refint\Gym.Domain.dll
+D:\Tài liệu - Copy\Gym_Project\GymManagement\src\Gym.Domain\obj\Debug\net10.0\Gym.Domain.pdb
+D:\Tài liệu - Copy\Gym_Project\GymManagement\src\Gym.Domain\obj\Debug\net10.0\ref\Gym.Domain.dll

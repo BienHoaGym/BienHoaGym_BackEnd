@@ -5,10 +5,11 @@ public class ProviderDto
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Code { get; set; } = string.Empty;
+    public string? ContactPerson { get; set; }
     public string? Address { get; set; }
     public string? PhoneNumber { get; set; }
     public string? Email { get; set; }
-    public string? VATCode { get; set; }
+    public string? TaxCode { get; set; }
     public string? SupplyType { get; set; }
     public string? BankAccountNumber { get; set; }
     public string? BankName { get; set; }
@@ -20,10 +21,11 @@ public class CreateProviderDto
 {
     public string Name { get; set; } = string.Empty;
     public string Code { get; set; } = string.Empty;
+    public string? ContactPerson { get; set; }
     public string? Address { get; set; }
     public string? PhoneNumber { get; set; }
     public string? Email { get; set; }
-    public string? VATCode { get; set; }
+    public string? TaxCode { get; set; }
     public string? SupplyType { get; set; }
     public string? BankAccountNumber { get; set; }
     public string? BankName { get; set; }
@@ -37,6 +39,8 @@ public class ProviderSummaryDto
     public string Name { get; set; } = string.Empty;
     public string Code { get; set; } = string.Empty;
     public string? PhoneNumber { get; set; }
+    public string? ContactPerson { get; set; }
+    public string? TaxCode { get; set; }
     public string? SupplyType { get; set; }
     public string? Email { get; set; }
     public string? Address { get; set; }

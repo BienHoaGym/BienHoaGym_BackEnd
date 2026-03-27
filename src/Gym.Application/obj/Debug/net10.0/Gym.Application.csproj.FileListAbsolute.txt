@@ -29,3 +29,19 @@ C:\Users\ADMIN\OneDrive\Tài liệu\Gym_Project\GymManagement\src\Gym.Applicat
 C:\Users\ADMIN\OneDrive\Tài liệu\Gym_Project\GymManagement\src\Gym.Application\obj\Debug\net10.0\Gym.Application.pdb
 C:\Users\ADMIN\OneDrive\Tài liệu\Gym_Project\GymManagement\src\Gym.Application\obj\Debug\net10.0\ref\Gym.Application.dll
 C:\Users\ADMIN\OneDrive\Tài liệu\Gym_Project\GymManagement\src\Gym.Application\obj\Debug\net10.0\Gym.Application.sourcelink.json
+D:\Tài liệu - Copy\Gym_Project\GymManagement\src\Gym.Application\bin\Debug\net10.0\Gym.Application.deps.json
+D:\Tài liệu - Copy\Gym_Project\GymManagement\src\Gym.Application\bin\Debug\net10.0\Gym.Application.dll
+D:\Tài liệu - Copy\Gym_Project\GymManagement\src\Gym.Application\bin\Debug\net10.0\Gym.Application.pdb
+D:\Tài liệu - Copy\Gym_Project\GymManagement\src\Gym.Application\bin\Debug\net10.0\Gym.Domain.dll
+D:\Tài liệu - Copy\Gym_Project\GymManagement\src\Gym.Application\bin\Debug\net10.0\Gym.Domain.pdb
+D:\Tài liệu - Copy\Gym_Project\GymManagement\src\Gym.Application\obj\Debug\net10.0\Gym.Application.csproj.AssemblyReference.cache
+D:\Tài liệu - Copy\Gym_Project\GymManagement\src\Gym.Application\obj\Debug\net10.0\Gym.Application.GeneratedMSBuildEditorConfig.editorconfig
+D:\Tài liệu - Copy\Gym_Project\GymManagement\src\Gym.Application\obj\Debug\net10.0\Gym.Application.AssemblyInfoInputs.cache
+D:\Tài liệu - Copy\Gym_Project\GymManagement\src\Gym.Application\obj\Debug\net10.0\Gym.Application.AssemblyInfo.cs
+D:\Tài liệu - Copy\Gym_Project\GymManagement\src\Gym.Application\obj\Debug\net10.0\Gym.Application.csproj.CoreCompileInputs.cache
+D:\Tài liệu - Copy\Gym_Project\GymManagement\src\Gym.Application\obj\Debug\net10.0\Gym.Application.sourcelink.json
+D:\Tài liệu - Copy\Gym_Project\GymManagement\src\Gym.Application\obj\Debug\net10.0\Gym.Appl.BE88B8F5.Up2Date
+D:\Tài liệu - Copy\Gym_Project\GymManagement\src\Gym.Application\obj\Debug\net10.0\Gym.Application.dll
+D:\Tài liệu - Copy\Gym_Project\GymManagement\src\Gym.Application\obj\Debug\net10.0\refint\Gym.Application.dll
+D:\Tài liệu - Copy\Gym_Project\GymManagement\src\Gym.Application\obj\Debug\net10.0\Gym.Application.pdb
+D:\Tài liệu - Copy\Gym_Project\GymManagement\src\Gym.Application\obj\Debug\net10.0\ref\Gym.Application.dll

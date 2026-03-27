@@ -3,6 +3,7 @@ using Gym.Application.Interfaces;
 using Gym.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Gym.Domain.Constants;
 using Microsoft.EntityFrameworkCore; // Cần thêm để dùng .Include() và .ToListAsync()
 
 namespace Gym.ManagementAPI.Controllers;
@@ -22,7 +23,7 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet("stats")]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [Authorize(Policy = PermissionConstants.DashboardRead)]
     public async Task<IActionResult> GetDashboardStats()
     {
         _logger.LogInformation("Getting dashboard stats");
@@ -82,8 +83,8 @@ public class DashboardController : ControllerBase
 
             // 5. Recent Payments (5 giao dịch gần nhất)
             var recentPayments = await paymentsQuery
-                .Include(p => p.Subscription).ThenInclude(s => s.Member) // Nạp Member
-                .Include(p => p.Subscription).ThenInclude(s => s.Package) // Nạp Package
+                .Include(p => p.Subscription).ThenInclude(s => s!.Member) // Nạp Member
+                .Include(p => p.Subscription).ThenInclude(s => s!.Package) // Nạp Package
                 .OrderByDescending(p => p.PaymentDate)
                 .Take(5)
                 .Select(p => new
@@ -93,10 +94,8 @@ public class DashboardController : ControllerBase
                     Method = p.Method.ToString(),
                     p.PaymentDate,
                     p.TransactionId, // Sửa từ TransactionRef thành TransactionId cho khớp Entity
-                    MemberName = p.Subscription != null && p.Subscription.Member != null
-                                 ? p.Subscription.Member.FullName : "Khách vãng lai",
-                    PackageName = p.Subscription != null && p.Subscription.Package != null
-                                  ? p.Subscription.Package.Name : "N/A"
+                    MemberName = p.Subscription != null && p.Subscription.Member != null ? p.Subscription.Member.FullName : "Khách vãng lai",
+                    PackageName = p.Subscription != null && p.Subscription.Package != null ? p.Subscription.Package.Name : "N/A"
                 })
                 .ToListAsync();
 
@@ -179,7 +178,7 @@ public class DashboardController : ControllerBase
     }
 
     [HttpGet("checkin-chart")]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [Authorize(Policy = PermissionConstants.DashboardRead)]
     public async Task<IActionResult> GetCheckinChart()
     {
         try

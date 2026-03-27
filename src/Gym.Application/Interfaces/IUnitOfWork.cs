@@ -13,6 +13,7 @@ public interface IUnitOfWork : IDisposable
     ITrainerRepository Trainers { get; }
     IClassRepository Classes { get; }
     IUserRepository Users { get; }
+    IRoleRepository Roles { get; }
     IClassEnrollmentRepository ClassEnrollments { get; }
     IGenericRepository<TrainerMemberAssignment> TrainerMemberAssignments { get; }
     IGenericRepository<Product> Products { get; }
@@ -41,4 +42,5 @@ public interface IUnitOfWork : IDisposable
     Task BeginTransactionAsync();
     Task CommitAsync();
     Task RollbackAsync();
+    Task ExecuteStrategyAsync(Func<Task> action);
 }
