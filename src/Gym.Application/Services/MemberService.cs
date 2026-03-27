@@ -14,12 +14,33 @@ public class MemberService : IMemberService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
     private readonly IAuditLogService _auditLogService;
-
     public MemberService(IUnitOfWork unitOfWork, IMapper mapper, IAuditLogService auditLogService)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _auditLogService = auditLogService;
+    }
+
+    private async Task ScanAndExpireProspectiveMembersAsync()
+    {
+        var expiryLimit = DateTime.UtcNow.AddHours(-24);
+        var expiredLeads = await _unitOfWork.Members.GetQueryable()
+            .Where(m => m.Status == MemberStatus.Prospective && m.CreatedAt < expiryLimit && !m.IsDeleted)
+            .ToListAsync();
+
+        if (expiredLeads.Any())
+        {
+            foreach (var lead in expiredLeads)
+            {
+                lead.IsDeleted = true;
+                lead.UpdatedAt = DateTime.UtcNow;
+                
+                await _auditLogService.LogAsync("System", "AUTO_EXPIRE_LEAD", "Members", 
+                    new { Status = MemberStatus.Prospective.ToString() }, 
+                    new { IsDeleted = true, Reason = "Timeout 24h" });
+            }
+            await _unitOfWork.SaveChangesAsync();
+        }
     }
 
     #region Basic Operations
@@ -35,7 +56,6 @@ public class MemberService : IMemberService
 
     public async Task<ResponseDto<PaginatedResultDto<MemberListDto>>> GetAllAsync(int pageNumber = 1, int pageSize = 10)
     {
-        // Consider moving this to a background job for better performance
         await ScanAndExpireProspectiveMembersAsync();
 
         var query = _unitOfWork.Members.GetQueryable()

@@ -135,6 +135,9 @@ public class GymDbContext : DbContext
             entity.Property(e => e.FaceEncoding)
                 .HasColumnType("nvarchar(max)");
 
+            entity.Property(e => e.QRCode)
+                .HasMaxLength(255);
+
             entity.HasIndex(e => e.FullName);
         });
 

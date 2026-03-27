@@ -48,6 +48,16 @@ public class CheckInsController : ControllerBase
         return Ok(result);
     }
 
+    [HttpPost("qr")]
+    [Authorize(Policy = PermissionConstants.CheckInCreate)]
+    public async Task<IActionResult> CheckInWithQRCode([FromBody] string qrCode)
+    {
+        _logger.LogInformation("QR Code Check-in request");
+        var result = await _checkInService.CheckInWithQRCodeAsync(qrCode);
+        if (!result.Success) return BadRequest(result);
+        return Ok(result);
+    }
+
     /// <summary>
     /// Check-in via Face ID
     /// </summary>
@@ -60,8 +70,6 @@ public class CheckInsController : ControllerBase
         if (!result.Success) return BadRequest(result);
         return Ok(result);
     }
-
-
 
     /// <summary>
     /// Check-out member

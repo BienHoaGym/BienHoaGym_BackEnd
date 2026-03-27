@@ -30,10 +30,28 @@ public class TrainersController : ControllerBase
         var userId = Guid.Parse(userIdStr);
         var email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
         var fullName = User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value;
-
         var isAdmin = User.IsInRole("Admin");
+
         var result = await _trainerService.GetPersonalScheduleAsync(userId, email, fullName, isAdmin);
         
+        if (!result.Success) return BadRequest(result);
+        return Ok(result);
+    }
+
+    [HttpGet("summary/schedule")]
+    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    public async Task<IActionResult> GetGlobalSchedule()
+    {
+        var result = await _trainerService.GetGlobalScheduleAsync();
+        if (!result.Success) return BadRequest(result);
+        return Ok(result);
+    }
+
+    [HttpGet("{id:guid}/schedule")]
+    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    public async Task<IActionResult> GetTrainerSchedule(Guid id)
+    {
+        var result = await _trainerService.GetTrainerScheduleAsync(id);
         if (!result.Success) return BadRequest(result);
         return Ok(result);
     }
@@ -55,7 +73,7 @@ public class TrainersController : ControllerBase
     /// Get trainer by ID
     /// URL: GET /api/Trainers/{id}
     /// </summary>
-    [HttpGet("{id}")]
+    [HttpGet("{id:guid}")]
     [Authorize(Policy = PermissionConstants.TrainerRead)]
     public async Task<IActionResult> GetTrainer(Guid id)
     {
@@ -69,15 +87,14 @@ public class TrainersController : ControllerBase
     }
 
     /// <summary>
-    /// Get only active trainers (SỬA ĐỂ KHỚP VỚI FRONTEND)
+    /// Get only active trainers
     /// URL: GET /api/Trainers/active
     /// </summary>
-    [HttpGet("active")] // <--- ĐÃ SỬA TỪ "available" THÀNH "active"
+    [HttpGet("active")]
     [AllowAnonymous]
     public async Task<IActionResult> GetActiveTrainers()
     {
         _logger.LogInformation("Getting active trainers");
-        // Lưu ý: Đảm bảo Service của bạn cũng có hàm GetActiveAsync hoặc tương tự
         var result = await _trainerService.GetAvailableAsync();
         return Ok(result);
     }
@@ -103,7 +120,7 @@ public class TrainersController : ControllerBase
     /// Update trainer
     /// URL: PUT /api/Trainers/{id}
     /// </summary>
-    [HttpPut("{id}")]
+    [HttpPut("{id:guid}")]
     [Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> UpdateTrainer(Guid id, [FromBody] UpdateTrainerDto dto)
     {
@@ -120,7 +137,7 @@ public class TrainersController : ControllerBase
     /// Delete trainer (soft delete)
     /// URL: DELETE /api/Trainers/{id}
     /// </summary>
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:guid}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteTrainer(Guid id)
     {
@@ -133,7 +150,7 @@ public class TrainersController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet("{id}/members")]
+    [HttpGet("{id:guid}/members")]
     [Authorize(Policy = PermissionConstants.TrainerRead)]
     public async Task<IActionResult> GetAssignedMembers(Guid id)
     {
@@ -150,7 +167,7 @@ public class TrainersController : ControllerBase
         return Ok(result);
     }
 
-    [HttpDelete("unassign/{assignmentId}")]
+    [HttpDelete("unassign/{assignmentId:guid}")]
     [Authorize(Roles = "Admin,Manager,Receptionist")]
     public async Task<IActionResult> RemoveAssignment(Guid assignmentId)
     {

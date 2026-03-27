@@ -23,6 +23,7 @@ public interface IInventoryService
     Task<ResponseDto<bool>> ExportStockAsync(CreateStockTransactionDto dto);
     Task<ResponseDto<bool>> TransferStockAsync(CreateStockTransactionDto dto); // Chuyển kho
     Task<ResponseDto<bool>> InternalUseStockAsync(CreateStockTransactionDto dto); // Xuất dùng nội bộ
+    Task<ResponseDto<bool>> StockAdjustmentAsync(CreateStockTransactionDto dto); // Điều chỉnh tồn kho
 
 
     // Orders

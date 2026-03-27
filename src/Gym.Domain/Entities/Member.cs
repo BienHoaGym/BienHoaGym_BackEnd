@@ -22,6 +22,7 @@ public class Member : BaseEntity
     public string? EmergencyPhone { get; set; }   // Liên hệ khẩn cấp (SĐT)
 
     public string? FaceEncoding { get; set; }   // Vector đặc trưng khuôn mặt (JSON string/Base64)
+    public string? QRCode { get; set; }         // Dữ liệu mã QR duy nhất để check-in
     // ---------------------------------------------
 
     public Guid? UserId { get; set; }

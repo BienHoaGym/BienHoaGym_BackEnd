@@ -48,7 +48,7 @@ public class CheckInService : ICheckInService
             
             // ✅ GHI AUDIT LOG: Thử check-in sai mã
             await _auditLogService.LogAsync("System", "CHECKIN_FAILED", "CheckIns", null, 
-                new { MemberCode = memberCode, Reason = "Invalid Member Code" });
+                new { MemberCode = memberCode, Reason = "Mã hội viên không hợp lệ" });
                 
             return ResponseDto<CheckInValidationResultDto>.SuccessResult(result);
         }
@@ -64,7 +64,7 @@ public class CheckInService : ICheckInService
 
             // ✅ GHI AUDIT LOG: Check-in khi tài khoản bị khóa/inactive
             await _auditLogService.LogAsync("System", "CHECKIN_FAILED", "CheckIns", null,
-                new { MemberCode = memberCode, Status = member.Status.ToString(), Reason = "Account not Active" });
+                new { MemberCode = memberCode, Status = member.Status.ToString(), Reason = "Tài khoản không hoạt động" });
 
             return ResponseDto<CheckInValidationResultDto>.SuccessResult(result);
         }
@@ -87,7 +87,7 @@ public class CheckInService : ICheckInService
 
             // ✅ GHI AUDIT LOG: Thử check-in khi không có gói tập
             await _auditLogService.LogAsync("System", "CHECKIN_FAILED", "CheckIns", null,
-                new { MemberCode = memberCode, Reason = "No Active Subscription found" });
+                new { MemberCode = memberCode, Reason = "Không tìm thấy gói tập kích hoạt" });
 
             return ResponseDto<CheckInValidationResultDto>.SuccessResult(result);
         }
@@ -103,7 +103,7 @@ public class CheckInService : ICheckInService
 
             // ✅ GHI AUDIT LOG: Check-in khi gói hết hạn
             await _auditLogService.LogAsync("System", "CHECKIN_FAILED", "CheckIns", null,
-                new { MemberCode = memberCode, SubscriptionId = activeSubscription.Id, Reason = "Sub Expired" });
+                new { MemberCode = memberCode, SubscriptionId = activeSubscription.Id, Reason = "Gói tập hết hạn" });
 
             return ResponseDto<CheckInValidationResultDto>.SuccessResult(result);
         }
@@ -136,7 +136,7 @@ public class CheckInService : ICheckInService
 
             // ✅ GHI AUDIT LOG: Cảnh báo dùng chung thẻ
             await _auditLogService.LogAsync("System", "FRAUD_WARNING", "CheckIns", null,
-                new { MemberCode = memberCode, Reason = "Double Check-in Attempt" });
+                new { MemberCode = memberCode, Reason = "Thử check-in 2 lần cùng lúc" });
 
             return ResponseDto<CheckInValidationResultDto>.SuccessResult(result);
         }
@@ -156,7 +156,7 @@ public class CheckInService : ICheckInService
 
             // ✅ GHI AUDIT LOG: Cảnh báo Check-in quá giới hạn trong ngày
             await _auditLogService.LogAsync("System", "FRAUD_WARNING", "CheckIns", null,
-                new { MemberCode = memberCode, Reason = "Daily Check-in Limit Exceeded" });
+                new { MemberCode = memberCode, Reason = "Vượt quá giới hạn check-in ngày" });
 
             return ResponseDto<CheckInValidationResultDto>.SuccessResult(result);
         }
@@ -183,8 +183,11 @@ public class CheckInService : ICheckInService
         return await ExecuteCheckInAsync(validation.Data.Member!.Id, validation.Data.ActiveSubscription!.Id, dto.Notes);
     }
 
-    public async Task<ResponseDto<CheckInDto>> CheckInWithFaceAsync(string faceEncoding)
+    public async Task<ResponseDto<CheckInDto>> CheckInWithFaceAsync(string? faceEncoding)
     {
+        if (string.IsNullOrEmpty(faceEncoding))
+            return ResponseDto<CheckInDto>.FailureResult("Dữ liệu khuôn mặt không hợp lệ hoặc bị trống.");
+
         // 1. Tìm hội viên khớp với khuôn mặt (Mô phỏng matching chính xác vector)
         var members = await _unitOfWork.Members.FindAsync(m => m.FaceEncoding == faceEncoding && !m.IsDeleted);
         var member = members.FirstOrDefault();
@@ -198,9 +201,29 @@ public class CheckInService : ICheckInService
 
         // ✅ GHI AUDIT LOG: Nhận diện FaceID thành công
         await _auditLogService.LogAsync("System", "FACE_RECOGNITION", "CheckIns", member.Id.ToString(), 
-            new { MemberName = member.FullName, Result = "Success" });
+            new { MemberName = member.FullName, Result = "Thành công" });
 
         return await ExecuteCheckInAsync(member.Id, validation.Data.ActiveSubscription!.Id, "Check-in qua FaceID");
+    }
+
+    public async Task<ResponseDto<CheckInDto>> CheckInWithQRCodeAsync(string qrCode)
+    {
+        // 1. Tìm hội viên bằng mã QRCode
+        var members = await _unitOfWork.Members.FindAsync(m => m.QRCode == qrCode && !m.IsDeleted);
+        var member = members.FirstOrDefault();
+
+        if (member == null)
+            return ResponseDto<CheckInDto>.FailureResult("Mã QR không hợp lệ hoặc không tồn tại trong hệ thống.");
+
+        var validation = await ValidateCheckInAsync(member.MemberCode);
+        if (!validation.Data!.IsValid)
+            return ResponseDto<CheckInDto>.FailureResult(validation.Data.Message, validation.Data.Errors);
+
+        // ✅ GHI AUDIT LOG: Check-in bằng QR thành công
+        await _auditLogService.LogAsync("System", "QR_CHECKIN", "CheckIns", member.Id.ToString(), 
+            new { MemberName = member.FullName, Result = "Thành công" });
+
+        return await ExecuteCheckInAsync(member.Id, validation.Data.ActiveSubscription!.Id, "Check-in qua mã QR");
     }
 
 

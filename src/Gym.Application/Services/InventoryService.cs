@@ -29,7 +29,6 @@ public class InventoryService : IInventoryService
     }
 
     // Warehouse management
-    // Internal Supply Management (Direct to warehouse mindset)
     public async Task<ResponseDto<InventoryDto>> CreateInternalSupplyAsync(CreateInternalSupplyDto dto)
     {
         try
@@ -43,7 +42,7 @@ public class InventoryService : IInventoryService
                 Type = ProductType.Supply,
                 TrackInventory = true,
                 CostPrice = dto.CostPrice,
-                Price = 0, // Supplies are for internal use, usually no selling price
+                Price = 0, 
                 Unit = dto.Unit,
                 ProviderId = dto.ProviderId,
                 IsActive = true,
@@ -52,7 +51,6 @@ public class InventoryService : IInventoryService
 
             await _unitOfWork.Products.AddAsync(product);
             
-            // Add initial stock if provided
             if (dto.InitialQuantity > 0 && dto.WarehouseId.HasValue)
             {
                 var inventory = new Inventory
@@ -65,7 +63,6 @@ public class InventoryService : IInventoryService
                 await _unitOfWork.Inventories.AddAsync(inventory);
                 product.StockQuantity = dto.InitialQuantity;
 
-                // Log Transaction
                 var transaction = new StockTransaction
                 {
                     ProductId = product.Id,
@@ -118,7 +115,6 @@ public class InventoryService : IInventoryService
     {
         var result = new List<InventoryDto>();
 
-        // 1. Hàng hóa (Products)
         var products = await _unitOfWork.Products.GetQueryable()
             .Where(p => !p.IsDeleted && p.TrackInventory)
             .OrderBy(p => p.Name)
@@ -139,7 +135,6 @@ public class InventoryService : IInventoryService
             });
         }
 
-        // 2. Thiết bị (Assets) - Nếu yêu cầu
         if (includeAssets)
         {
             var equipments = await _unitOfWork.Equipments.GetQueryable()
@@ -163,7 +158,6 @@ public class InventoryService : IInventoryService
             }
         }
 
-
         return ResponseDto<List<InventoryDto>>.SuccessResult(result.OrderBy(x => x.ProductName).ToList());
     }
 
@@ -181,7 +175,6 @@ public class InventoryService : IInventoryService
     // Movement log
     public async Task<ResponseDto<List<StockTransactionDto>>> GetStockTransactionsAsync(Guid? productId = null, Guid? warehouseId = null)
     {
-        // 1. Fetch Product Stock Transactions
         var prodQuery = _unitOfWork.StockTransactions.GetQueryable()
             .Include(t => t.Product)
             .Include(t => t.FromWarehouse)
@@ -195,7 +188,6 @@ public class InventoryService : IInventoryService
         var prodTransactions = await prodQuery.ToListAsync();
         var result = _mapper.Map<List<StockTransactionDto>>(prodTransactions);
 
-        // 2. Fetch Equipment Transactions (included if no warehouse filter, or if specifically looking for an ID)
         if (!warehouseId.HasValue || productId.HasValue)
         {
             var equipQuery = _unitOfWork.EquipmentTransactions.GetQueryable()
@@ -218,7 +210,7 @@ public class InventoryService : IInventoryService
                     Type = ConvertEquipToStockType(et.Type),
                     Note = et.Note,
                     FromWarehouseName = et.FromLocation,
-                    ToWarehouseName = et.ToLocation, // Use Location as WarehouseName placeholder
+                    ToWarehouseName = et.ToLocation, 
                     PerformedBy = "Hệ thống (Assets)"
                 });
             }
@@ -252,18 +244,18 @@ public class InventoryService : IInventoryService
                 if (equipment == null) return ResponseDto<bool>.FailureResult("Không tìm thấy thiết bị để nhập kho");
 
                 int before = equipment.Quantity;
-                equipment.Quantity += dto.Quantity;
+                equipment.Quantity += (int)dto.Quantity;
                 equipment.Status = EquipmentStatus.Active;
 
                 var equipTrans = new EquipmentTransaction
                 {
                     EquipmentId = equipment.Id,
                     Type = EquipmentTransactionType.Purchase,
-                    Quantity = dto.Quantity,
+                    Quantity = (int)dto.Quantity,
                     BeforeQuantity = before,
                     AfterQuantity = equipment.Quantity,
                     Date = DateTime.UtcNow,
-                    Note = dto.Note ?? $"Nhập kho máy móc/thiết bị (Số lượng: {dto.Quantity})",
+                    Note = dto.Note ?? $"Nhập kho máy móc/thiết bị qua Quản lý Kho (Số lượng: {dto.Quantity})",
                     ToLocation = equipment.Location,
                     CreatedBy = userName
                 };
@@ -274,7 +266,6 @@ public class InventoryService : IInventoryService
                 return ResponseDto<bool>.SuccessResult(true, $"Đã nhập kho thêm {dto.Quantity} {equipment.Name}.");
             }
 
-            // --- Product logic ---
             if (!dto.ToWarehouseId.HasValue) return ResponseDto<bool>.FailureResult("Bắt buộc chọn kho nhập đến");
 
             var product = await _unitOfWork.Products.GetByIdAsync(dto.ProductId);
@@ -283,12 +274,14 @@ public class InventoryService : IInventoryService
             decimal oldTotalStock = product.StockQuantity;
             decimal oldCostPrice = product.CostPrice;
             decimal incomingQuantity = dto.Quantity;
-            decimal incomingPrice = dto.UnitPrice > 0 ? dto.UnitPrice : oldCostPrice;
+            decimal incomingPrice = dto.UnitPrice;
 
-            // Inheritance logic: update price used for calculations
-            dto.UnitPrice = incomingPrice;
+            if (incomingPrice <= 0)
+            {
+                incomingPrice = oldCostPrice;
+                dto.UnitPrice = incomingPrice;
+            }
 
-            // Updated cost price calculation
             decimal totalNewStock = oldTotalStock + incomingQuantity;
             if (totalNewStock > 0)
             {
@@ -301,22 +294,15 @@ public class InventoryService : IInventoryService
                 product.CostPrice = incomingPrice;
             }
 
-            // Update product global stock quantity
-            product.StockQuantity += dto.Quantity;
-            product.UpdatedAt = DateTime.UtcNow;
-
-            // Specific warehouse inventory
             var inventory = await GetOrCreateInventory(dto.ProductId, dto.ToWarehouseId.Value);
             int beforeProd = inventory.Quantity;
-            inventory.Quantity += dto.Quantity;
+            inventory.Quantity += (int)dto.Quantity;
             inventory.LastUpdated = DateTime.UtcNow;
 
-            // Create transaction record
             var transaction = _mapper.Map<StockTransaction>(dto);
             transaction.CheckId(); 
             transaction.Type = StockTransactionType.Import;
             transaction.Date = DateTime.UtcNow;
-            transaction.FromWarehouseId = null;
             transaction.BeforeQuantity = beforeProd;
             transaction.AfterQuantity = inventory.Quantity;
             transaction.PerformedBy = userName;
@@ -325,15 +311,15 @@ public class InventoryService : IInventoryService
             await _unitOfWork.StockTransactions.AddAsync(transaction);
             _unitOfWork.Products.Update(product);
 
-            // Save all changes at once
             await _unitOfWork.SaveChangesAsync();
-            
+            await UpdateProductGlobalStock(dto.ProductId);
+            await _unitOfWork.SaveChangesAsync();
+
             return ResponseDto<bool>.SuccessResult(true, $"Đã nhập kho {dto.Quantity} sản phẩm. Giá nhập: {incomingPrice:N0}đ. Giá bình quân mới: {product.CostPrice:N0}đ");
         }
         catch (Exception ex)
         {
-            var msg = ex.InnerException != null ? $"{ex.Message} -> {ex.InnerException.Message}" : ex.Message;
-            return ResponseDto<bool>.FailureResult($"Lỗi khi nhập kho: {msg}");
+            return ResponseDto<bool>.FailureResult($"Lỗi khi nhập kho: {ex.Message}");
         }
     }
 
@@ -354,12 +340,10 @@ public class InventoryService : IInventoryService
             if (inventory == null || inventory.Quantity < dto.Quantity)
                 return ResponseDto<bool>.FailureResult("Số lượng tồn kho tại kho này không đủ");
 
-            // Price inheritance for Export
             if (dto.UnitPrice <= 0) dto.UnitPrice = product.CostPrice;
 
             int before = inventory.Quantity;
-            inventory.Quantity -= dto.Quantity;
-            product.StockQuantity -= dto.Quantity; // Atomic update
+            inventory.Quantity -= (int)dto.Quantity;
             inventory.LastUpdated = DateTime.UtcNow;
 
             var transaction = _mapper.Map<StockTransaction>(dto);
@@ -372,13 +356,16 @@ public class InventoryService : IInventoryService
             transaction.UnitPrice = dto.UnitPrice;
             
             await _unitOfWork.StockTransactions.AddAsync(transaction);
+            
             await _unitOfWork.SaveChangesAsync();
+            await UpdateProductGlobalStock(dto.ProductId);
+            await _unitOfWork.SaveChangesAsync();
+
             return ResponseDto<bool>.SuccessResult(true, $"Đã xuất kho {dto.Quantity} sản phẩm.");
         }
         catch (Exception ex)
         {
-            var msg = ex.InnerException != null ? $"{ex.Message} -> {ex.InnerException.Message}" : ex.Message;
-            return ResponseDto<bool>.FailureResult($"Lỗi khi xuất kho: {msg}");
+            return ResponseDto<bool>.FailureResult($"Lỗi khi xuất kho: {ex.Message}");
         }
     }
 
@@ -406,7 +393,7 @@ public class InventoryService : IInventoryService
                 {
                     EquipmentId = equipment.Id,
                     Type = EquipmentTransactionType.Transfer,
-                    Quantity = dto.Quantity,
+                    Quantity = (int)dto.Quantity,
                     Date = DateTime.UtcNow,
                     FromLocation = fromWh?.Name ?? "Kho gửi",
                     ToLocation = toWh?.Name ?? "Kho nhận",
@@ -422,36 +409,14 @@ public class InventoryService : IInventoryService
                 var sourceInv = await _unitOfWork.Inventories.GetQueryable()
                     .FirstOrDefaultAsync(i => i.ProductId == dto.ProductId && i.WarehouseId == dto.FromWarehouseId.Value);
 
-                // TRƯỜNG HỢP: Kho đi chưa có bản ghi tồn kho cụ thể
-                if (sourceInv == null)
-                {
-                    // Nếu sản phẩm đã có số lượng tồn tổng (Global) nhưng chưa chia về kho này
-                    if (product.StockQuantity >= dto.Quantity)
-                    {
-                        // Giả định hàng đang ở kho đi này và tự động khởi tạo bản ghi cho kho đó
-                        sourceInv = new Inventory
-                        {
-                            ProductId = product.Id,
-                            WarehouseId = dto.FromWarehouseId.Value,
-                            Quantity = product.StockQuantity,
-                            LastUpdated = DateTime.UtcNow
-                        };
-                        await _unitOfWork.Inventories.AddAsync(sourceInv);
-                    }
-                    else
-                    {
-                        return ResponseDto<bool>.FailureResult("Kho này chưa có hàng và tổng tồn kho cũng không đủ");
-                    }
-                }
-
-                if (sourceInv.Quantity < dto.Quantity)
+                if (sourceInv == null || sourceInv.Quantity < dto.Quantity)
                     return ResponseDto<bool>.FailureResult("Tồn kho nguồn không đủ để điều chuyển");
 
                 var destInv = await GetOrCreateInventory(dto.ProductId, dto.ToWarehouseId.Value);
 
                 int sourceBefore = sourceInv.Quantity;
-                sourceInv.Quantity -= dto.Quantity;
-                destInv.Quantity += dto.Quantity;
+                sourceInv.Quantity -= (int)dto.Quantity;
+                destInv.Quantity += (int)dto.Quantity;
 
                 sourceInv.LastUpdated = DateTime.UtcNow;
                 destInv.LastUpdated = DateTime.UtcNow;
@@ -465,7 +430,8 @@ public class InventoryService : IInventoryService
                 transaction.PerformedBy = userName;
                 await _unitOfWork.StockTransactions.AddAsync(transaction);
                 
-                // No global stock change in transfer
+                await _unitOfWork.SaveChangesAsync();
+                await UpdateProductGlobalStock(dto.ProductId);
             }
 
             await _unitOfWork.SaveChangesAsync();
@@ -473,8 +439,7 @@ public class InventoryService : IInventoryService
         }
         catch (Exception ex)
         {
-            var msg = ex.InnerException != null ? $"{ex.Message} -> {ex.InnerException.Message}" : ex.Message;
-            return ResponseDto<bool>.FailureResult($"Lỗi điều chuyển: {msg}");
+            return ResponseDto<bool>.FailureResult($"Lỗi điều chuyển: {ex.Message}");
         }
     }
 
@@ -493,17 +458,15 @@ public class InventoryService : IInventoryService
             if (inventory == null || inventory.Quantity < dto.Quantity)
                 return ResponseDto<bool>.FailureResult("Tồn kho không đủ để xuất dùng");
 
-            // Price inheritance for Internal Use
             if (dto.UnitPrice <= 0) dto.UnitPrice = product.CostPrice;
 
             int before = inventory.Quantity;
-            inventory.Quantity -= dto.Quantity;
-            product.StockQuantity -= dto.Quantity; // Atomic update
+            inventory.Quantity -= (int)dto.Quantity;
             inventory.LastUpdated = DateTime.UtcNow;
 
             var transaction = _mapper.Map<StockTransaction>(dto);
             transaction.CheckId();
-            transaction.Type = StockTransactionType.InternalUse; // Internal use
+            transaction.Type = StockTransactionType.InternalUse;
             transaction.Date = DateTime.UtcNow;
             transaction.BeforeQuantity = before;
             transaction.AfterQuantity = inventory.Quantity;
@@ -513,16 +476,80 @@ public class InventoryService : IInventoryService
             await _unitOfWork.StockTransactions.AddAsync(transaction);
 
             await _unitOfWork.SaveChangesAsync();
+            await UpdateProductGlobalStock(dto.ProductId);
+            await _unitOfWork.SaveChangesAsync();
+
             return ResponseDto<bool>.SuccessResult(true, "Đã xuất dùng nội bộ thành công");
         }
         catch (Exception ex)
         {
-            var msg = ex.InnerException != null ? $"{ex.Message} -> {ex.InnerException.Message}" : ex.Message;
-            return ResponseDto<bool>.FailureResult($"Lỗi xuất dùng: {msg}");
+            return ResponseDto<bool>.FailureResult($"Lỗi xuất dùng: {ex.Message}");
         }
     }
 
+    public async Task<ResponseDto<bool>> StockAdjustmentAsync(CreateStockTransactionDto dto)
+    {
+        try
+        {
+            var product = await _unitOfWork.Products.GetByIdAsync(dto.ProductId);
+            if (product == null) return ResponseDto<bool>.FailureResult("Không tìm thấy sản phẩm");
 
+            string userName = _httpContextAccessor.HttpContext?.User?.Identity?.Name ?? "Hệ thống";
+            string message = "Điều chỉnh tồn kho thành công";
+            int before = 0;
+            int after = (int)dto.Quantity;
+
+            if (dto.FromWarehouseId.HasValue && dto.FromWarehouseId != dto.ToWarehouseId)
+            {
+                var sourceInv = await _unitOfWork.Inventories.GetQueryable()
+                    .FirstOrDefaultAsync(i => i.ProductId == dto.ProductId && i.WarehouseId == dto.FromWarehouseId.Value);
+
+                if (sourceInv == null || sourceInv.Quantity < dto.Quantity)
+                    return ResponseDto<bool>.FailureResult("Tồn kho nguồn không đủ để điều phối");
+
+                var destInv = await GetOrCreateInventory(dto.ProductId, dto.ToWarehouseId.Value);
+
+                before = sourceInv.Quantity;
+                sourceInv.Quantity -= (int)dto.Quantity;
+                destInv.Quantity += (int)dto.Quantity;
+                
+                dto.Type = StockTransactionType.Transfer;
+                after = sourceInv.Quantity; 
+                message = "Đã điều phối số lượng giữa 2 kho thành công";
+            }
+            else
+            {
+                var inventory = await GetOrCreateInventory(dto.ProductId, dto.ToWarehouseId.Value);
+                before = inventory.Quantity;
+                inventory.Quantity = (int)dto.Quantity; 
+                dto.Type = StockTransactionType.Adjustment;
+            }
+
+            if (dto.UnitPrice <= 0) dto.UnitPrice = product.CostPrice;
+
+            var transaction = _mapper.Map<StockTransaction>(dto);
+            transaction.CheckId();
+            transaction.Date = DateTime.UtcNow;
+            transaction.BeforeQuantity = before;
+            transaction.AfterQuantity = after;
+            transaction.PerformedBy = userName;
+            transaction.UnitPrice = dto.UnitPrice;
+            
+            await _unitOfWork.StockTransactions.AddAsync(transaction);
+            await _unitOfWork.SaveChangesAsync();
+            await UpdateProductGlobalStock(dto.ProductId);
+            await _unitOfWork.SaveChangesAsync();
+
+            await _auditLogService.LogAsync("System", "MANUAL_STOCK_ADJUSTMENT", "Inventories", 
+                null, new { productId = dto.ProductId, warehouseId = dto.ToWarehouseId, quantity = dto.Quantity });
+
+            return ResponseDto<bool>.SuccessResult(true, message);
+        }
+        catch (Exception ex)
+        {
+            return ResponseDto<bool>.FailureResult($"Lỗi điều chỉnh: {ex.Message}");
+        }
+    }
 
     public async Task<ResponseDto<Order>> CreateOrderAsync(Order order, Guid warehouseId)
     {
@@ -540,19 +567,16 @@ public class InventoryService : IInventoryService
                 if (inventory == null || inventory.Quantity < detail.Quantity)
                     return ResponseDto<Order>.FailureResult($"Sản phẩm {detail.ProductId} không đủ tồn tại kho bán hàng");
 
-                inventory.Quantity -= detail.Quantity;
-                 // EF Core tracking handles this
+                inventory.Quantity -= (int)detail.Quantity;
                 
                 var product = await _unitOfWork.Products.GetByIdAsync(detail.ProductId);
                 if (product != null)
                 {
-                    await UpdateProductGlobalStock(product.Id);
                     detail.Price = product.Price;
                 }
                 
                 total += detail.Price * detail.Quantity;
 
-                // Log Export
                 var transaction = new StockTransaction
                 {
                     ProductId = detail.ProductId,
@@ -563,7 +587,7 @@ public class InventoryService : IInventoryService
                     Date = DateTime.UtcNow,
                     Note = $"Bán hàng tại quầy: {order.OrderNumber}",
                     ReferenceNumber = order.OrderNumber,
-                    BeforeQuantity = inventory.Quantity + detail.Quantity,
+                    BeforeQuantity = inventory.Quantity + (int)detail.Quantity,
                     AfterQuantity = inventory.Quantity,
                     PerformedBy = _httpContextAccessor.HttpContext?.User?.Identity?.Name ?? "Hệ thống"
                 };
@@ -573,6 +597,13 @@ public class InventoryService : IInventoryService
 
             order.TotalAmount = total;
             await _unitOfWork.Orders.AddAsync(order);
+            await _unitOfWork.SaveChangesAsync();
+
+            // Recalculate global stock for all updated products
+            foreach (var detail in order.OrderDetails)
+            {
+                await UpdateProductGlobalStock(detail.ProductId);
+            }
             await _unitOfWork.SaveChangesAsync();
 
             return ResponseDto<Order>.SuccessResult(order, "Tạo đơn hàng thành công");
@@ -585,7 +616,6 @@ public class InventoryService : IInventoryService
 
     public async Task<ResponseDto<List<InventoryDto>>> GetStockAlertsAsync()
     {
-        // 1. Get products where sum of stock across warehouses <= threshold
         var productAlerts = await _unitOfWork.Inventories.GetQueryable()
             .Include(i => i.Product)
             .Include(i => i.Warehouse)
@@ -594,7 +624,6 @@ public class InventoryService : IInventoryService
         
         var result = _mapper.Map<List<InventoryDto>>(productAlerts);
 
-        // 2. Get equipments that need attention (Status is Broken or NeedsMaintenance)
         var equipAlerts = await _unitOfWork.Equipments.GetQueryable()
             .Where(e => !e.IsDeleted && (e.Status == EquipmentStatus.Maintenance || e.Status == EquipmentStatus.Broken))
             .ToListAsync();
@@ -608,7 +637,7 @@ public class InventoryService : IInventoryService
                 ProductSKU = e.EquipmentCode,
                 WarehouseName = e.Location ?? "Phòng tập",
                 Quantity = e.Quantity,
-                MinStockThreshold = 1, // Placeholder
+                MinStockThreshold = 1, 
                 LastUpdated = e.UpdatedAt ?? e.CreatedAt
             });
         }
@@ -619,7 +648,6 @@ public class InventoryService : IInventoryService
     // Helpers
     private async Task<Inventory> GetOrCreateInventory(Guid productId, Guid warehouseId)
     {
-        // Phải reload từ DB hoặc lấy từ Context để đảm bảo Id duy nhất
         var inventory = await _unitOfWork.Inventories.GetQueryable()
             .FirstOrDefaultAsync(i => i.ProductId == productId && i.WarehouseId == warehouseId);
 
@@ -627,7 +655,7 @@ public class InventoryService : IInventoryService
         {
             inventory = new Inventory 
             { 
-               Id = Guid.NewGuid(), // Gán chủ động để tránh duplicate Guid.Empty
+               Id = Guid.NewGuid(), 
                ProductId = productId, 
                WarehouseId = warehouseId, 
                Quantity = 0, 
@@ -643,7 +671,6 @@ public class InventoryService : IInventoryService
         var product = await _unitOfWork.Products.GetByIdAsync(productId);
         if (product != null)
         {
-            // Tính toán lại tổng tồn từ Context (Local tracking sẽ được ToListAsync hợp nhất)
             var inventories = await _unitOfWork.Inventories.GetQueryable()
                 .Where(i => i.ProductId == productId)
                 .ToListAsync();

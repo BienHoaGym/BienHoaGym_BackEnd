@@ -25,4 +25,5 @@ public class MemberListDto
     public DateTime? ActiveSubscriptionEndDate { get; set; }
 
     public string? FaceEncoding { get; set; }
+    public string? QRCode { get; set; }
 }

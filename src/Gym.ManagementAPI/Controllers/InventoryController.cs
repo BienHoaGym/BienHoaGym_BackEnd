@@ -93,7 +93,13 @@ public class InventoryController : ControllerBase
         return Ok(result);
     }
 
-
+    [HttpPost("adjustment")]
+    [Authorize(Policy = PermissionConstants.InventoryUpdate)]
+    public async Task<IActionResult> StockAdjustment([FromBody] CreateStockTransactionDto dto)
+    {
+        var result = await _inventoryService.StockAdjustmentAsync(dto);
+        return Ok(result);
+    }
 
     [HttpGet("alerts")]
     [Authorize(Policy = PermissionConstants.InventoryRead)]
