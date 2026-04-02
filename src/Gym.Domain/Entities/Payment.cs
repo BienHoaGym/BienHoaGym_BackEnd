@@ -1,19 +1,19 @@
-﻿using Gym.Domain.Common;
+using Gym.Domain.Common;
 using Gym.Domain.Enums;
 
 namespace Gym.Domain.Entities;
 
 public class Payment : BaseEntity
 {
-    // 1. Sửa lỗi 'SubscriptionId': Đặt tên thống nhất là MemberSubscriptionId
+    // 1. S?a l?i 'SubscriptionId': �?t t�n th?ng nh?t l� MemberSubscriptionId
     public Guid MemberSubscriptionId { get; set; }
     public virtual MemberSubscription? Subscription { get; set; }
 
     public decimal Amount { get; set; }
     public DateTime PaymentDate { get; set; } = DateTime.UtcNow;
 
-    // 2. Sửa lỗi 'PaymentMethod': Đặt tên thuộc tính là Method (Kiểu Enum PaymentMethod)
-    // Lưu ý: Trong Service phải gọi là .Method, không phải .PaymentMethod
+    // 2. S?a l?i 'PaymentMethod': �?t t�n thu?c t�nh l� Method (Ki?u Enum PaymentMethod)
+    // Luu �: Trong Service ph?i g?i l� .Method, kh�ng ph?i .PaymentMethod
     public PaymentMethod Method { get; set; } = PaymentMethod.Cash;
 
     public PaymentStatus Status { get; set; } = PaymentStatus.Pending;
@@ -21,7 +21,7 @@ public class Payment : BaseEntity
     public string? TransactionId { get; set; }
     public string? Note { get; set; }
 
-    // Phải là tên này:
+    // Ph?i l� t�n n�y:
 
-    // Phải là tên này:
+    // Ph?i l� t�n n�y:
 }

@@ -1,14 +1,14 @@
-﻿using Gym.Domain.Common;
+using Gym.Domain.Common;
 
 namespace Gym.Domain.Entities;
 
 public class CheckIn : BaseEntity
 {
     public Guid MemberId { get; set; }
-    public virtual Member? Member { get; set; } // Dùng để lấy FullName
+    public virtual Member? Member { get; set; } // D�ng d? l?y FullName
 
     public Guid? SubscriptionId { get; set; }
-    public virtual MemberSubscription? Subscription { get; set; } // Dùng để lấy tên Package
+    public virtual MemberSubscription? Subscription { get; set; } // D�ng d? l?y t�n Package
 
     public DateTime CheckInTime { get; set; } = DateTime.UtcNow;
     public DateTime? CheckOutTime { get; set; }

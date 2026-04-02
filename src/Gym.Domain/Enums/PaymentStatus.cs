@@ -1,9 +1,9 @@
-ï»¿namespace Gym.Domain.Enums;
+namespace Gym.Domain.Enums;
 
 public enum PaymentStatus
 {
-    Pending = 1,    // âœ… NÃŠN THÃŠM
-    Completed = 2,  // âœ… NÃŠN THÃŠM
-    Failed = 3,     // âœ… NÃŠN THÃŠM
-    Refunded = 4    // âœ… NÃŠN THÃŠM
+    Pending = 1,    // ? NÊN THÊM
+    Completed = 2,  // ? NÊN THÊM
+    Failed = 3,     // ? NÊN THÊM
+    Refunded = 4    // ? NÊN THÊM
 }

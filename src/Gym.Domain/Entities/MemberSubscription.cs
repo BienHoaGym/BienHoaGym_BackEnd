@@ -1,4 +1,4 @@
-﻿using Gym.Domain.Common;
+using Gym.Domain.Common;
 using Gym.Domain.Enums;
 using System;
 using System.Collections.Generic;
@@ -18,13 +18,13 @@ public class MemberSubscription : BaseEntity
     public SubscriptionStatus Status { get; set; } = SubscriptionStatus.Pending;
     public int? RemainingSessions { get; set; }
 
-    // Quan hệ với thanh toán
+    // Quan h? v?i thanh to�n
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
 
-    // ✅ Đã sửa lỗi: Thêm danh sách Check-in
+    // ? �� s?a l?i: Th�m danh s�ch Check-in
     public virtual ICollection<CheckIn> CheckIns { get; set; } = new List<CheckIn>();
 
-    // --- NGHIỆP VỤ I.3 (SNAPSHOT DATA) ---
+    // --- NGHI?P V? I.3 (SNAPSHOT DATA) ---
     public string OriginalPackageName { get; set; } = string.Empty;
     public decimal OriginalPrice { get; set; }
     public decimal DiscountApplied { get; set; }

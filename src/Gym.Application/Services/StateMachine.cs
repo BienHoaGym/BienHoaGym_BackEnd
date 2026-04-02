@@ -179,7 +179,7 @@ namespace Gym.Application.Services
 
                 // Perform transition
                 subscription.Status = SubscriptionStatus.Active;
-                subscription.StartDate = DateTime.Now;
+                subscription.StartDate = DateTime.UtcNow;
 
                 // Save to database
                 // _repository.Update(subscription);
@@ -201,10 +201,10 @@ namespace Gym.Application.Services
 
                 // Perform transition
                 subscription.Status = SubscriptionStatus.Cancelled;
-                subscription.CancelledAt = DateTime.Now;
+                subscription.CancelledAt = DateTime.UtcNow;
 
                 // Check if eligible for refund
-                var daysUsed = (DateTime.Now - subscription.StartDate).Days;
+                var daysUsed = (DateTime.UtcNow - subscription.StartDate).Days;
                 if (daysUsed <= 7 && subscription.Payment.Status == PaymentStatus.Paid)
                 {
                     // Eligible for refund
@@ -225,7 +225,7 @@ namespace Gym.Application.Services
 
                 // Perform refund
                 payment.Status = PaymentStatus.Refunded;
-                payment.RefundedAt = DateTime.Now;
+                payment.RefundedAt = DateTime.UtcNow;
                 payment.RefundReason = "Cancelled within 7 days";
 
                 // Process actual refund via payment gateway

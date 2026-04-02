@@ -23,6 +23,6 @@ public class CreateMemberValidator : AbstractValidator<CreateMemberDto>
             .Matches(@"^\d{10}$").WithMessage("S? di?n tho?i ph?i có 10 ch? s?");
 
         RuleFor(x => x.DateOfBirth)
-            .LessThan(DateTime.Now.AddYears(-12)).WithMessage("H?i viên ph?i trên 12 tu?i");
+            .LessThan(DateTime.UtcNow.AddYears(-12)).WithMessage("H?i viên ph?i trên 12 tu?i");
     }
 }

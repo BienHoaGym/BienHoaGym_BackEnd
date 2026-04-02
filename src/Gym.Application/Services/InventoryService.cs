@@ -38,7 +38,7 @@ public class InventoryService : IInventoryService
                 Id = Guid.NewGuid(),
                 Name = dto.Name,
                 Description = dto.Description,
-                SKU = "SUP-" + DateTime.Now.Ticks.ToString().Substring(12),
+                SKU = "SUP-" + DateTime.UtcNow.Ticks.ToString().Substring(12),
                 Type = ProductType.Supply,
                 TrackInventory = true,
                 CostPrice = dto.CostPrice,
@@ -557,7 +557,7 @@ public class InventoryService : IInventoryService
         {
             order.CreatedDate = DateTime.UtcNow;
             var count = await _unitOfWork.Orders.GetQueryable().CountAsync();
-            order.OrderNumber = $"ORD-{DateTime.Now:yyyyMMdd}-{(count + 1):D4}";
+            order.OrderNumber = $"ORD-{DateTime.UtcNow:yyyyMMdd}-{(count + 1):D4}";
 
             decimal total = 0;
             foreach (var detail in order.OrderDetails)

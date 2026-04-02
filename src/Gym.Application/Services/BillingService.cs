@@ -68,7 +68,7 @@ public class BillingService : IBillingService
 
             // Generate Invoice Number - Consider using a sequence in DB for production
             var count = await _unitOfWork.Invoices.GetQueryable().CountAsync();
-            invoice.InvoiceNumber = $"HD-{DateTime.Now:yyyyMMdd}-{(count + 1):D4}";
+            invoice.InvoiceNumber = $"HD-{DateTime.UtcNow:yyyyMMdd}-{(count + 1):D4}";
 
             // Prepare Details
             decimal total = 0;

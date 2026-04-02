@@ -1,10 +1,10 @@
-ï»¿namespace Gym.Domain.Enums;
+namespace Gym.Domain.Enums;
 
 public enum SubscriptionStatus
 {
-    Pending = 1,    // âœ… NÃŠN THÃŠM
-    Active = 2,     // âœ… NÃŠN THÃŠM
-    Expired = 3,    // âœ… NÃŠN THÃŠM
-    Cancelled = 4,  // âœ… NÃŠN THÃŠM
-    Suspended = 5   // âœ… NÃŠN THÃŠM
+    Pending = 1,    // ? NÊN THÊM
+    Active = 2,     // ? NÊN THÊM
+    Expired = 3,    // ? NÊN THÊM
+    Cancelled = 4,  // ? NÊN THÊM
+    Suspended = 5   // ? NÊN THÊM
 }

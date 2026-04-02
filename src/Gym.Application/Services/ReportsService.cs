@@ -394,7 +394,7 @@ public class ReportsService : IReportsService
                     var member = new Member
                     {
                         FullName = memberNames[random.Next(memberNames.Length)] + " " + i + j,
-                        MemberCode = "M" + DateTime.Now.Ticks.ToString().Substring(10),
+                        MemberCode = "M" + DateTime.UtcNow.Ticks.ToString().Substring(10),
                         JoinedDate = date,
                         Status = MemberStatus.Active
                     };

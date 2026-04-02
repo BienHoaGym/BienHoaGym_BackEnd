@@ -135,7 +135,7 @@ public class UserService : IUserService
                 {
                     UserId = userId,
                     FullName = dto.FullName,
-                    TrainerCode = "PT-" + DateTime.Now.Ticks.ToString().Substring(10),
+                    TrainerCode = "PT-" + DateTime.UtcNow.Ticks.ToString().Substring(10),
                     Specialization = dto.Specialization,
                     ExperienceYears = dto.ExperienceYears ?? 0,
                     Salary = dto.Salary ?? 0,
@@ -189,7 +189,7 @@ public class UserService : IUserService
             {
                 UserId = user.Id,
                 FullName = dto.FullName,
-                TrainerCode = "PT-" + DateTime.Now.Ticks.ToString().Substring(10),
+                TrainerCode = "PT-" + DateTime.UtcNow.Ticks.ToString().Substring(10),
                 Specialization = dto.Specialization,
                 ExperienceYears = dto.ExperienceYears ?? 0,
                 Salary = dto.Salary ?? 0,
