@@ -32,7 +32,14 @@ builder.Services.AddEndpointsApiExplorer();
 // Configure DbContext
 builder.Services.AddDbContext<GymDbContext>(options =>
 {
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+        ?? Environment.GetEnvironmentVariable("DATABASE_URL");
+        
+    if (string.IsNullOrEmpty(connectionString))
+    {
+        throw new Exception("Connection string 'DefaultConnection' or 'DATABASE_URL' not found.");
+    }
+
     options.UseNpgsql(connectionString);
 
     if (builder.Environment.IsDevelopment())

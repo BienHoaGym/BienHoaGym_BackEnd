@@ -568,8 +568,8 @@ public class GymDbContext : DbContext
         var trainerId2 = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
 
         modelBuilder.Entity<Trainer>().HasData(
-            new() { Id = trainerId1, UserId = trainerUserId1, FullName = "Trần Thị Hương", Email = "trainer1@gym.com", PhoneNumber = "0903456789", Specialization = "Yoga, Pilates, Meditation", Bio = "HLV Yoga với 8 năm kinh nghiệm, chứng chỉ quốc tế RYT-500", HireDate = new DateTime(2020, 3, 15), IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new() { Id = trainerId2, UserId = trainerUserId2, FullName = "Lê Văn Nam", Email = "trainer2@gym.com", PhoneNumber = "0904567890", Specialization = "Boxing, Muay Thai, CrossFit", Bio = "Võ sư Boxing chuyên nghiệp, từng thi đấu SEA Games", HireDate = new DateTime(2021, 6, 1), IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+            new() { Id = trainerId1, UserId = trainerUserId1, FullName = "Trần Thị Hương", Email = "trainer1@gym.com", PhoneNumber = "0903456789", Specialization = "Yoga, Pilates, Meditation", Bio = "HLV Yoga với 8 năm kinh nghiệm, chứng chỉ quốc tế RYT-500", HireDate = new DateTime(2020, 3, 15, 0, 0, 0, DateTimeKind.Utc), IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+            new() { Id = trainerId2, UserId = trainerUserId2, FullName = "Lê Văn Nam", Email = "trainer2@gym.com", PhoneNumber = "0904567890", Specialization = "Boxing, Muay Thai, CrossFit", Bio = "Võ sư Boxing chuyên nghiệp, từng thi đấu SEA Games", HireDate = new DateTime(2021, 6, 1, 0, 0, 0, DateTimeKind.Utc), IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
         );
 
         var package1Id = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc");
@@ -591,9 +591,9 @@ public class GymDbContext : DbContext
         var memberId3 = Guid.Parse("40404040-4040-4040-4040-404040404040");
 
         modelBuilder.Entity<Member>().HasData(
-            new() { Id = memberId1, UserId = memberUserId1, FullName = "Nguyễn Văn A", Email = "nguyenvana@gmail.com", PhoneNumber = "0906789012", DateOfBirth = new DateTime(1995, 5, 15), MemberCode = "GYM2024001", Status = MemberStatus.Active, JoinedDate = new DateTime(2024, 2, 1, 0, 0, 0, DateTimeKind.Utc), CreatedAt = new DateTime(2024, 2, 1, 0, 0, 0, DateTimeKind.Utc), FaceEncoding = "MOCK_FACE_VECTOR_GYM2024001" },
-            new() { Id = memberId2, UserId = memberUserId2, FullName = "Trần Thị B", Email = "tranthib@gmail.com", PhoneNumber = "0907890123", DateOfBirth = new DateTime(1992, 8, 20), MemberCode = "GYM2024002", Status = MemberStatus.Active, JoinedDate = new DateTime(2024, 2, 5, 0, 0, 0, DateTimeKind.Utc), CreatedAt = new DateTime(2024, 2, 5, 0, 0, 0, DateTimeKind.Utc), FaceEncoding = "MOCK_FACE_VECTOR_GYM2024002" },
-            new() { Id = memberId3, UserId = memberUserId3, FullName = "Lê Văn C", Email = "levanc@gmail.com", PhoneNumber = "0908901234", DateOfBirth = new DateTime(1998, 12, 10), MemberCode = "GYM2024003", Status = MemberStatus.Active, JoinedDate = new DateTime(2024, 2, 10, 0, 0, 0, DateTimeKind.Utc), CreatedAt = new DateTime(2024, 2, 10, 0, 0, 0, DateTimeKind.Utc), FaceEncoding = "MOCK_FACE_VECTOR_GYM2024003" }
+            new() { Id = memberId1, UserId = memberUserId1, FullName = "Nguyễn Văn A", Email = "nguyenvana@gmail.com", PhoneNumber = "0906789012", DateOfBirth = new DateTime(1995, 5, 15, 0, 0, 0, DateTimeKind.Utc), MemberCode = "GYM2024001", Status = MemberStatus.Active, JoinedDate = new DateTime(2024, 2, 1, 0, 0, 0, DateTimeKind.Utc), CreatedAt = new DateTime(2024, 2, 1, 0, 0, 0, DateTimeKind.Utc), FaceEncoding = "MOCK_FACE_VECTOR_GYM2024001" },
+            new() { Id = memberId2, UserId = memberUserId2, FullName = "Trần Thị B", Email = "tranthib@gmail.com", PhoneNumber = "0907890123", DateOfBirth = new DateTime(1992, 8, 20, 0, 0, 0, DateTimeKind.Utc), MemberCode = "GYM2024002", Status = MemberStatus.Active, JoinedDate = new DateTime(2024, 2, 5, 0, 0, 0, DateTimeKind.Utc), CreatedAt = new DateTime(2024, 2, 5, 0, 0, 0, DateTimeKind.Utc), FaceEncoding = "MOCK_FACE_VECTOR_GYM2024002" },
+            new() { Id = memberId3, UserId = memberUserId3, FullName = "Lê Văn C", Email = "levanc@gmail.com", PhoneNumber = "0908901234", DateOfBirth = new DateTime(1998, 12, 10, 0, 0, 0, DateTimeKind.Utc), MemberCode = "GYM2024003", Status = MemberStatus.Active, JoinedDate = new DateTime(2024, 2, 10, 0, 0, 0, DateTimeKind.Utc), CreatedAt = new DateTime(2024, 2, 10, 0, 0, 0, DateTimeKind.Utc), FaceEncoding = "MOCK_FACE_VECTOR_GYM2024003" }
         );
 
         var classId1 = Guid.Parse("50505050-5050-5050-5050-505050505050");
@@ -610,8 +610,8 @@ public class GymDbContext : DbContext
         var subscriptionId2 = Guid.Parse("90909090-9090-9090-9090-909090909090");
 
         modelBuilder.Entity<MemberSubscription>().HasData(
-            new() { Id = subscriptionId1, MemberId = memberId1, PackageId = package2Id, StartDate = new DateTime(2024, 2, 1), EndDate = new DateTime(2024, 3, 2), Status = SubscriptionStatus.Active, CreatedAt = new DateTime(2024, 2, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new() { Id = subscriptionId2, MemberId = memberId2, PackageId = package3Id, StartDate = new DateTime(2024, 2, 5), EndDate = new DateTime(2024, 4, 5), Status = SubscriptionStatus.Active, RemainingSessions = 10, CreatedAt = new DateTime(2024, 2, 5, 0, 0, 0, DateTimeKind.Utc) }
+            new() { Id = subscriptionId1, MemberId = memberId1, PackageId = package2Id, StartDate = new DateTime(2024, 2, 1, 0, 0, 0, DateTimeKind.Utc), EndDate = new DateTime(2024, 3, 2, 0, 0, 0, DateTimeKind.Utc), Status = SubscriptionStatus.Active, CreatedAt = new DateTime(2024, 2, 1, 0, 0, 0, DateTimeKind.Utc) },
+            new() { Id = subscriptionId2, MemberId = memberId2, PackageId = package3Id, StartDate = new DateTime(2024, 2, 5, 0, 0, 0, DateTimeKind.Utc), EndDate = new DateTime(2024, 4, 5, 0, 0, 0, DateTimeKind.Utc), Status = SubscriptionStatus.Active, RemainingSessions = 10, CreatedAt = new DateTime(2024, 2, 5, 0, 0, 0, DateTimeKind.Utc) }
         );
 
         modelBuilder.Entity<Payment>().HasData(
@@ -647,7 +647,7 @@ public class GymDbContext : DbContext
         );
 
         modelBuilder.Entity<Equipment>().HasData(
-            new Equipment { Id = Guid.Parse("d1d1d1d1-d1d1-d1d1-d1d1-d1d1d1d1d1d1"), EquipmentCode = "EQP-RUN-001", Name = "Máy chạy bộ Matrix T7", SerialNumber = "MTX7-2024-X1", CategoryId = categoryId1, ProviderId = providerId1, Quantity = 5, PurchaseDate = new DateTime(2024, 1, 1), PurchasePrice = 25000000m, SalvageValue = 5000000m, UsefulLifeMonths = 60, Status = EquipmentStatus.Active, Priority = EquipmentPriority.High, Location = "Khu Cardio Tầng 1", MaintenanceIntervalDays = 90, MonthlyDepreciationAmount = 333333m, RemainingValue = 25000000m, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+            new Equipment { Id = Guid.Parse("d1d1d1d1-d1d1-d1d1-d1d1-d1d1d1d1d1d1"), EquipmentCode = "EQP-RUN-001", Name = "Máy chạy bộ Matrix T7", SerialNumber = "MTX7-2024-X1", CategoryId = categoryId1, ProviderId = providerId1, Quantity = 5, PurchaseDate = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc), PurchasePrice = 25000000m, SalvageValue = 5000000m, UsefulLifeMonths = 60, Status = EquipmentStatus.Active, Priority = EquipmentPriority.High, Location = "Khu Cardio Tầng 1", MaintenanceIntervalDays = 90, MonthlyDepreciationAmount = 333333m, RemainingValue = 25000000m, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
         );
     }
 

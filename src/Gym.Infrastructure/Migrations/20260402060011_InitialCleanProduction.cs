@@ -9,7 +9,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Gym.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialClean : Migration
+    public partial class InitialCleanProduction : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -947,15 +947,15 @@ namespace Gym.Infrastructure.Migrations
                 columns: new[] { "Id", "CreatedAt", "Email", "FullName", "IsActive", "LastLoginAt", "PasswordHash", "PhoneNumber", "UpdatedAt", "Username" },
                 values: new object[,]
                 {
-                    { new Guid("11111111-1111-1111-1111-111111111111"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "admin@gym.com", "System Administrator", true, null, "AQAAAAIAAYagAAAAEJauMWjJOMs/YBoC1FTQLfvwbKRY1/rwfQApU0uzZpcJBiZzu/Msj/hQeXwdM5jYAw==", "0901234567", null, "admin" },
-                    { new Guid("22222222-2222-2222-2222-222222222222"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "manager@gym.com", "Nguyễn Văn Manager", true, null, "AQAAAAIAAYagAAAAENQ+tKYX63+ltmz8TL708XA4O0ssbXEdDn8NAABvOWIxzm0BT116LFBJM7/uEYVx9Q==", "0902345678", null, "manager" },
-                    { new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "trainer1@gym.com", "Trần Thị Hương", true, null, "AQAAAAIAAYagAAAAEJ2MPUcra2v8smn0ZmNMtWxvXLEqgjYj5PNFeYiZDdcp9jzFjCwCxaNmSVTIspjbHg==", "0903456789", null, "trainer1" },
-                    { new Guid("44444444-4444-4444-4444-444444444444"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "trainer2@gym.com", "Lê Văn Nam", true, null, "AQAAAAIAAYagAAAAEI8Y9sJuI/m6rwU0SEzCLMDCFzhuIcBWVB8d5XqMBpp9zoAM3/h4NEb5wTRok44Uhg==", "0904567890", null, "trainer2" },
-                    { new Guid("55555555-5555-5555-5555-555555555555"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "receptionist@gym.com", "Phạm Thị Lan", true, null, "AQAAAAIAAYagAAAAEJwVV96VbYzsG2itQSw4tnoebPID3+qjH2fwzItRJsUSxDHAGTBiN2gbF8W5zBe3Ng==", "0905678901", null, "receptionist" },
-                    { new Guid("66666666-6666-6666-6666-666666666666"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "nguyenvana@gmail.com", "Nguyễn Văn A", true, null, "AQAAAAIAAYagAAAAEF4j+IuH19fFMNT5+YxwuXNQWxzu/P1Odb3Yn1YRUZEuYPiGWB5wnAvMv4SuIUK5EA==", "0906789012", null, "member001" },
-                    { new Guid("77777777-7777-7777-7777-777777777777"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "tranthib@gmail.com", "Trần Thị B", true, null, "AQAAAAIAAYagAAAAEG/9ViPbL41P9Y2aR9GnQ/bY07MpbasbLZ/gVz215jnT9WJKIHI0n25q3ELkhUavmw==", "0907890123", null, "member002" },
-                    { new Guid("88888888-8888-8888-8888-888888888888"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "levanc_member@gmail.com", "Lê Văn C (Member)", true, null, "AQAAAAIAAYagAAAAEAJ5BrObRjN8Uwyu2rzv/VeER/45jV23xwziz3Pv9rtThO3cL8Oe1SNQV/6Jz78Fyg==", "0908901234", null, "member003" },
-                    { new Guid("99999999-9999-9999-9999-999999999999"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "levanc@gym.com", "Lê Văn C", true, null, "AQAAAAIAAYagAAAAENJyF+pCa4VN+h2IYV4OPo4/Dvy/SqSLLxd8//Zye6g4XqFiCS+wu7U9JA21meBEqg==", "0909999999", null, "levanc" }
+                    { new Guid("11111111-1111-1111-1111-111111111111"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "admin@gym.com", "System Administrator", true, null, "AQAAAAIAAYagAAAAEPXmSnswJsuChXHy25rHDebvtt8ccxgeK63G8rDJKpRCYkJS+6bb+k1wM2HMZPAtgA==", "0901234567", null, "admin" },
+                    { new Guid("22222222-2222-2222-2222-222222222222"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "manager@gym.com", "Nguyễn Văn Manager", true, null, "AQAAAAIAAYagAAAAEEz5c2BAKbYKQFOPXvHJ7pXFVG0nZ5n/jEmy0PkcVr0No6XUPXK5aO/AjMZeGVODmw==", "0902345678", null, "manager" },
+                    { new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "trainer1@gym.com", "Trần Thị Hương", true, null, "AQAAAAIAAYagAAAAEDA13NYAMI7+1+oPVX8+fMhLIQWUWzRYvWF04XivEp6CvNDAsC0b0fNCT+3FMfobIQ==", "0903456789", null, "trainer1" },
+                    { new Guid("44444444-4444-4444-4444-444444444444"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "trainer2@gym.com", "Lê Văn Nam", true, null, "AQAAAAIAAYagAAAAEJWeFUgHO6+G7ZH7LAiYowd0CjWY15dIFynosdmb5eFSD5ruKByWRqUBYA5iKSjRRg==", "0904567890", null, "trainer2" },
+                    { new Guid("55555555-5555-5555-5555-555555555555"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "receptionist@gym.com", "Phạm Thị Lan", true, null, "AQAAAAIAAYagAAAAEOJtv51E4qbMORVifgr+Kb0YBhjYGRKz25T6LuuA/y5W2MqDqhEyWdf+LQRB430fxw==", "0905678901", null, "receptionist" },
+                    { new Guid("66666666-6666-6666-6666-666666666666"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "nguyenvana@gmail.com", "Nguyễn Văn A", true, null, "AQAAAAIAAYagAAAAEIqzC14s4ZGbXqrTs5teCJyKkZKs/QjpV5FLe7n2khgXcrO9GnidKfNE0TZyf63v6w==", "0906789012", null, "member001" },
+                    { new Guid("77777777-7777-7777-7777-777777777777"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "tranthib@gmail.com", "Trần Thị B", true, null, "AQAAAAIAAYagAAAAEKrlWZOQhRlcWYeJU3lDX8zqBoLwcZS9lxPeqeg7udELiZ5zeF1Krw9HBHA0EtThwg==", "0907890123", null, "member002" },
+                    { new Guid("88888888-8888-8888-8888-888888888888"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "levanc_member@gmail.com", "Lê Văn C (Member)", true, null, "AQAAAAIAAYagAAAAEBBZK9bRcdOebCPUlVW84f0iOkxHVIZqkUmA18BRIog1pd2Ni0CiL8uaQxlm3YfHNg==", "0908901234", null, "member003" },
+                    { new Guid("99999999-9999-9999-9999-999999999999"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "levanc@gym.com", "Lê Văn C", true, null, "AQAAAAIAAYagAAAAEGIxkxEf55bLp01ARpDA/QMr/2naQ7wmthzlA+rgcqGd86cfZmqVNGXXBbRsfULiCQ==", "0909999999", null, "levanc" }
                 });
 
             migrationBuilder.InsertData(
@@ -970,16 +970,16 @@ namespace Gym.Infrastructure.Migrations
             migrationBuilder.InsertData(
                 table: "Equipments",
                 columns: new[] { "Id", "AccumulatedDepreciation", "CategoryId", "CreatedAt", "DepreciationStartDate", "Description", "EquipmentCode", "IsDeleted", "IsFullyDepreciated", "LastMaintenanceDate", "Location", "MaintenanceIntervalDays", "MonthlyDepreciationAmount", "Name", "NextMaintenanceDate", "Priority", "ProviderId", "PurchaseDate", "PurchasePrice", "Quantity", "RemainingValue", "SalvageValue", "SerialNumber", "Status", "UpdatedAt", "UsefulLifeMonths", "WarrantyExpiryDate", "Weight" },
-                values: new object[] { new Guid("d1d1d1d1-d1d1-d1d1-d1d1-d1d1d1d1d1d1"), 0m, new Guid("f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, null, "EQP-RUN-001", false, false, null, "Khu Cardio Tầng 1", 90, 333333m, "Máy chạy bộ Matrix T7", null, 3, new Guid("e1e1e1e1-e1e1-e1e1-e1e1-e1e1e1e1e1e1"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), 25000000m, 5, 25000000m, 5000000m, "MTX7-2024-X1", 1, null, 60, null, null });
+                values: new object[] { new Guid("d1d1d1d1-d1d1-d1d1-d1d1-d1d1d1d1d1d1"), 0m, new Guid("f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, null, "EQP-RUN-001", false, false, null, "Khu Cardio Tầng 1", 90, 333333m, "Máy chạy bộ Matrix T7", null, 3, new Guid("e1e1e1e1-e1e1-e1e1-e1e1-e1e1e1e1e1e1"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), 25000000m, 5, 25000000m, 5000000m, "MTX7-2024-X1", 1, null, 60, null, null });
 
             migrationBuilder.InsertData(
                 table: "Members",
                 columns: new[] { "Id", "Address", "CreatedAt", "DateOfBirth", "Email", "EmergencyContact", "EmergencyPhone", "FaceEncoding", "FullName", "Gender", "IsDeleted", "JoinedDate", "MemberCode", "Note", "PhoneNumber", "QRCode", "Status", "UpdatedAt", "UserId" },
                 values: new object[,]
                 {
-                    { new Guid("20202020-2020-2020-2020-202020202020"), null, new DateTime(2024, 2, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(1995, 5, 15, 0, 0, 0, 0, DateTimeKind.Unspecified), "nguyenvana@gmail.com", null, null, "MOCK_FACE_VECTOR_GYM2024001", "Nguyễn Văn A", null, false, new DateTime(2024, 2, 1, 0, 0, 0, 0, DateTimeKind.Utc), "GYM2024001", null, "0906789012", null, 1, null, new Guid("66666666-6666-6666-6666-666666666666") },
-                    { new Guid("30303030-3030-3030-3030-303030303030"), null, new DateTime(2024, 2, 5, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(1992, 8, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), "tranthib@gmail.com", null, null, "MOCK_FACE_VECTOR_GYM2024002", "Trần Thị B", null, false, new DateTime(2024, 2, 5, 0, 0, 0, 0, DateTimeKind.Utc), "GYM2024002", null, "0907890123", null, 1, null, new Guid("77777777-7777-7777-7777-777777777777") },
-                    { new Guid("40404040-4040-4040-4040-404040404040"), null, new DateTime(2024, 2, 10, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(1998, 12, 10, 0, 0, 0, 0, DateTimeKind.Unspecified), "levanc@gmail.com", null, null, "MOCK_FACE_VECTOR_GYM2024003", "Lê Văn C", null, false, new DateTime(2024, 2, 10, 0, 0, 0, 0, DateTimeKind.Utc), "GYM2024003", null, "0908901234", null, 1, null, new Guid("88888888-8888-8888-8888-888888888888") }
+                    { new Guid("20202020-2020-2020-2020-202020202020"), null, new DateTime(2024, 2, 1, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(1995, 5, 15, 0, 0, 0, 0, DateTimeKind.Utc), "nguyenvana@gmail.com", null, null, "MOCK_FACE_VECTOR_GYM2024001", "Nguyễn Văn A", null, false, new DateTime(2024, 2, 1, 0, 0, 0, 0, DateTimeKind.Utc), "GYM2024001", null, "0906789012", null, 1, null, new Guid("66666666-6666-6666-6666-666666666666") },
+                    { new Guid("30303030-3030-3030-3030-303030303030"), null, new DateTime(2024, 2, 5, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(1992, 8, 20, 0, 0, 0, 0, DateTimeKind.Utc), "tranthib@gmail.com", null, null, "MOCK_FACE_VECTOR_GYM2024002", "Trần Thị B", null, false, new DateTime(2024, 2, 5, 0, 0, 0, 0, DateTimeKind.Utc), "GYM2024002", null, "0907890123", null, 1, null, new Guid("77777777-7777-7777-7777-777777777777") },
+                    { new Guid("40404040-4040-4040-4040-404040404040"), null, new DateTime(2024, 2, 10, 0, 0, 0, 0, DateTimeKind.Utc), new DateTime(1998, 12, 10, 0, 0, 0, 0, DateTimeKind.Utc), "levanc@gmail.com", null, null, "MOCK_FACE_VECTOR_GYM2024003", "Lê Văn C", null, false, new DateTime(2024, 2, 10, 0, 0, 0, 0, DateTimeKind.Utc), "GYM2024003", null, "0908901234", null, 1, null, new Guid("88888888-8888-8888-8888-888888888888") }
                 });
 
             migrationBuilder.InsertData(
@@ -992,8 +992,8 @@ namespace Gym.Infrastructure.Migrations
                 columns: new[] { "Id", "Bio", "CreatedAt", "Email", "ExperienceYears", "FullName", "HireDate", "IsActive", "IsDeleted", "PhoneNumber", "ProfilePhoto", "Salary", "SessionRate", "Specialization", "TrainerCode", "UpdatedAt", "UserId" },
                 values: new object[,]
                 {
-                    { new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), "HLV Yoga với 8 năm kinh nghiệm, chứng chỉ quốc tế RYT-500", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "trainer1@gym.com", 0, "Trần Thị Hương", new DateTime(2020, 3, 15, 0, 0, 0, 0, DateTimeKind.Unspecified), true, false, "0903456789", null, 0m, 0m, "Yoga, Pilates, Meditation", "", null, new Guid("33333333-3333-3333-3333-333333333333") },
-                    { new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"), "Võ sư Boxing chuyên nghiệp, từng thi đấu SEA Games", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "trainer2@gym.com", 0, "Lê Văn Nam", new DateTime(2021, 6, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), true, false, "0904567890", null, 0m, 0m, "Boxing, Muay Thai, CrossFit", "", null, new Guid("44444444-4444-4444-4444-444444444444") }
+                    { new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"), "HLV Yoga với 8 năm kinh nghiệm, chứng chỉ quốc tế RYT-500", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "trainer1@gym.com", 0, "Trần Thị Hương", new DateTime(2020, 3, 15, 0, 0, 0, 0, DateTimeKind.Utc), true, false, "0903456789", null, 0m, 0m, "Yoga, Pilates, Meditation", "", null, new Guid("33333333-3333-3333-3333-333333333333") },
+                    { new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"), "Võ sư Boxing chuyên nghiệp, từng thi đấu SEA Games", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "trainer2@gym.com", 0, "Lê Văn Nam", new DateTime(2021, 6, 1, 0, 0, 0, 0, DateTimeKind.Utc), true, false, "0904567890", null, 0m, 0m, "Boxing, Muay Thai, CrossFit", "", null, new Guid("44444444-4444-4444-4444-444444444444") }
                 });
 
             migrationBuilder.InsertData(
@@ -1001,16 +1001,16 @@ namespace Gym.Infrastructure.Migrations
                 columns: new[] { "RoleId", "UserId", "AssignedAt" },
                 values: new object[,]
                 {
-                    { 1, new Guid("11111111-1111-1111-1111-111111111111"), new DateTime(2026, 4, 2, 5, 49, 4, 729, DateTimeKind.Utc).AddTicks(7369) },
-                    { 2, new Guid("22222222-2222-2222-2222-222222222222"), new DateTime(2026, 4, 2, 5, 49, 4, 729, DateTimeKind.Utc).AddTicks(7376) },
-                    { 3, new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2026, 4, 2, 5, 49, 4, 729, DateTimeKind.Utc).AddTicks(7378) },
-                    { 3, new Guid("44444444-4444-4444-4444-444444444444"), new DateTime(2026, 4, 2, 5, 49, 4, 729, DateTimeKind.Utc).AddTicks(7379) },
-                    { 4, new Guid("55555555-5555-5555-5555-555555555555"), new DateTime(2026, 4, 2, 5, 49, 4, 729, DateTimeKind.Utc).AddTicks(7381) },
-                    { 5, new Guid("66666666-6666-6666-6666-666666666666"), new DateTime(2026, 4, 2, 5, 49, 4, 729, DateTimeKind.Utc).AddTicks(7385) },
-                    { 5, new Guid("77777777-7777-7777-7777-777777777777"), new DateTime(2026, 4, 2, 5, 49, 4, 729, DateTimeKind.Utc).AddTicks(7386) },
-                    { 5, new Guid("88888888-8888-8888-8888-888888888888"), new DateTime(2026, 4, 2, 5, 49, 4, 729, DateTimeKind.Utc).AddTicks(7387) },
-                    { 3, new Guid("99999999-9999-9999-9999-999999999999"), new DateTime(2026, 4, 2, 5, 49, 4, 729, DateTimeKind.Utc).AddTicks(7384) },
-                    { 4, new Guid("99999999-9999-9999-9999-999999999999"), new DateTime(2026, 4, 2, 5, 49, 4, 729, DateTimeKind.Utc).AddTicks(7382) }
+                    { 1, new Guid("11111111-1111-1111-1111-111111111111"), new DateTime(2026, 4, 2, 6, 0, 10, 887, DateTimeKind.Utc).AddTicks(9143) },
+                    { 2, new Guid("22222222-2222-2222-2222-222222222222"), new DateTime(2026, 4, 2, 6, 0, 10, 887, DateTimeKind.Utc).AddTicks(9152) },
+                    { 3, new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2026, 4, 2, 6, 0, 10, 887, DateTimeKind.Utc).AddTicks(9153) },
+                    { 3, new Guid("44444444-4444-4444-4444-444444444444"), new DateTime(2026, 4, 2, 6, 0, 10, 887, DateTimeKind.Utc).AddTicks(9155) },
+                    { 4, new Guid("55555555-5555-5555-5555-555555555555"), new DateTime(2026, 4, 2, 6, 0, 10, 887, DateTimeKind.Utc).AddTicks(9156) },
+                    { 5, new Guid("66666666-6666-6666-6666-666666666666"), new DateTime(2026, 4, 2, 6, 0, 10, 887, DateTimeKind.Utc).AddTicks(9159) },
+                    { 5, new Guid("77777777-7777-7777-7777-777777777777"), new DateTime(2026, 4, 2, 6, 0, 10, 887, DateTimeKind.Utc).AddTicks(9161) },
+                    { 5, new Guid("88888888-8888-8888-8888-888888888888"), new DateTime(2026, 4, 2, 6, 0, 10, 887, DateTimeKind.Utc).AddTicks(9162) },
+                    { 3, new Guid("99999999-9999-9999-9999-999999999999"), new DateTime(2026, 4, 2, 6, 0, 10, 887, DateTimeKind.Utc).AddTicks(9158) },
+                    { 4, new Guid("99999999-9999-9999-9999-999999999999"), new DateTime(2026, 4, 2, 6, 0, 10, 887, DateTimeKind.Utc).AddTicks(9157) }
                 });
 
             migrationBuilder.InsertData(
@@ -1028,8 +1028,8 @@ namespace Gym.Infrastructure.Migrations
                 columns: new[] { "Id", "CreatedAt", "DiscountApplied", "EndDate", "FinalPrice", "IsDeleted", "MemberId", "OriginalPackageName", "OriginalPrice", "PackageId", "RemainingSessions", "StartDate", "Status", "UpdatedAt" },
                 values: new object[,]
                 {
-                    { new Guid("80808080-8080-8080-8080-808080808080"), new DateTime(2024, 2, 1, 0, 0, 0, 0, DateTimeKind.Utc), 0m, new DateTime(2024, 3, 2, 0, 0, 0, 0, DateTimeKind.Unspecified), 0m, false, new Guid("20202020-2020-2020-2020-202020202020"), "", 0m, new Guid("dddddddd-dddd-dddd-dddd-dddddddddddd"), null, new DateTime(2024, 2, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), 2, null },
-                    { new Guid("90909090-9090-9090-9090-909090909090"), new DateTime(2024, 2, 5, 0, 0, 0, 0, DateTimeKind.Utc), 0m, new DateTime(2024, 4, 5, 0, 0, 0, 0, DateTimeKind.Unspecified), 0m, false, new Guid("30303030-3030-3030-3030-303030303030"), "", 0m, new Guid("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"), 10, new DateTime(2024, 2, 5, 0, 0, 0, 0, DateTimeKind.Unspecified), 2, null }
+                    { new Guid("80808080-8080-8080-8080-808080808080"), new DateTime(2024, 2, 1, 0, 0, 0, 0, DateTimeKind.Utc), 0m, new DateTime(2024, 3, 2, 0, 0, 0, 0, DateTimeKind.Utc), 0m, false, new Guid("20202020-2020-2020-2020-202020202020"), "", 0m, new Guid("dddddddd-dddd-dddd-dddd-dddddddddddd"), null, new DateTime(2024, 2, 1, 0, 0, 0, 0, DateTimeKind.Utc), 2, null },
+                    { new Guid("90909090-9090-9090-9090-909090909090"), new DateTime(2024, 2, 5, 0, 0, 0, 0, DateTimeKind.Utc), 0m, new DateTime(2024, 4, 5, 0, 0, 0, 0, DateTimeKind.Utc), 0m, false, new Guid("30303030-3030-3030-3030-303030303030"), "", 0m, new Guid("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"), 10, new DateTime(2024, 2, 5, 0, 0, 0, 0, DateTimeKind.Utc), 2, null }
                 });
 
             migrationBuilder.InsertData(
