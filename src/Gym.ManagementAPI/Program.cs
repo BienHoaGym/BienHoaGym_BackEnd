@@ -182,16 +182,10 @@ builder.Services.AddScoped<IAuthorizationHandler, PermissionHandler>();
 // Configure CORS (Cho phép Frontend gọi vào)
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
-    {
-        // Cho phép frontend ở các cổng phổ biến
-        policy.WithOrigins("http://localhost:5173", "https://localhost:5173", 
-                          "http://localhost:3000", "https://localhost:3000",
-                          "http://localhost:3001", "https://localhost:3001")
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials();
-    });
+    options.AddPolicy("AllowAll",
+        policy => policy.AllowAnyOrigin()
+                        .AllowAnyHeader()
+                        .AllowAnyMethod());
 });
 
 var app = builder.Build();
@@ -254,4 +248,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-app.Run();
+// Lấy PORT từ môi trường (Render cấp)
+var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
+
+app.Run($"http://0.0.0.0:{port}");

@@ -1,4 +1,4 @@
-﻿using Gym.Infrastructure.Data;
+using Gym.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 
@@ -87,4 +87,7 @@ Console.WriteLine("🌐 Gym Public API is running!");
 Console.WriteLine("📖 Swagger UI: http://localhost:5002/swagger");
 Console.WriteLine("📍 Port: 5002");
 
-app.Run();
+// Lấy PORT từ môi trường (Render cấp)
+var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
+
+app.Run($"http://0.0.0.0:{port}");
