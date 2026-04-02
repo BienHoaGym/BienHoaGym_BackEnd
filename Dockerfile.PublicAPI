@@ -20,7 +20,7 @@ COPY . .
 
 # Build đúng path
 WORKDIR "/src/src/Gym.PublicAPI"
-RUN dotnet publish "Gym.PublicAPI.csproj" -c $BUILD_CONFIGURATION -o /app/publish
+RUN dotnet publish "/src/src/Gym.PublicAPI/Gym.PublicAPI.csproj" -c Release -o /app/publish-c $BUILD_CONFIGURATION -o /app/publish
 
 # ===== Stage 3: Run =====
 FROM base AS final
