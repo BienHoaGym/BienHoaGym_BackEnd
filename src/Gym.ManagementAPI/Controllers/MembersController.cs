@@ -77,4 +77,4 @@ public class MembersController : ControllerBase
         var result = await _memberService.SearchAsync(keyword);
         return Ok(result);
     }
-}
+}

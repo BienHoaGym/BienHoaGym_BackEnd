@@ -1,4 +1,4 @@
-﻿using Gym.Application.DTOs.Members;
+using Gym.Application.DTOs.Members;
 using Gym.Application.DTOs.Packages;
 using Gym.Application.DTOs.Payments;
 

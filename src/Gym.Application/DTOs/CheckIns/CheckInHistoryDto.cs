@@ -1,4 +1,4 @@
-﻿namespace Gym.Application.DTOs.CheckIns;
+namespace Gym.Application.DTOs.CheckIns;
 
 public class CheckInHistoryDto
 {

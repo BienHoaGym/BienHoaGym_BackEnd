@@ -1,4 +1,4 @@
-﻿using Gym.Domain.Entities;
+using Gym.Domain.Entities;
 using System.Security.Claims;
 
 namespace Gym.Application.Interfaces.Services;

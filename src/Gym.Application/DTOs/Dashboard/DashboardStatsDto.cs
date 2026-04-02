@@ -1,4 +1,4 @@
-ï»¿namespace Gym.Application.DTOs.Dashboard;
+namespace Gym.Application.DTOs.Dashboard;
 
 public class DashboardStatsDto
 {
@@ -6,5 +6,5 @@ public class DashboardStatsDto
     public int ActiveMembers { get; set; }
     public int TotalTrainers { get; set; }
     public decimal MonthlyRevenue { get; set; }
-    // Báº¡n cÃ³ thá»ƒ thÃªm cÃ¡c chá»‰ sá»‘ khÃ¡c tÃ¹y Ã½
+    // B?n có th? thêm các ch? s? khác tùy ý
 }

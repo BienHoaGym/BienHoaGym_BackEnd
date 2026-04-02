@@ -1,4 +1,4 @@
-﻿using Gym.Application.DTOs.Common;
+using Gym.Application.DTOs.Common;
 using Gym.Application.DTOs.Packages;
 
 namespace Gym.Application.Interfaces.Services;

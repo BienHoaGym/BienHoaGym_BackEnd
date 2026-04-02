@@ -321,9 +321,9 @@ public class ReportsService : IReportsService
             var packages = await _unitOfWork.Packages.GetAllAsync();
             if (!packages.Any())
             {
-                var p1 = new MembershipPackage { Name = "Gói 1 Tháng", Price = 500000, DurationInDays = 30, IsActive = true };
-                var p2 = new MembershipPackage { Name = "Gói 3 Tháng", Price = 1350000, DurationInDays = 90, IsActive = true };
-                var p3 = new MembershipPackage { Name = "Gói 1 Năm", Price = 4800000, DurationInDays = 365, IsActive = true };
+                var p1 = new MembershipPackage { Name = "Gói 1 Tháng", Price = 500000, DurationDays = 30, IsActive = true };
+                var p2 = new MembershipPackage { Name = "Gói 3 Tháng", Price = 1350000, DurationDays = 90, IsActive = true };
+                var p3 = new MembershipPackage { Name = "Gói 1 Năm", Price = 4800000, DurationDays = 365, IsActive = true };
                 await _unitOfWork.Packages.AddAsync(p1);
                 await _unitOfWork.Packages.AddAsync(p2);
                 await _unitOfWork.Packages.AddAsync(p3);
@@ -407,7 +407,7 @@ public class ReportsService : IReportsService
                         MemberId = member.Id,
                         PackageId = pkg.Id,
                         StartDate = date,
-                        EndDate = date.AddDays(pkg.DurationInDays),
+                        EndDate = date.AddDays(pkg.DurationDays),
                         Status = SubscriptionStatus.Active,
                         CreatedAt = date
                     };

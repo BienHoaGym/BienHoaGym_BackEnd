@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -8,27 +8,27 @@ namespace Gym.Application.Interfaces;
 
 public interface IGenericRepository<T> where T : class
 {
-    // Lấy dữ liệu theo ID
+    // L?y d? li?u theo ID
     Task<T?> GetByIdAsync(Guid id);
 
-    // Lấy toàn bộ dữ liệu
+    // L?y to�n b? d? li?u
     Task<IEnumerable<T>> GetAllAsync();
 
-    // Tìm kiếm theo điều kiện (Trả về danh sách)
+    // T�m ki?m theo di?u ki?n (Tr? v? danh s�ch)
     Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate);
 
-    // Lấy ra IQueryable để có thể dùng LINQ (Include, Where, OrderBy...) ở tầng Service
+    // L?y ra IQueryable d? c� th? d�ng LINQ (Include, Where, OrderBy...) ? t?ng Service
     IQueryable<T> GetQueryable();
 
-    // Thêm mới
+    // Th�m m?i
     Task AddAsync(T entity);
     Task AddRangeAsync(IEnumerable<T> entities);
 
-    // Cập nhật (EF Core Update là hàm đồng bộ)
+    // C?p nh?t (EF Core Update l� h�m d?ng b?)
     void Update(T entity);
     void UpdateRange(IEnumerable<T> entities);
 
-    // Xóa
+    // X�a
     void Delete(T entity);
     void DeleteRange(IEnumerable<T> entities);
 }

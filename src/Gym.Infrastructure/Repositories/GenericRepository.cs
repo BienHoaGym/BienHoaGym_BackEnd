@@ -1,4 +1,4 @@
-﻿using Gym.Application.Interfaces;
+using Gym.Application.Interfaces;
 using Gym.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -37,7 +37,7 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
 
     public IQueryable<T> GetQueryable()
     {
-        // Trả về AsQueryable để Service có thể tùy ý gọi .Include(), .Where()
+        // Tr? v? AsQueryable d? Service c� th? t�y � g?i .Include(), .Where()
         return _dbSet.AsQueryable();
     }
 

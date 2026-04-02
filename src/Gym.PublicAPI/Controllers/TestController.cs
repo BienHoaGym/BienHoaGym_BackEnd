@@ -157,7 +157,7 @@ public class TestController : ControllerBase
                     p.Id,
                     p.Name,              // ау s?a t? PackageName -> Name
                     p.Description,
-                    p.DurationInDays,    // ау s?a t? DurationDays -> DurationInDays
+                    p.DurationDays,    // ау s?a t? DurationDays -> DurationDays
                     p.Price,
                     p.DiscountPrice,
                     p.SessionLimit

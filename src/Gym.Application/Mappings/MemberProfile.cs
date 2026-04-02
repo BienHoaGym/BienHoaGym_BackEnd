@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Gym.Application.DTOs.Members;
 using Gym.Domain.Entities;
 

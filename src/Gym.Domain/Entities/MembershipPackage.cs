@@ -12,7 +12,7 @@ public class MembershipPackage : BaseEntity
     public decimal? DiscountPrice { get; set; }
 
     // Sửa 'DurationDays' thành 'DurationInDays' để rõ nghĩa hơn
-    public int DurationInDays { get; set; }
+    public int DurationDays { get; set; }
     public int DurationInMonths { get; set; } // Giữ lại nếu cần tính theo tháng
 
     public int? SessionLimit { get; set; }

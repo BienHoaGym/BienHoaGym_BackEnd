@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Gym.Application.DTOs.CheckIns;
 using Gym.Domain.Entities;
 

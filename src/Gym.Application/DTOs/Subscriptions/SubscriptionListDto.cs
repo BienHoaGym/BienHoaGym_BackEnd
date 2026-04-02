@@ -1,4 +1,4 @@
-﻿namespace Gym.Application.DTOs.Subscriptions;
+namespace Gym.Application.DTOs.Subscriptions;
 
 public class SubscriptionListDto
 {

@@ -1,4 +1,4 @@
-﻿namespace Gym.Application.DTOs.Common;
+namespace Gym.Application.DTOs.Common;
 
 /// <summary>
 /// Generic paginated result wrapper

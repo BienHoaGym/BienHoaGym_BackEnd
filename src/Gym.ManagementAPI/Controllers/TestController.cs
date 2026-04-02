@@ -1,11 +1,11 @@
-﻿using Gym.Infrastructure.Data;
+using Gym.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Gym.ManagementAPI.Controllers;
 
 /// <summary>
-/// Test Controller - Kiểm tra database connection và hệ thống
+/// Test Controller - Ki?m tra database connection v� h? th?ng
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
@@ -148,16 +148,16 @@ public class TestController : ControllerBase
     {
         try
         {
-            // Sửa lỗi ở đây: Sử dụng đúng tên thuộc tính mới trong Entity MembershipPackage
+            // S?a l?i ? d�y: S? d?ng d�ng t�n thu?c t�nh m?i trong Entity MembershipPackage
             var packages = await _context.MembershipPackages
                 .Where(p => !p.IsDeleted && p.IsActive)
                 .OrderBy(p => p.Price)
                 .Select(p => new
                 {
                     p.Id,
-                    p.Name,              // Đã sửa từ PackageName -> Name
+                    p.Name,              // �� s?a t? PackageName -> Name
                     p.Description,
-                    p.DurationInDays,    // Đã sửa từ DurationDays -> DurationInDays
+                    p.DurationDays,    // �� s?a t? DurationDays -> DurationDays
                     p.Price,
                     p.DiscountPrice,
                     p.SessionLimit

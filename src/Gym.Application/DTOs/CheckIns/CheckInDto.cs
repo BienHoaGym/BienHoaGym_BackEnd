@@ -1,17 +1,17 @@
-﻿namespace Gym.Application.DTOs.CheckIns;
+namespace Gym.Application.DTOs.CheckIns;
 
 public class CheckInDto
 {
     public Guid Id { get; set; }
-    public string MemberName { get; set; } = string.Empty; // Map từ Member.FullName
+    public string MemberName { get; set; } = string.Empty; // Map t? Member.FullName
     public string MemberCode { get; set; } = string.Empty;
-    public string PackageName { get; set; } = string.Empty; // Thêm để hiện tên gói tập
+    public string PackageName { get; set; } = string.Empty; // Th�m d? hi?n t�n g�i t?p
     public DateTime CheckInTime { get; set; }
     public DateTime? CheckOutTime { get; set; }
     public string? Notes { get; set; }
 }
 
-// DTO mới để fix lỗi truyền string từ Body
+// DTO m?i d? fix l?i truy?n string t? Body
 public class ValidateCheckInRequest
 {
     public string MemberCode { get; set; } = string.Empty;

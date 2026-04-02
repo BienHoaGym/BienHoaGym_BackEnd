@@ -195,7 +195,7 @@ public class SubscriptionService : ISubscriptionService
         // NGHIỆP VỤ I.2 (STATE MACHINE): Bắt đầu vòng đời luôn là Pending
         subscription.Status = SubscriptionStatus.Pending;
         subscription.RemainingSessions = package.SessionLimit;
-        subscription.EndDate = subscription.StartDate.AddDays(package.DurationInDays);
+        subscription.EndDate = subscription.StartDate.AddDays(package.DurationDays);
 
         // NGHIỆP VỤ I.3 (SNAPSHOT DATA): Lưu giá chết tại thời điểm mua
         subscription.OriginalPackageName = package.Name;
@@ -354,7 +354,7 @@ public class SubscriptionService : ISubscriptionService
             MemberId = currentSub.MemberId,
             PackageId = packageId,
             StartDate = startDate,
-            EndDate = startDate.AddDays(package.DurationInDays),
+            EndDate = startDate.AddDays(package.DurationDays),
             Status = SubscriptionStatus.Pending,
             RemainingSessions = package.SessionLimit,
             OriginalPackageName = package.Name,

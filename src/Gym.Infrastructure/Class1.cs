@@ -1,4 +1,4 @@
-﻿namespace Gym.Infrastructure;
+namespace Gym.Infrastructure;
 
 public class Class1
 {

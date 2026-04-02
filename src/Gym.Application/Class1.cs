@@ -1,4 +1,4 @@
-﻿namespace Gym.Application;
+namespace Gym.Application;
 
 public class Class1
 {

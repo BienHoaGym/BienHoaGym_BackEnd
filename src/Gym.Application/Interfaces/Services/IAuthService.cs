@@ -1,4 +1,4 @@
-﻿using Gym.Application.DTOs.Auth;
+using Gym.Application.DTOs.Auth;
 using Gym.Application.DTOs.Common;
 using Gym.Domain.Entities;
 namespace Gym.Application.Interfaces.Services;

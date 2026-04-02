@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Gym.Application.DTOs.Common;
 using Gym.Application.DTOs.Packages;
 using Gym.Application.Interfaces;

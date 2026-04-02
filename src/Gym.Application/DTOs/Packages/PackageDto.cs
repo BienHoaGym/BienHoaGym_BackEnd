@@ -7,7 +7,7 @@ public class PackageDto
     public string Description { get; set; } = string.Empty;
     public decimal Price { get; set; }
     public decimal? DiscountPrice { get; set; }
-    public int DurationInDays { get; set; }
+    public int DurationDays { get; set; }
     public int DurationInMonths { get; set; }
     public int? SessionLimit { get; set; }
     public bool HasPT { get; set; }

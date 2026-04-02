@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using Gym.Application.DTOs.Packages;
 
 namespace Gym.Application.Validators.Packages;
@@ -8,13 +8,13 @@ public class CreatePackageValidator : AbstractValidator<CreatePackageDto>
     public CreatePackageValidator()
     {
         RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("Tên gói tập không được để trống")
-            .MaximumLength(100).WithMessage("Tên gói không quá 100 ký tự");
+            .NotEmpty().WithMessage("T�n g�i t?p kh�ng du?c d? tr?ng")
+            .MaximumLength(100).WithMessage("T�n g�i kh�ng qu� 100 k� t?");
 
         RuleFor(x => x.Price)
-            .GreaterThan(0).WithMessage("Giá gói tập phải lớn hơn 0");
+            .GreaterThan(0).WithMessage("Gi� g�i t?p ph?i l?n hon 0");
 
-        RuleFor(x => x.DurationInDays)
-            .InclusiveBetween(1, 365).WithMessage("Thời hạn phải từ 1 đến 365 ngày");
+        RuleFor(x => x.DurationDays)
+            .InclusiveBetween(1, 365).WithMessage("Th?i h?n ph?i t? 1 d?n 365 ng�y");
     }
 }

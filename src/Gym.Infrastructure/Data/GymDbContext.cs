@@ -579,11 +579,11 @@ public class GymDbContext : DbContext
         var package5Id = Guid.Parse("10101010-1010-1010-1010-101010101010");
 
         modelBuilder.Entity<MembershipPackage>().HasData(
-            new() { Id = package1Id, Name = "Gói Cơ Bản 1 Tháng", Description = "Truy cập phòng gym không giới hạn trong 30 ngày", DurationInDays = 30, DurationInMonths = 1, Price = 500000m, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new() { Id = package2Id, Name = "Gói Premium 1 Tháng", Description = "Gym + Tất cả lớp học trong 30 ngày", DurationInDays = 30, DurationInMonths = 1, Price = 800000m, DiscountPrice = 750000m, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new() { Id = package3Id, Name = "Gói 10 Buổi Tập", Description = "10 buổi tập, hạn sử dụng 60 ngày", DurationInDays = 60, DurationInMonths = 2, Price = 450000m, SessionLimit = 10, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new() { Id = package4Id, Name = "Gói 3 Tháng", Description = "Truy cập không giới hạn 90 ngày", DurationInDays = 90, DurationInMonths = 3, Price = 1200000m, DiscountPrice = 1100000m, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new() { Id = package5Id, Name = "Gói VIP 1 Năm", Description = "Toàn bộ dịch vụ + PT cá nhân trong 365 ngày", DurationInDays = 365, DurationInMonths = 12, Price = 4500000m, DiscountPrice = 4000000m, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+            new() { Id = package1Id, Name = "Gói Cơ Bản 1 Tháng", Description = "Truy cập phòng gym không giới hạn trong 30 ngày", DurationDays = 30, DurationInMonths = 1, Price = 500000m, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+            new() { Id = package2Id, Name = "Gói Premium 1 Tháng", Description = "Gym + Tất cả lớp học trong 30 ngày", DurationDays = 30, DurationInMonths = 1, Price = 800000m, DiscountPrice = 750000m, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+            new() { Id = package3Id, Name = "Gói 10 Buổi Tập", Description = "10 buổi tập, hạn sử dụng 60 ngày", DurationDays = 60, DurationInMonths = 2, Price = 450000m, SessionLimit = 10, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+            new() { Id = package4Id, Name = "Gói 3 Tháng", Description = "Truy cập không giới hạn 90 ngày", DurationDays = 90, DurationInMonths = 3, Price = 1200000m, DiscountPrice = 1100000m, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+            new() { Id = package5Id, Name = "Gói VIP 1 Năm", Description = "Toàn bộ dịch vụ + PT cá nhân trong 365 ngày", DurationDays = 365, DurationInMonths = 12, Price = 4500000m, DiscountPrice = 4000000m, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
         );
 
         var memberId1 = Guid.Parse("20202020-2020-2020-2020-202020202020");

@@ -1,4 +1,4 @@
-﻿namespace Gym.Application.DTOs.Auth;
+namespace Gym.Application.DTOs.Auth;
 
 public class LoginDto
 {

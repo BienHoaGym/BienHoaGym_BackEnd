@@ -1,8 +1,8 @@
-﻿namespace Gym.Application.DTOs.Subscriptions;
+namespace Gym.Application.DTOs.Subscriptions;
 
 public class UpdateSubscriptionDto
 {
     public Guid Id { get; set; }
-    public DateTime? EndDate { get; set; } // Gia hạn thủ công
-    public string Status { get; set; } = string.Empty; // Cập nhật trạng thái (Active/Expired/Cancelled)
+    public DateTime? EndDate { get; set; } // Gia h?n th? c�ng
+    public string Status { get; set; } = string.Empty; // C?p nh?t tr?ng th�i (Active/Expired/Cancelled)
 }

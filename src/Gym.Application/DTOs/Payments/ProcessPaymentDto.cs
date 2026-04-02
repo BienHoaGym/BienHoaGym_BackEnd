@@ -1,4 +1,4 @@
-﻿namespace Gym.Application.DTOs.Payments;
+namespace Gym.Application.DTOs.Payments;
 
 public class ProcessPaymentDto
 {

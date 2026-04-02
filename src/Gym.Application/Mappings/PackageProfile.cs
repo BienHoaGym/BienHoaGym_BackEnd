@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Gym.Application.DTOs.Packages;
 using Gym.Domain.Entities;
 
@@ -11,7 +11,7 @@ public class PackageProfile : Profile
         CreateMap<MembershipPackage, PackageDto>().ReverseMap();
 
         CreateMap<CreatePackageDto, MembershipPackage>()
-            // SỬA LỖI Ở ĐÂY: Xóa dòng map Status, chỉ giữ IsActive
+            // S?A L?I ? ��Y: X�a d�ng map Status, ch? gi? IsActive
             .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => true));
 
         CreateMap<UpdatePackageDto, MembershipPackage>()

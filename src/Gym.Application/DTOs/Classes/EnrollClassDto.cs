@@ -1,4 +1,4 @@
-﻿namespace Gym.Application.DTOs.Classes;
+namespace Gym.Application.DTOs.Classes;
 
 public class EnrollClassDto
 {

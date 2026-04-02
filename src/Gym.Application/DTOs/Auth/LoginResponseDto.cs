@@ -1,4 +1,4 @@
-﻿using Gym.Application.DTOs.Users;
+using Gym.Application.DTOs.Users;
 
 namespace Gym.Application.DTOs.Auth;
 

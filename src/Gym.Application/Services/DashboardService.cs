@@ -1,9 +1,9 @@
-﻿using Gym.Application.DTOs.Common;
+using Gym.Application.DTOs.Common;
 using Gym.Application.DTOs.Dashboard;
 using Gym.Application.Interfaces;
 using Gym.Application.Interfaces.Services;
 using Gym.Domain.Enums;
-using Microsoft.EntityFrameworkCore; // Để dùng hàm .CountAsync(), .SumAsync()
+using Microsoft.EntityFrameworkCore; // �? d�ng h�m .CountAsync(), .SumAsync()
 
 namespace Gym.Application.Services;
 
@@ -18,16 +18,16 @@ public class DashboardService : IDashboardService
 
     public async Task<ResponseDto<DashboardStatsDto>> GetStatsAsync()
     {
-        // 1. Đếm tổng thành viên
-        // Lưu ý: Cần truy cập DbSet từ UnitOfWork hoặc Repository. 
-        // Giả sử UnitOfWork của bạn public DbContext hoặc Repositories.
-        // Ở đây tôi ví dụ dùng _unitOfWork.Members (bạn cần đảm bảo Repository có hàm Count hoặc truy cập được IQueryable)
+        // 1. �?m t?ng th�nh vi�n
+        // Luu �: C?n truy c?p DbSet t? UnitOfWork ho?c Repository. 
+        // Gi? s? UnitOfWork c?a b?n public DbContext ho?c Repositories.
+        // ? d�y t�i v� d? d�ng _unitOfWork.Members (b?n c?n d?m b?o Repository c� h�m Count ho?c truy c?p du?c IQueryable)
 
-        // Cách an toàn nhất nếu dùng Generic Repository là viết thêm hàm CountAsync, 
-        // hoặc lấy GetAll rồi Count (nhưng sẽ chậm).
-        // Tốt nhất là Repository nên expose IQueryable hoặc hàm Count.
+        // C�ch an to�n nh?t n?u d�ng Generic Repository l� vi?t th�m h�m CountAsync, 
+        // ho?c l?y GetAll r?i Count (nhung s? ch?m).
+        // T?t nh?t l� Repository n�n expose IQueryable ho?c h�m Count.
 
-        // Ví dụ code giả định bạn có thể truy cập IQueryable:
+        // V� d? code gi? d?nh b?n c� th? truy c?p IQueryable:
         var totalMembers = await _unitOfWork.Members.GetQueryable().CountAsync();
 
         var activeMembers = await _unitOfWork.Members.GetQueryable()
@@ -35,7 +35,7 @@ public class DashboardService : IDashboardService
 
         var totalTrainers = await _unitOfWork.Trainers.GetQueryable().CountAsync();
 
-        // Tính doanh thu tháng này (Giả sử bảng Payments)
+        // T�nh doanh thu th�ng n�y (Gi? s? b?ng Payments)
         var currentMonth = DateTime.UtcNow.Month;
         var currentYear = DateTime.UtcNow.Year;
 

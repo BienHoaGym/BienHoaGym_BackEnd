@@ -1,4 +1,4 @@
-﻿using Gym.Application.Interfaces.Repositories;
+using Gym.Application.Interfaces.Repositories;
 using Gym.Domain.Entities;
 using Gym.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
