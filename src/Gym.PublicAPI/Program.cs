@@ -24,18 +24,11 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// Configure DbContext with SQL Server
+// Configure DbContext
 builder.Services.AddDbContext<GymDbContext>(options =>
 {
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
-        sqlOptions =>
-        {
-            sqlOptions.EnableRetryOnFailure(
-                maxRetryCount: 5,
-                maxRetryDelay: TimeSpan.FromSeconds(30),
-                errorNumbersToAdd: null);
-        });
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    options.UseNpgsql(connectionString);
 
     if (builder.Environment.IsDevelopment())
     {
@@ -82,6 +75,22 @@ app.MapGet("/", () => new
 
 Console.WriteLine("🌐 Gym Public API is running!");
 Console.WriteLine("📖 Swagger UI: /swagger");
+Console.WriteLine("DB: " + builder.Configuration.GetConnectionString("DefaultConnection"));
+
+// Auto Migrate
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<GymDbContext>();
+    try 
+    {
+        db.Database.Migrate();
+        Console.WriteLine("✅ Database migrated successfully!");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Migration error: {ex.Message}");
+    }
+}
 // Lấy PORT từ môi trường (Render cấp)
 var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
 

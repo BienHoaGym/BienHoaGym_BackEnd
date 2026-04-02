@@ -32,15 +32,8 @@ builder.Services.AddEndpointsApiExplorer();
 // Configure DbContext
 builder.Services.AddDbContext<GymDbContext>(options =>
 {
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
-        sqlOptions =>
-        {
-            sqlOptions.EnableRetryOnFailure(
-                maxRetryCount: 5,
-                maxRetryDelay: TimeSpan.FromSeconds(30),
-                errorNumbersToAdd: null);
-        });
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    options.UseNpgsql(connectionString);
 
     if (builder.Environment.IsDevelopment())
     {
@@ -227,6 +220,22 @@ app.MapGet("/api/debug/auth", (ClaimsPrincipal user) =>
 // Console Logs
 Console.WriteLine("🚀 Gym Management API is running!");
 Console.WriteLine("📖 Swagger UI: /swagger");
+Console.WriteLine("DB: " + builder.Configuration.GetConnectionString("DefaultConnection"));
+
+// Auto Migrate
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<GymDbContext>();
+    try 
+    {
+        db.Database.Migrate();
+        Console.WriteLine("✅ Database migrated successfully!");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Migration error: {ex.Message}");
+    }
+}
 
 // Database Check
 using (var scope = app.Services.CreateScope())
