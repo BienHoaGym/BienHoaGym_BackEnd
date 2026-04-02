@@ -1,35 +1,35 @@
-# Stage 1: Runtime Base
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
+# ===== Stage 1: Runtime =====
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
 
-# Stage 2: Build
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+# ===== Stage 2: Build =====
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
-# Copy project files for restore
+# Copy csproj để restore
 COPY ["src/Gym.PublicAPI/Gym.PublicAPI.csproj", "src/Gym.PublicAPI/"]
 COPY ["src/Gym.Application/Gym.Application.csproj", "src/Gym.Application/"]
 COPY ["src/Gym.Domain/Gym.Domain.csproj", "src/Gym.Domain/"]
 COPY ["src/Gym.Infrastructure/Gym.Infrastructure.csproj", "src/Gym.Infrastructure/"]
 
-# Restore dependencies
 RUN dotnet restore "src/Gym.PublicAPI/Gym.PublicAPI.csproj"
 
 # Copy full source
 COPY . .
-WORKDIR "/src/src/Gym.PublicAPI"
-RUN dotnet build "Gym.PublicAPI.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
-# Stage 3: Publish
-FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "Gym.PublicAPI.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+# Build đúng path
+WORKDIR "/src/Gym.PublicAPI"
+RUN dotnet publish "Gym.PublicAPI.csproj" -c $BUILD_CONFIGURATION -o /app/publish
 
-# Stage 4: Run
+# ===== Stage 3: Run =====
 FROM base AS final
 WORKDIR /app
-COPY --from=publish /app/publish .
 
-# Use PORT from environment variable (as configured in Program.cs)
+COPY --from=build /app/publish .
+
+# QUAN TRỌNG cho Render
+ENV ASPNETCORE_URLS=http://0.0.0.0:10000
+EXPOSE 10000
+
 ENTRYPOINT ["dotnet", "Gym.PublicAPI.dll"]
