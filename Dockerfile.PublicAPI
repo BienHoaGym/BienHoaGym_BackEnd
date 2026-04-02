@@ -19,7 +19,7 @@ RUN dotnet restore "src/Gym.PublicAPI/Gym.PublicAPI.csproj"
 COPY . .
 
 # Build đúng path
-WORKDIR "/src/Gym.PublicAPI"
+WORKDIR "/src/src/Gym.PublicAPI"
 RUN dotnet publish "Gym.PublicAPI.csproj" -c $BUILD_CONFIGURATION -o /app/publish
 
 # ===== Stage 3: Run =====
