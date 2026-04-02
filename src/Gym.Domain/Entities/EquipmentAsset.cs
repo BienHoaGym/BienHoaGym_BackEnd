@@ -28,7 +28,7 @@ public class Equipment : BaseEntity
     public double? Weight { get; set; } // Trọng lượng (kg)
     
     // Depreciation settings
-    public int UsefulLifeMonths { get; set; } = 36; // Default 3 years (thời gian khấu hao tháng)
+    public int UsefulLifeMonths { get; set; } = 12; // Mặc định khấu hao trong 1 năm (12 tháng) theo yêu cầu người dùng
     public decimal SalvageValue { get; set; } = 0; // Estimated value after useful life (Giá trị dư ước tính)
     public DateTime? DepreciationStartDate { get; set; }
     

@@ -140,4 +140,12 @@ public class EquipmentController : ControllerBase
         var result = await _equipmentService.RecordDepreciationAsync(id, month, year, note);
         return Ok(result);
     }
+
+    [HttpPost("bulk-depreciation")]
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<IActionResult> BulkRecordDepreciation([FromQuery] int month, [FromQuery] int year)
+    {
+        var result = await _equipmentService.BulkRecordDepreciationAsync(month, year);
+        return Ok(result);
+    }
 }

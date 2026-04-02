@@ -21,27 +21,6 @@ public class MemberService : IMemberService
         _auditLogService = auditLogService;
     }
 
-    private async Task ScanAndExpireProspectiveMembersAsync()
-    {
-        var expiryLimit = DateTime.UtcNow.AddHours(-24);
-        var expiredLeads = await _unitOfWork.Members.GetQueryable()
-            .Where(m => m.Status == MemberStatus.Prospective && m.CreatedAt < expiryLimit && !m.IsDeleted)
-            .ToListAsync();
-
-        if (expiredLeads.Any())
-        {
-            foreach (var lead in expiredLeads)
-            {
-                lead.IsDeleted = true;
-                lead.UpdatedAt = DateTime.UtcNow;
-                
-                await _auditLogService.LogAsync("System", "AUTO_EXPIRE_LEAD", "Members", 
-                    new { Status = MemberStatus.Prospective.ToString() }, 
-                    new { IsDeleted = true, Reason = "Timeout 24h" });
-            }
-            await _unitOfWork.SaveChangesAsync();
-        }
-    }
 
     #region Basic Operations
 
@@ -260,8 +239,7 @@ public class MemberService : IMemberService
         }
 
         // Safety loop to ensure uniqueness
-        string code;
-        while (await _unitOfWork.Members.GetQueryable().AnyAsync(m => m.MemberCode == (code = $"GYM{nextIndex:D4}")))
+        while (await _unitOfWork.Members.GetQueryable().AnyAsync(m => m.MemberCode == $"GYM{nextIndex:D4}"))
         {
             nextIndex++;
         }

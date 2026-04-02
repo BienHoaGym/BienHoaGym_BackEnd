@@ -141,25 +141,8 @@ public class CheckInService : ICheckInService
             return ResponseDto<CheckInValidationResultDto>.SuccessResult(result);
         }
 
-        // 6.5. NGHIỆP VỤ (BA - II.5): Chống gian lận - Giới hạn 1 ngày 1 lần
-        var today = DateTime.UtcNow.Date;
-        var hasCheckedInToday = await _unitOfWork.CheckIns.GetQueryable()
-            .AnyAsync(c => c.MemberId == member.Id
-                        && c.CheckInTime.Date == today // Đã tối ưu biến today
-                        && !c.IsDeleted);
+        // 6.5. Đã loại bỏ logic giới hạn 1 lần/ngày theo yêu cầu (Hội viên có thể check-in nhiều lần nếu đã check-out)
 
-        if (hasCheckedInToday)
-        {
-            result.IsValid = false;
-            result.Message = "Đã sử dụng hết lượt trong ngày";
-            result.Errors.Add("Theo quy định, hội viên chỉ được check-in 1 lần/ngày.");
-
-            // ✅ GHI AUDIT LOG: Cảnh báo Check-in quá giới hạn trong ngày
-            await _auditLogService.LogAsync("System", "FRAUD_WARNING", "CheckIns", null,
-                new { MemberCode = memberCode, Reason = "Vượt quá giới hạn check-in ngày" });
-
-            return ResponseDto<CheckInValidationResultDto>.SuccessResult(result);
-        }
 
         // 7. Cảnh báo sắp hết hạn
         var daysUntilExpiry = (activeSubscription.EndDate - DateTime.Today).Days;
