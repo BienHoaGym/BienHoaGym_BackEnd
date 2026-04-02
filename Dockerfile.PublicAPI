@@ -18,9 +18,9 @@ RUN dotnet restore "src/Gym.PublicAPI/Gym.PublicAPI.csproj"
 # Copy full source
 COPY . .
 
-# Build đúng path
+# Build đúng path (QUAN TRỌNG)
 WORKDIR "/src/src/Gym.PublicAPI"
-RUN dotnet publish "/src/src/Gym.PublicAPI/Gym.PublicAPI.csproj" -c Release -o /app/publish-c $BUILD_CONFIGURATION -o /app/publish
+RUN dotnet publish "/src/src/Gym.PublicAPI/Gym.PublicAPI.csproj" -c $BUILD_CONFIGURATION -o /app/publish
 
 # ===== Stage 3: Run =====
 FROM base AS final
