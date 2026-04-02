@@ -194,15 +194,12 @@ var app = builder.Build();
 // 5. MIDDLEWARE PIPELINE
 // ==========================================
 
-if (app.Environment.IsDevelopment())
+app.UseSwagger();
+app.UseSwaggerUI(options =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(options =>
-    {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Gym Management API V1");
-        options.RoutePrefix = "swagger";
-    });
-}
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Gym Management API V1");
+    options.RoutePrefix = "swagger";
+});
 
 // CORS phải đứng trước Auth
 app.UseCors("AllowAll");
