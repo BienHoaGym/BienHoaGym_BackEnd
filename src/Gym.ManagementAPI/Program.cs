@@ -183,7 +183,7 @@ builder.Services.AddScoped<IAuthorizationHandler, PermissionHandler>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
-        policy => policy.AllowAnyOrigin()
+        policy => policy.WithOrigins("https://bienhoagym.github.io")
                         .AllowAnyHeader()
                         .AllowAnyMethod());
 });
@@ -229,7 +229,7 @@ app.MapGet("/api/debug/auth", (ClaimsPrincipal user) =>
 
 // Console Logs
 Console.WriteLine("🚀 Gym Management API is running!");
-Console.WriteLine("📖 Swagger UI: http://localhost:5001/swagger");
+Console.WriteLine("📖 Swagger UI: /swagger");
 
 // Database Check
 using (var scope = app.Services.CreateScope())
@@ -249,6 +249,8 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Lấy PORT từ môi trường (Render cấp)
-var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
+var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
+
+Console.WriteLine($"📍 Port: {port}");
 
 app.Run($"http://0.0.0.0:{port}");
