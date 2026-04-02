@@ -9,7 +9,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Gym.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCleanProduction : Migration
+    public partial class InitialCleanPostgres : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -947,15 +947,15 @@ namespace Gym.Infrastructure.Migrations
                 columns: new[] { "Id", "CreatedAt", "Email", "FullName", "IsActive", "LastLoginAt", "PasswordHash", "PhoneNumber", "UpdatedAt", "Username" },
                 values: new object[,]
                 {
-                    { new Guid("11111111-1111-1111-1111-111111111111"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "admin@gym.com", "System Administrator", true, null, "AQAAAAIAAYagAAAAEPXmSnswJsuChXHy25rHDebvtt8ccxgeK63G8rDJKpRCYkJS+6bb+k1wM2HMZPAtgA==", "0901234567", null, "admin" },
-                    { new Guid("22222222-2222-2222-2222-222222222222"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "manager@gym.com", "Nguyễn Văn Manager", true, null, "AQAAAAIAAYagAAAAEEz5c2BAKbYKQFOPXvHJ7pXFVG0nZ5n/jEmy0PkcVr0No6XUPXK5aO/AjMZeGVODmw==", "0902345678", null, "manager" },
-                    { new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "trainer1@gym.com", "Trần Thị Hương", true, null, "AQAAAAIAAYagAAAAEDA13NYAMI7+1+oPVX8+fMhLIQWUWzRYvWF04XivEp6CvNDAsC0b0fNCT+3FMfobIQ==", "0903456789", null, "trainer1" },
-                    { new Guid("44444444-4444-4444-4444-444444444444"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "trainer2@gym.com", "Lê Văn Nam", true, null, "AQAAAAIAAYagAAAAEJWeFUgHO6+G7ZH7LAiYowd0CjWY15dIFynosdmb5eFSD5ruKByWRqUBYA5iKSjRRg==", "0904567890", null, "trainer2" },
-                    { new Guid("55555555-5555-5555-5555-555555555555"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "receptionist@gym.com", "Phạm Thị Lan", true, null, "AQAAAAIAAYagAAAAEOJtv51E4qbMORVifgr+Kb0YBhjYGRKz25T6LuuA/y5W2MqDqhEyWdf+LQRB430fxw==", "0905678901", null, "receptionist" },
-                    { new Guid("66666666-6666-6666-6666-666666666666"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "nguyenvana@gmail.com", "Nguyễn Văn A", true, null, "AQAAAAIAAYagAAAAEIqzC14s4ZGbXqrTs5teCJyKkZKs/QjpV5FLe7n2khgXcrO9GnidKfNE0TZyf63v6w==", "0906789012", null, "member001" },
-                    { new Guid("77777777-7777-7777-7777-777777777777"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "tranthib@gmail.com", "Trần Thị B", true, null, "AQAAAAIAAYagAAAAEKrlWZOQhRlcWYeJU3lDX8zqBoLwcZS9lxPeqeg7udELiZ5zeF1Krw9HBHA0EtThwg==", "0907890123", null, "member002" },
-                    { new Guid("88888888-8888-8888-8888-888888888888"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "levanc_member@gmail.com", "Lê Văn C (Member)", true, null, "AQAAAAIAAYagAAAAEBBZK9bRcdOebCPUlVW84f0iOkxHVIZqkUmA18BRIog1pd2Ni0CiL8uaQxlm3YfHNg==", "0908901234", null, "member003" },
-                    { new Guid("99999999-9999-9999-9999-999999999999"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "levanc@gym.com", "Lê Văn C", true, null, "AQAAAAIAAYagAAAAEGIxkxEf55bLp01ARpDA/QMr/2naQ7wmthzlA+rgcqGd86cfZmqVNGXXBbRsfULiCQ==", "0909999999", null, "levanc" }
+                    { new Guid("11111111-1111-1111-1111-111111111111"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "admin@gym.com", "System Administrator", true, null, "AQAAAAIAAYagAAAAEHL4vT2Buc/sGNdvHQvFfQ4CPc4UQOmiPbzp5m1Z7oQcBwOSwcLDD59AMEAn/VIucg==", "0901234567", null, "admin" },
+                    { new Guid("22222222-2222-2222-2222-222222222222"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "manager@gym.com", "Nguyễn Văn Manager", true, null, "AQAAAAIAAYagAAAAEMOE509lshkBGDxE6dq/f4XoE6hQo4zLMTgN++LE8Y6ZGamPY0pO27BTeK3UQAOJIA==", "0902345678", null, "manager" },
+                    { new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "trainer1@gym.com", "Trần Thị Hương", true, null, "AQAAAAIAAYagAAAAEHmUV0/HBqxqxwRVGtDla2IqXBjr91HmiCdPU0Yuvxk6AIzRZNC/eEOTH84lDXDiEw==", "0903456789", null, "trainer1" },
+                    { new Guid("44444444-4444-4444-4444-444444444444"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "trainer2@gym.com", "Lê Văn Nam", true, null, "AQAAAAIAAYagAAAAEPrwImYQBLTEJwPjRlKXNIG8ikfT8srZxmJWqEZXHOIkQVC//7TkcwH0C4pxNZ36pQ==", "0904567890", null, "trainer2" },
+                    { new Guid("55555555-5555-5555-5555-555555555555"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "receptionist@gym.com", "Phạm Thị Lan", true, null, "AQAAAAIAAYagAAAAEKa+C8CgOyFYIqAgpeV6LP/I46nFwIAVaka1cnVu0rH4wEGn64gk54JxYI8hlJP+/A==", "0905678901", null, "receptionist" },
+                    { new Guid("66666666-6666-6666-6666-666666666666"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "nguyenvana@gmail.com", "Nguyễn Văn A", true, null, "AQAAAAIAAYagAAAAEDQRD6y5aiOyUFR10moTudhiIVNTsd+fyVANMNhZYluVjWPkGLHk15aQ0j0yVQalwA==", "0906789012", null, "member001" },
+                    { new Guid("77777777-7777-7777-7777-777777777777"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "tranthib@gmail.com", "Trần Thị B", true, null, "AQAAAAIAAYagAAAAECmXsgKsmu1HTroDneVv0uYGtwIPHNu9ybdGN+tyFatP65EMN5eX3C2EbkJvj1lsUA==", "0907890123", null, "member002" },
+                    { new Guid("88888888-8888-8888-8888-888888888888"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "levanc_member@gmail.com", "Lê Văn C (Member)", true, null, "AQAAAAIAAYagAAAAEFNcwsku1D6L4HvB+OqvFjuGvwo1K4E9lQi5AqeKxzhcxiqyvyjhCfNhyh0ynUWAzA==", "0908901234", null, "member003" },
+                    { new Guid("99999999-9999-9999-9999-999999999999"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "levanc@gym.com", "Lê Văn C", true, null, "AQAAAAIAAYagAAAAEJXC/QCihxGmq34k06Gwb9lGepTD/VpXBi9xvD4lMAaOIDl3RytY/354gifzLJfuMw==", "0909999999", null, "levanc" }
                 });
 
             migrationBuilder.InsertData(
@@ -1001,16 +1001,16 @@ namespace Gym.Infrastructure.Migrations
                 columns: new[] { "RoleId", "UserId", "AssignedAt" },
                 values: new object[,]
                 {
-                    { 1, new Guid("11111111-1111-1111-1111-111111111111"), new DateTime(2026, 4, 2, 6, 0, 10, 887, DateTimeKind.Utc).AddTicks(9143) },
-                    { 2, new Guid("22222222-2222-2222-2222-222222222222"), new DateTime(2026, 4, 2, 6, 0, 10, 887, DateTimeKind.Utc).AddTicks(9152) },
-                    { 3, new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2026, 4, 2, 6, 0, 10, 887, DateTimeKind.Utc).AddTicks(9153) },
-                    { 3, new Guid("44444444-4444-4444-4444-444444444444"), new DateTime(2026, 4, 2, 6, 0, 10, 887, DateTimeKind.Utc).AddTicks(9155) },
-                    { 4, new Guid("55555555-5555-5555-5555-555555555555"), new DateTime(2026, 4, 2, 6, 0, 10, 887, DateTimeKind.Utc).AddTicks(9156) },
-                    { 5, new Guid("66666666-6666-6666-6666-666666666666"), new DateTime(2026, 4, 2, 6, 0, 10, 887, DateTimeKind.Utc).AddTicks(9159) },
-                    { 5, new Guid("77777777-7777-7777-7777-777777777777"), new DateTime(2026, 4, 2, 6, 0, 10, 887, DateTimeKind.Utc).AddTicks(9161) },
-                    { 5, new Guid("88888888-8888-8888-8888-888888888888"), new DateTime(2026, 4, 2, 6, 0, 10, 887, DateTimeKind.Utc).AddTicks(9162) },
-                    { 3, new Guid("99999999-9999-9999-9999-999999999999"), new DateTime(2026, 4, 2, 6, 0, 10, 887, DateTimeKind.Utc).AddTicks(9158) },
-                    { 4, new Guid("99999999-9999-9999-9999-999999999999"), new DateTime(2026, 4, 2, 6, 0, 10, 887, DateTimeKind.Utc).AddTicks(9157) }
+                    { 1, new Guid("11111111-1111-1111-1111-111111111111"), new DateTime(2026, 4, 2, 6, 18, 15, 899, DateTimeKind.Utc).AddTicks(1725) },
+                    { 2, new Guid("22222222-2222-2222-2222-222222222222"), new DateTime(2026, 4, 2, 6, 18, 15, 899, DateTimeKind.Utc).AddTicks(1730) },
+                    { 3, new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2026, 4, 2, 6, 18, 15, 899, DateTimeKind.Utc).AddTicks(1732) },
+                    { 3, new Guid("44444444-4444-4444-4444-444444444444"), new DateTime(2026, 4, 2, 6, 18, 15, 899, DateTimeKind.Utc).AddTicks(1733) },
+                    { 4, new Guid("55555555-5555-5555-5555-555555555555"), new DateTime(2026, 4, 2, 6, 18, 15, 899, DateTimeKind.Utc).AddTicks(1734) },
+                    { 5, new Guid("66666666-6666-6666-6666-666666666666"), new DateTime(2026, 4, 2, 6, 18, 15, 899, DateTimeKind.Utc).AddTicks(1891) },
+                    { 5, new Guid("77777777-7777-7777-7777-777777777777"), new DateTime(2026, 4, 2, 6, 18, 15, 899, DateTimeKind.Utc).AddTicks(1892) },
+                    { 5, new Guid("88888888-8888-8888-8888-888888888888"), new DateTime(2026, 4, 2, 6, 18, 15, 899, DateTimeKind.Utc).AddTicks(1894) },
+                    { 3, new Guid("99999999-9999-9999-9999-999999999999"), new DateTime(2026, 4, 2, 6, 18, 15, 899, DateTimeKind.Utc).AddTicks(1737) },
+                    { 4, new Guid("99999999-9999-9999-9999-999999999999"), new DateTime(2026, 4, 2, 6, 18, 15, 899, DateTimeKind.Utc).AddTicks(1735) }
                 });
 
             migrationBuilder.InsertData(
@@ -1086,13 +1086,13 @@ namespace Gym.Infrastructure.Migrations
                 name: "IX_Classes_ScheduleDay",
                 table: "Classes",
                 column: "ScheduleDay",
-                filter: "IsActive = 1");
+                filter: "\"IsActive\" = true");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Classes_ScheduleDay_StartTime",
                 table: "Classes",
                 columns: new[] { "ScheduleDay", "StartTime" },
-                filter: "IsActive = 1");
+                filter: "\"IsActive\" = true");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Classes_TrainerId",
@@ -1159,7 +1159,7 @@ namespace Gym.Infrastructure.Migrations
                 table: "Invoices",
                 column: "InvoiceNumber",
                 unique: true,
-                filter: "IsDeleted = 0");
+                filter: "\"IsDeleted\" = false");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Invoices_MemberId",
@@ -1201,7 +1201,7 @@ namespace Gym.Infrastructure.Migrations
                 table: "Members",
                 column: "MemberCode",
                 unique: true,
-                filter: "IsDeleted = 0");
+                filter: "\"IsDeleted\" = false");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Members_PhoneNumber",
@@ -1212,7 +1212,7 @@ namespace Gym.Infrastructure.Migrations
                 name: "IX_Members_Status",
                 table: "Members",
                 column: "Status",
-                filter: "IsDeleted = 0");
+                filter: "\"IsDeleted\" = false");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Members_UserId",
@@ -1224,13 +1224,13 @@ namespace Gym.Infrastructure.Migrations
                 name: "IX_MembershipPackages_IsActive",
                 table: "MembershipPackages",
                 column: "IsActive",
-                filter: "IsDeleted = 0");
+                filter: "\"IsDeleted\" = false");
 
             migrationBuilder.CreateIndex(
                 name: "IX_MemberSubscriptions_EndDate",
                 table: "MemberSubscriptions",
                 column: "EndDate",
-                filter: "Status = 2");
+                filter: "\"Status\" = 2");
 
             migrationBuilder.CreateIndex(
                 name: "IX_MemberSubscriptions_MemberId",
@@ -1251,7 +1251,7 @@ namespace Gym.Infrastructure.Migrations
                 name: "IX_MemberSubscriptions_Status",
                 table: "MemberSubscriptions",
                 column: "Status",
-                filter: "IsDeleted = 0");
+                filter: "\"IsDeleted\" = false");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OrderDetails_OrderId",
@@ -1287,7 +1287,7 @@ namespace Gym.Infrastructure.Migrations
                 name: "IX_Payments_TransactionId",
                 table: "Payments",
                 column: "TransactionId",
-                filter: "TransactionId IS NOT NULL");
+                filter: "\"TransactionId\" IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Products_ProviderId",
@@ -1299,7 +1299,7 @@ namespace Gym.Infrastructure.Migrations
                 table: "Products",
                 column: "SKU",
                 unique: true,
-                filter: "IsDeleted = 0");
+                filter: "\"IsDeleted\" = false");
 
             migrationBuilder.CreateIndex(
                 name: "IX_StockTransactions_FromWarehouseId",
@@ -1335,20 +1335,20 @@ namespace Gym.Infrastructure.Migrations
                 name: "IX_Trainers_Email",
                 table: "Trainers",
                 column: "Email",
-                filter: "Email IS NOT NULL");
+                filter: "\"Email\" IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Trainers_IsActive",
                 table: "Trainers",
                 column: "IsActive",
-                filter: "IsDeleted = 0");
+                filter: "\"IsDeleted\" = false");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Trainers_UserId",
                 table: "Trainers",
                 column: "UserId",
                 unique: true,
-                filter: "UserId IS NOT NULL");
+                filter: "\"UserId\" IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserRoles_RoleId",
