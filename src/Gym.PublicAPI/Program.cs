@@ -84,10 +84,10 @@ app.MapGet("/", () => new
 });
 
 Console.WriteLine("🌐 Gym Public API is running!");
-Console.WriteLine("📖 Swagger UI: http://localhost:5002/swagger");
-Console.WriteLine("📍 Port: 5002");
-
+Console.WriteLine("📖 Swagger UI: /swagger");
 // Lấy PORT từ môi trường (Render cấp)
-var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
+var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
+
+Console.WriteLine($"📍 Port: {port}");
 
 app.Run($"http://0.0.0.0:{port}");
