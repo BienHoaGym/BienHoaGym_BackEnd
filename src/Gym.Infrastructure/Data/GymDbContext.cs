@@ -67,9 +67,7 @@ public class GymDbContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        optionsBuilder.ConfigureWarnings(warnings =>
-            warnings.Ignore(RelationalEventId.PendingModelChangesWarning));
-
+        optionsBuilder.ConfigureWarnings(w => { });
         base.OnConfiguring(optionsBuilder);
     }
 
