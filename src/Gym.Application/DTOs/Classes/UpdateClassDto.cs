@@ -6,7 +6,7 @@ public class UpdateClassDto
 
     public string? Description { get; set; }
 
-    public Guid TrainerId { get; set; }
+    public Guid? TrainerId { get; set; }
 
     public string? ScheduleDay { get; set; }
 

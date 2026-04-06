@@ -72,14 +72,17 @@ public class DashboardController : ControllerBase
 
             var revenueToday = await paymentsQuery
                 .Where(p => p.PaymentDate.Date == today)
-                .SumAsync(p => p.Amount);
+                .Select(p => (double)p.Amount)
+                .SumAsync();
 
             var revenueMonth = await paymentsQuery
                 .Where(p => p.PaymentDate >= monthStart)
-                .SumAsync(p => p.Amount);
+                .Select(p => (double)p.Amount)
+                .SumAsync();
 
             var revenueTotal = await paymentsQuery
-                .SumAsync(p => p.Amount);
+                .Select(p => (double)p.Amount)
+                .SumAsync();
 
             // 5. Recent Payments (5 giao dịch gần nhất)
             var recentPayments = await paymentsQuery

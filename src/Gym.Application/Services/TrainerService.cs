@@ -251,7 +251,7 @@ public class TrainerService : ITrainerService
         var dto = new PersonalScheduleDto
         {
             UserInfo = _mapper.Map<TrainerDto>(trainer),
-            Classes = _mapper.Map<List<Gym.Application.DTOs.Classes.ClassDto>>(trainer.Classes.Where(c => !c.IsDeleted && c.IsActive).OrderBy(c => c.ScheduleDay).ThenBy(c => c.StartTime)),
+            Classes = _mapper.Map<List<Gym.Application.DTOs.Classes.ClassDto>>(trainer.Classes.Where(c => !c.IsDeleted && c.IsActive).ToList().OrderBy(c => c.ScheduleDay).ThenBy(c => c.StartTime)),
             PersonalClients = _mapper.Map<List<TrainerAssignmentDto>>(trainer.TrainerMemberAssignments.Where(a => !a.IsDeleted && a.IsActive))
         };
 
@@ -272,7 +272,7 @@ public class TrainerService : ITrainerService
         var dto = new PersonalScheduleDto
         {
             UserInfo = _mapper.Map<TrainerDto>(trainer),
-            Classes = _mapper.Map<List<Gym.Application.DTOs.Classes.ClassDto>>(trainer.Classes.Where(c => !c.IsDeleted && c.IsActive).OrderBy(c => c.ScheduleDay).ThenBy(c => c.StartTime)),
+            Classes = _mapper.Map<List<Gym.Application.DTOs.Classes.ClassDto>>(trainer.Classes.Where(c => !c.IsDeleted && c.IsActive).ToList().OrderBy(c => c.ScheduleDay).ThenBy(c => c.StartTime)),
             PersonalClients = _mapper.Map<List<TrainerAssignmentDto>>(trainer.TrainerMemberAssignments.Where(a => !a.IsDeleted && a.IsActive))
         };
 
@@ -283,11 +283,14 @@ public class TrainerService : ITrainerService
     {
         try 
         {
-            var classes = await _unitOfWork.Classes.GetQueryable()
+            var classesFromDb = await _unitOfWork.Classes.GetQueryable()
                 .Include(c => c.Trainer)
                 .Where(c => !c.IsDeleted && c.IsActive)
-                .OrderBy(c => c.ScheduleDay).ThenBy(c => c.StartTime)
                 .ToListAsync();
+
+            var classes = classesFromDb
+                .OrderBy(c => c.ScheduleDay).ThenBy(c => c.StartTime)
+                .ToList();
 
             var assignments = await _unitOfWork.TrainerMemberAssignments.GetQueryable()
                 .Include(a => a.Member)

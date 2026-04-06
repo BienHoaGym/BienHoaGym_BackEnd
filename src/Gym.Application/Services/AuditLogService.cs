@@ -22,39 +22,61 @@ namespace Gym.Application.Services
 
         public async Task LogAsync(string userId, string action, string entityName, object? oldValues, object? newValues)
         {
-            var jsonOptions = new JsonSerializerOptions
+            try 
             {
-                WriteIndented = false,
-                ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles
-            };
+                var jsonOptions = new JsonSerializerOptions
+                {
+                    WriteIndented = false,
+                    ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                };
 
-            // Fetch user info to avoid empty logs
-            string userName = "System";
-            string userRole = "N/A";
-            if (!string.IsNullOrEmpty(userId) && userId != "System")
-            {
-                // Note: Assuming a generic way to get user, or just logging the ID if not found
-                // For now, let's try to find them if possible, or just use the ID as name if preferred
-                // But generally we want to keep logs rich.
-                // In a real app, we'd search: var user = await _unitOfWork.Users.GetByIdAsync(new Guid(userId));
+                string userName = "Hệ thống";
+                string userRole = "N/A";
+
+                // Chỉ truy tìm nếu userId là GUID hợp lệ và không phải System
+                if (!string.IsNullOrEmpty(userId) && userId != "System" && Guid.TryParse(userId, out var userGuid))
+                {
+                    try {
+                        var user = await _unitOfWork.Users.GetQueryable()
+                            .AsNoTracking() // Dùng AsNoTracking để tránh lỗi conflict transaction
+                            .Include(u => u.UserRoles)
+                                .ThenInclude(ur => ur.Role)
+                            .FirstOrDefaultAsync(u => u.Id == userGuid);
+                        
+                        if (user != null)
+                        {
+                            userName = user.Username;
+                            userRole = user.UserRoles.FirstOrDefault()?.Role?.RoleName ?? "User";
+                        }
+                    } catch {
+                        // Nếu lỗi DB khi tìm user thì dùng ID làm tên
+                        userName = $"User ({userId.Substring(0, 5)}...)";
+                    }
+                }
+
+                var log = new AuditLog
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = string.IsNullOrEmpty(userId) ? "System" : userId,
+                    UserName = userName, 
+                    UserRole = userRole,
+                    Action = action,
+                    EntityName = entityName,
+                    OldValues = oldValues != null ? JsonSerializer.Serialize(oldValues, jsonOptions) : "{}",
+                    NewValues = newValues != null ? JsonSerializer.Serialize(newValues, jsonOptions) : "{}",
+                    Severity = action.Contains("Deleted") ? Domain.Enums.AuditSeverity.Critical : Domain.Enums.AuditSeverity.Normal,
+                    Timestamp = DateTime.UtcNow
+                };
+
+                await _unitOfWork.AuditLogs.AddAsync(log);
+                await _unitOfWork.SaveChangesAsync();
             }
-
-            var log = new AuditLog
+            catch (Exception ex)
             {
-                Id = Guid.NewGuid(),
-                UserId = string.IsNullOrEmpty(userId) ? "System" : userId,
-                UserName = userName, 
-                UserRole = userRole,
-                Action = action,
-                EntityName = entityName,
-                OldValues = oldValues != null ? JsonSerializer.Serialize(oldValues, jsonOptions) : "{}",
-                NewValues = newValues != null ? JsonSerializer.Serialize(newValues, jsonOptions) : "{}",
-                Severity = action.Contains("Deleted") ? Domain.Enums.AuditSeverity.Critical : Domain.Enums.AuditSeverity.Normal,
-                Timestamp = DateTime.UtcNow
-            };
-
-            await _unitOfWork.AuditLogs.AddAsync(log);
-            await _unitOfWork.SaveChangesAsync();
+                // Tuyệt đối không để lỗi ghi log làm hỏng flow chính của app
+                Console.WriteLine($" CRITICAL ERROR: Failed to write Audit Log: {ex.Message}");
+            }
         }
 
         // ========================================================

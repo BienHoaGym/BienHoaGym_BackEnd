@@ -407,9 +407,10 @@ public class EquipmentService : IEquipmentService
         // Total already depreciated
         var totalDepreciated = await _unitOfWork.Depreciations.GetQueryable()
             .Where(d => d.EquipmentId == equipmentId)
-            .SumAsync(d => d.Amount);
+            .Select(d => (double)d.Amount)
+            .SumAsync();
 
-        if (totalDepreciated >= (equipment.PurchasePrice - equipment.SalvageValue))
+        if ((decimal)totalDepreciated >= (equipment.PurchasePrice - equipment.SalvageValue))
             return ResponseDto<bool>.FailureResult("Thiết bị đã khấu hao hết");
 
         var dep = new Depreciation
@@ -418,7 +419,7 @@ public class EquipmentService : IEquipmentService
             Amount = monthlyAmount,
             PeriodMonth = month,
             PeriodYear = year,
-            RemainingValue = equipment.PurchasePrice - totalDepreciated - monthlyAmount,
+            RemainingValue = equipment.PurchasePrice - (decimal)totalDepreciated - monthlyAmount,
             Note = note ?? $"Khấu hao định kỳ tháng {month}/{year}",
             Date = DateTime.UtcNow
         };

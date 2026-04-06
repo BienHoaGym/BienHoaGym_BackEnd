@@ -60,10 +60,12 @@ public class ClassService : IClassService
             }
         }
 
-        var activeClasses = await classesQuery
+        var activeClassesFromDb = await classesQuery.ToListAsync();
+
+        var activeClasses = activeClassesFromDb
             .OrderBy(c => c.ScheduleDay)
             .ThenBy(c => c.StartTime)
-            .ToListAsync();
+            .ToList();
 
         var classDtos = _mapper.Map<List<ClassDto>>(activeClasses);
         return ResponseDto<List<ClassDto>>.SuccessResult(classDtos);
@@ -71,12 +73,15 @@ public class ClassService : IClassService
 
     public async Task<ResponseDto<List<ClassDto>>> GetActiveClassesAsync()
     {
-        var activeClasses = await _unitOfWork.Classes.GetQueryable()
+        var activeClassesFromDb = await _unitOfWork.Classes.GetQueryable()
             .Include(c => c.Trainer)
             .Where(c => !c.IsDeleted && c.IsActive)
+            .ToListAsync();
+
+        var activeClasses = activeClassesFromDb
             .OrderBy(c => c.ScheduleDay)
             .ThenBy(c => c.StartTime)
-            .ToListAsync();
+            .ToList();
 
         var classDtos = _mapper.Map<List<ClassDto>>(activeClasses);
         return ResponseDto<List<ClassDto>>.SuccessResult(classDtos);
@@ -94,7 +99,7 @@ public class ClassService : IClassService
         var trainer = await _unitOfWork.Trainers.GetByIdAsync(dto.TrainerId);
         if (trainer == null || trainer.IsDeleted)
         {
-            return ResponseDto<ClassDto>.FailureResult("Trainer not found");
+            return ResponseDto<ClassDto>.FailureResult($"LỖI: HLV (ID {dto.TrainerId}) không tồn tại trong DB mới. Vui lòng chọn lại HLV khác.");
         }
 
         if (!trainer.IsActive)
@@ -128,11 +133,22 @@ public class ClassService : IClassService
             return ResponseDto<ClassDto>.FailureResult("Class not found");
         }
 
+        // Chụp lại trạng thái cũ để so sánh nhật ký
+        var oldValues = new { 
+            classEntity.ClassName, 
+            classEntity.MaxCapacity, 
+            classEntity.StartTime, 
+            classEntity.EndTime, 
+            classEntity.ScheduleDay, 
+            classEntity.IsActive,
+            classEntity.TrainerId
+        };
+
         // Validate trainer exists
         var trainer = await _unitOfWork.Trainers.GetByIdAsync(dto.TrainerId);
         if (trainer == null || trainer.IsDeleted)
         {
-            return ResponseDto<ClassDto>.FailureResult("Trainer not found");
+            return ResponseDto<ClassDto>.FailureResult($"LỖI: HLV (ID {dto.TrainerId}) không tồn tại trong DB mới. Vui lòng chọn lại HLV khác.");
         }
 
         // Validate time
@@ -151,7 +167,23 @@ public class ClassService : IClassService
         classEntity.UpdatedAt = DateTime.UtcNow;
 
         _unitOfWork.Classes.Update(classEntity);
-        await _unitOfWork.SaveChangesAsync();
+        var result = await _unitOfWork.SaveChangesAsync();
+
+        if (result > 0)
+        {
+            // Ghi nhật ký chi tiết
+            var userIdStr = _httpContextAccessor.HttpContext?.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var newValues = new { 
+                classEntity.ClassName, 
+                classEntity.MaxCapacity, 
+                classEntity.StartTime, 
+                classEntity.EndTime, 
+                classEntity.ScheduleDay, 
+                classEntity.IsActive,
+                classEntity.TrainerId
+            };
+            await _auditLogService.LogAsync(userIdStr ?? "System", "Modified", "Class", oldValues, newValues);
+        }
 
         return await GetByIdAsync(classEntity.Id);
     }

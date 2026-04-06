@@ -34,9 +34,10 @@ public class ClassRepository : Repository<Class>, IClassRepository
     public async Task<List<Class>> GetUpcomingClassesAsync()
     {
         var currentTime = DateTime.UtcNow.TimeOfDay;
-        return await _dbSet.Include(c => c.Trainer)
+        var classes = await _dbSet.Include(c => c.Trainer)
             .Where(c => !c.IsDeleted && c.StartTime >= currentTime)
-            .OrderBy(c => c.StartTime)
             .ToListAsync();
+            
+        return classes.OrderBy(c => c.StartTime).ToList();
     }
 }

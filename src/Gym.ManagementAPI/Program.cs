@@ -40,7 +40,15 @@ builder.Services.AddDbContext<GymDbContext>(options =>
         throw new Exception("Connection string 'DefaultConnection' or 'DATABASE_URL' not found.");
     }
 
-    options.UseNpgsql(connectionString);
+    // Tự động nhận diện Provider: Nếu là file .sqlite hoặc chuỗi cho SQLite thì dùng UseSqlite
+    if (connectionString.Contains(".sqlite") || connectionString.Contains("Data Source") || connectionString.Contains("Filename"))
+    {
+        options.UseSqlite(connectionString);
+    }
+    else
+    {
+        options.UseNpgsql(connectionString);
+    }
 
     if (builder.Environment.IsDevelopment())
     {
@@ -183,7 +191,7 @@ builder.Services.AddScoped<IAuthorizationHandler, PermissionHandler>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
-        policy => policy.WithOrigins("https://bienhoagym.github.io")
+        policy => policy.WithOrigins("https://bienhoagym.github.io", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:3000")
                         .AllowAnyHeader()
                         .AllowAnyMethod());
 });
