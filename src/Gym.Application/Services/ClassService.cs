@@ -96,15 +96,19 @@ public class ClassService : IClassService
             return ResponseDto<ClassDto>.FailureResult("Chỉ Quản lý mới có quyền tạo lịch lớp học.");
         }
         // Validate trainer exists
-        var trainer = await _unitOfWork.Trainers.GetByIdAsync(dto.TrainerId);
-        if (trainer == null || trainer.IsDeleted)
+        if (dto.TrainerId.HasValue)
         {
-            return ResponseDto<ClassDto>.FailureResult($"LỖI: HLV (ID {dto.TrainerId}) không tồn tại trong DB mới. Vui lòng chọn lại HLV khác.");
-        }
+            var trainer = await _unitOfWork.Trainers.GetByIdAsync(dto.TrainerId.Value);
+            if (trainer == null || trainer.IsDeleted)
+            {
+                return ResponseDto<ClassDto>.FailureResult($"LỖI: HLV (ID {dto.TrainerId}) không tồn tại. Vui lòng chọn lại HLV khác.");
+            }
 
-        if (!trainer.IsActive)
-        {
-            return ResponseDto<ClassDto>.FailureResult("Trainer is not active");
+            if (!trainer.IsActive)
+            {
+                return ResponseDto<ClassDto>.FailureResult("Trainer is not active");
+            }
+            classEntity.TrainerId = trainer.Id;
         }
 
         // Validate time
