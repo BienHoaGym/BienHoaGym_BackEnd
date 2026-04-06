@@ -24,7 +24,8 @@ public class SeedController : ControllerBase
     {
         try
         {
-            var today = DateTime.UtcNow.Date;
+            var utcNow = DateTime.UtcNow;
+            var today = DateTime.SpecifyKind(utcNow.Date, DateTimeKind.Utc); // Ép kiểu UTC cho Postgres
             
             // 2. Trainers
             var trainer1 = new Trainer { FullName = "Nguyễn Văn A", Specialization = "Bodybuilding", IsActive = true, HireDate = today.AddMonths(-12) };

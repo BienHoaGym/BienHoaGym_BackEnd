@@ -30,12 +30,15 @@ public class DashboardController : ControllerBase
 
         try
         {
-            var today = DateTime.UtcNow.Date;
-            var monthStart = new DateTime(today.Year, today.Month, 1);
+            var utcNow = DateTime.UtcNow;
+            var today = DateTime.SpecifyKind(utcNow.Date, DateTimeKind.Utc);
+            var tomorrow = today.AddDays(1);
+            var monthStart = new DateTime(today.Year, today.Month, 1, 0, 0, 0, DateTimeKind.Utc);
             var last6Months = today.AddMonths(-6);
             var yesterday = today.AddDays(-1);
             var lastMonthStart = monthStart.AddMonths(-1);
             var lastMonthEnd = monthStart.AddDays(-1);
+            var expiryThreshold = today.AddDays(7);
 
             // 1. Members Statistics & Insights
             var totalActiveMembers = await _unitOfWork.Members.GetQueryable()
