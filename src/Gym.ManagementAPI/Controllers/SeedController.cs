@@ -9,7 +9,7 @@ namespace Gym.ManagementAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize] // Added for production safety! Secret portal will handle the auth token automatically.
+[Authorize] // Bảo mật cho deploy
 public class SeedController : ControllerBase
 {
     private readonly IUnitOfWork _unitOfWork;
