@@ -96,19 +96,18 @@ public class ClassService : IClassService
             return ResponseDto<ClassDto>.FailureResult("Chỉ Quản lý mới có quyền tạo lịch lớp học.");
         }
         // Validate trainer exists
-        if (dto.TrainerId.HasValue)
+        if (dto.TrainerId != Guid.Empty)
         {
-            var trainer = await _unitOfWork.Trainers.GetByIdAsync(dto.TrainerId.Value);
+            var trainer = await _unitOfWork.Trainers.GetByIdAsync(dto.TrainerId);
             if (trainer == null || trainer.IsDeleted)
             {
-                return ResponseDto<ClassDto>.FailureResult($"LỖI: HLV (ID {dto.TrainerId}) không tồn tại. Vui lòng chọn lại HLV khác.");
+                return ResponseDto<ClassDto>.FailureResult($"LỖI: HLV không tồn tại. Vui lòng chọn lại HLV khác.");
             }
 
             if (!trainer.IsActive)
             {
                 return ResponseDto<ClassDto>.FailureResult("Trainer is not active");
             }
-            classEntity.TrainerId = trainer.Id;
         }
 
         // Validate time
@@ -118,6 +117,7 @@ public class ClassService : IClassService
         }
 
         var classEntity = _mapper.Map<Class>(dto);
+        classEntity.Id = Guid.NewGuid();
         classEntity.IsActive = true;
         classEntity.CurrentEnrollment = 0;
 
@@ -149,9 +149,9 @@ public class ClassService : IClassService
         };
 
         // Validate trainer exists
-        if (dto.TrainerId.HasValue)
+        if (dto.TrainerId != Guid.Empty)
         {
-            var trainer = await _unitOfWork.Trainers.GetByIdAsync(dto.TrainerId.Value);
+            var trainer = await _unitOfWork.Trainers.GetByIdAsync(dto.TrainerId);
             if (trainer == null || trainer.IsDeleted)
             {
                 return ResponseDto<ClassDto>.FailureResult($"LỖI: HLV (ID {dto.TrainerId}) không tồn tại. Vui lòng chọn lại HLV khác.");
