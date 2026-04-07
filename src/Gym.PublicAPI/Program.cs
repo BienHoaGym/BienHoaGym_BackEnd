@@ -19,7 +19,21 @@ using Gym.Infrastructure.Auth;
 using System.Security.Claims;
 using System.Text;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    ContentRootPath = Directory.GetCurrentDirectory()
+});
+
+// Fix for inotify limit on Linux/Render
+builder.Configuration.Sources.Clear();
+builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
+                     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: false)
+                     .AddEnvironmentVariables();
+
+// Fix for PostgreSQL DateTimeKind issues
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 
 // ==========================================
 // 1. CONFIGURATION & DATABASE
@@ -232,20 +246,25 @@ Console.WriteLine("🌐 Gym Public API is running!");
 Console.WriteLine("📖 Swagger UI: /swagger");
 Console.WriteLine("DB: " + builder.Configuration.GetConnectionString("DefaultConnection"));
 
-// Auto Migrate
+// Auto Migrate & Seed
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<GymDbContext>();
+    var services = scope.ServiceProvider;
+    var db = services.GetRequiredService<GymDbContext>();
     try 
     {
         db.Database.Migrate();
         Console.WriteLine("✅ Database migrated successfully!");
+
+        // Automatic Demo Data Seeding
+        await Gym.Infrastructure.Data.DataSeeder.SeedDemoDataAsync(services);
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"❌ Migration error: {ex.Message}");
+        Console.WriteLine($"❌ Initialization error: {ex.Message}");
     }
 }
+
 
 // Lấy PORT từ môi trường
 var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
