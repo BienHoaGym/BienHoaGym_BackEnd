@@ -157,7 +157,7 @@ public class DashboardController : ControllerBase
                 .Select(i =>
                 {
                     var m = today.AddMonths(-i);
-                    var start = new DateTime(m.Year, m.Month, 1);
+                    var start = new DateTime(m.Year, m.Month, 1, 0, 0, 0, DateTimeKind.Utc);
                     var end = start.AddMonths(1);
                     var total = rawRevenueData.Where(p => p.PaymentDate >= start && p.PaymentDate < end).Sum(p => p.Amount);
                     return new { Month = m.ToString("MM/yyyy"), Revenue = total };
@@ -231,7 +231,7 @@ public class DashboardController : ControllerBase
 
             // --- NEW: TODAY'S SCHEDULE (2.5) ---
             var dayOfWeek = today.DayOfWeek.ToString(); // Monday, Tuesday...
-            var currentTime = DateTime.Now.TimeOfDay;
+            var currentTime = DateTime.UtcNow.TimeOfDay;
 
             var classesTodayRaw = await _unitOfWork.Classes.GetQueryable()
                 .Where(c => c.ScheduleDay == dayOfWeek && c.IsActive && !c.IsDeleted)
@@ -312,8 +312,8 @@ public class DashboardController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting dashboard stats");
-            // Trả về lỗi chi tiết hơn trong môi trường Dev nếu cần
-            return StatusCode(500, ResponseDto<object>.FailureResult($"Lỗi hệ thống: {ex.Message}"));
+            // Trả về lỗi chi tiết để debug trên host (Tạm thời)
+            return StatusCode(500, ResponseDto<object>.FailureResult($"Lỗi hệ thống: {ex.Message} | Detail: {ex.InnerException?.Message}"));
         }
     }
 
