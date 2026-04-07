@@ -499,7 +499,7 @@ public class InventoryService : IInventoryService
             int before = 0;
             int after = (int)dto.Quantity;
 
-            if (dto.FromWarehouseId.HasValue && dto.FromWarehouseId != dto.ToWarehouseId)
+            if (dto.FromWarehouseId.HasValue && dto.ToWarehouseId.HasValue && dto.FromWarehouseId != dto.ToWarehouseId)
             {
                 var sourceInv = await _unitOfWork.Inventories.GetQueryable()
                     .FirstOrDefaultAsync(i => i.ProductId == dto.ProductId && i.WarehouseId == dto.FromWarehouseId.Value);
@@ -517,12 +517,16 @@ public class InventoryService : IInventoryService
                 after = sourceInv.Quantity; 
                 message = "Đã điều phối số lượng giữa 2 kho thành công";
             }
-            else
+            else if (dto.ToWarehouseId.HasValue)
             {
                 var inventory = await GetOrCreateInventory(dto.ProductId, dto.ToWarehouseId.Value);
                 before = inventory.Quantity;
                 inventory.Quantity = (int)dto.Quantity; 
                 dto.Type = StockTransactionType.Adjustment;
+            }
+            else
+            {
+                return ResponseDto<bool>.FailureResult("Bắt buộc phải chọn kho để điều chỉnh.");
             }
 
             if (dto.UnitPrice <= 0) dto.UnitPrice = product.CostPrice;

@@ -61,14 +61,11 @@ public class DashboardController : ControllerBase
 
             var activeSubsCount = await activeSubsQuery.CountAsync();
 
-            var expiryThreshold = today.AddDays(7);
             var expiringSoonCount = await activeSubsQuery
                 .CountAsync(s => s.EndDate >= today && s.EndDate <= expiryThreshold);
 
             var expiredSubsCount = await _unitOfWork.Subscriptions.GetQueryable()
                 .CountAsync(s => s.Status == SubscriptionStatus.Expired && !s.IsDeleted);
-
-            var tomorrow = today.AddDays(1);
 
             // 3. Check-ins Statistics & Insights
             var checkinsToday = await _unitOfWork.CheckIns.GetQueryable()

@@ -8,8 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Gym.ManagementAPI.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
-[Authorize] // Bảo mật cho deploy
+[Route("api/seed")]
 public class SeedController : ControllerBase
 {
     private readonly IUnitOfWork _unitOfWork;
@@ -20,6 +19,7 @@ public class SeedController : ControllerBase
     }
 
     [HttpPost("dashboard-demo")]
+    [AllowAnonymous]
     public async Task<IActionResult> SeedDashboardData()
     {
         try
