@@ -34,5 +34,9 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
+# Fix for inotify limit on Linux/Render
+ENV DOTNET_USE_POLLING_FILE_WATCHER=1
+ENV DOTNET_RUNNING_IN_CONTAINER=true
+
 # Use PORT from environment variable (as configured in Program.cs)
 ENTRYPOINT ["dotnet", "Gym.ManagementAPI.dll"]
