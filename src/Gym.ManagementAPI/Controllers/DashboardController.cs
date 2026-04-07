@@ -44,6 +44,11 @@ public class DashboardController : ControllerBase
             var totalActiveMembers = await _unitOfWork.Members.GetQueryable()
                 .CountAsync(m => m.Status == MemberStatus.Active && !m.IsDeleted);
 
+            if (totalActiveMembers == 0)
+            {
+                return Ok(ResponseDto<object>.SuccessResult(GetMockDashboardStats(today, monthStart, last6Months), "Đang ở chế độ Demo (Cơ sở dữ liệu trống)"));
+            }
+
             var activeMembersLastMonth = await _unitOfWork.Members.GetQueryable()
                 .CountAsync(m => m.Status == MemberStatus.Active && m.JoinedDate <= lastMonthEnd && !m.IsDeleted);
 
@@ -351,4 +356,72 @@ public class DashboardController : ControllerBase
             return StatusCode(500, ResponseDto<object>.FailureResult(ex.Message));
         }
     }
+
+    private object GetMockDashboardStats(DateTime today, DateTime monthStart, DateTime last6Months)
+    {
+        return new
+        {
+            IsDemo = true,
+            RevenueToday = new { Value = 1250000, Trend = 15.5, Label = "Doanh thu hôm nay (Demo)", Status = "Tốt" },
+            CheckInsToday = new { Value = 42, Trend = 8.2, Label = "Lượt khách (Demo)", Detail = "Tăng 8% so với hôm qua" },
+            ActiveMembers = new { Value = 156, Trend = 12.0, Label = "Hội viên (Demo)", Detail = "12% trong tháng này" },
+            ExpiringSubscriptionsCount = new { Value = 8, Label = "Sắp hết hạn", NeedsAction = true },
+            ActiveTrainersCount = new { Value = 5, Label = "PT Đang dạy", Status = "Normal" },
+            EquipmentAlertCount = new { Value = 2, Label = "Thiết bị lỗi", Status = "Urgent" },
+
+            Occupancy = new { Current = 35, Max = 100, Percentage = 35.0, Status = "An toàn", PeakHour = "17:00 - 19:00", Alert = false },
+            EquipmentHealth = new { Total = 45, Broken = 2, Maintenance = 3, Status = "Warning" },
+            ActiveTrainers = 5,
+            ProspectiveLeads = 12,
+
+            RevenueMonth = 45800000,
+            RevenueTarget = 50000000,
+            RevenueProgress = 91.6,
+            RevenueGrowthMonth = 15.4,
+            RevenueTotal = 1250000000,
+            RevenueByPackage = new List<object> {
+                new { Category = "Gói Gym 1 Tháng", Value = 15000000.0 },
+                new { Category = "Gói Gym 1 Năm", Value = 25000000.0 },
+                new { Category = "Gói PT 1:1", Value = 35000000.0 },
+                new { Category = "Hội viên VIP", Value = 20000000.0 }
+            },
+
+            RevenueByMonth = Enumerable.Range(0, 6).Select(i => {
+                var m = today.AddMonths(-i);
+                return new { Month = m.ToString("MM/yyyy"), Revenue = 35000000 + (new Random().Next(-5000000, 5000000)) };
+            }).Reverse().ToList(),
+
+            CheckinChartData = Enumerable.Range(0, 7).Select(i => {
+                var date = today.AddDays(-6 + i);
+                return new { Date = date.ToString("dd/MM"), Count = 20 + (new Random().Next(0, 30)) };
+            }).ToList(),
+
+            Insights = new List<string> {
+                "Hệ thống đang chạy ở chế độ DEMO do cơ sở dữ liệu trống.",
+                "Hội viên 'Nguyễn Văn Demo' sắp hết hạn gói tập.",
+                "Doanh thu tháng này sắp đạt mục tiêu đề ra (91%).",
+                "Phòng tập đang ở trạng thái tải trọng an toàn (35%)."
+            },
+
+            ExpiringSoonList = new List<object> {
+                new { Id = Guid.NewGuid(), MemberName = "Nguyễn Văn Demo", MemberCode = "M1001", PhoneNumber = "0900000001", PackageName = "Gói Gym 12 Tháng", EndDate = today.AddDays(2), DaysLeft = 2, Status = "Urgent" },
+                new { Id = Guid.NewGuid(), MemberName = "Trần Thị Demo", MemberCode = "M1002", PhoneNumber = "0900000002", PackageName = "Gói PT 10 Buổi", EndDate = today.AddDays(5), DaysLeft = 5, Status = "Warning" }
+            },
+            RecentPayments = new List<object> {
+                new { Id = Guid.NewGuid(), Amount = 500000, Method = "Cash", PaymentDate = DateTime.UtcNow.AddMinutes(-45), TransactionId = "TX123", MemberName = "Lê Văn Demo", PackageName = "Gói Tháng" },
+                new { Id = Guid.NewGuid(), Amount = 4500000, Method = "BankTransfer", PaymentDate = DateTime.UtcNow.AddHours(-3), TransactionId = "TX124", MemberName = "Phạm Thị Demo", PackageName = "Gói Năm" }
+            },
+            NewMembersList = new List<object> {
+                new { Id = Guid.NewGuid(), FullName = "Hoàng Demo", MemberCode = "M2001", JoinedDate = today.AddDays(-1), PhoneNumber = "0912345678" },
+                new { Id = Guid.NewGuid(), FullName = "Đỗ Demo", MemberCode = "M2002", JoinedDate = today.AddDays(-3), PhoneNumber = "0987654321" }
+            },
+            ClassesToday = new List<object> {
+                new { Id = Guid.NewGuid(), ClassName = "Yoga Sáng", Time = "08:00", TrainerName = "HLV Minh", Status = "Đã xong", Capacity = 20, Enrolled = 15 },
+                new { Id = Guid.NewGuid(), ClassName = "Zumba Dance", Time = "17:30", TrainerName = "HLV Lan", Status = "Sắp diễn ra", Capacity = 25, Enrolled = 18 }
+            },
+
+            GeneratedAt = DateTime.UtcNow
+        };
+    }
 }
+

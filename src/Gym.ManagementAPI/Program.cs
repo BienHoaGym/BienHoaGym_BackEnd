@@ -241,18 +241,22 @@ Console.WriteLine("🚀 Gym Management API is running!");
 Console.WriteLine("📖 Swagger UI: /swagger");
 Console.WriteLine("DB: " + builder.Configuration.GetConnectionString("DefaultConnection"));
 
-// Auto Migrate
+// Auto Migrate & Seed
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<GymDbContext>();
+    var services = scope.ServiceProvider;
+    var db = services.GetRequiredService<GymDbContext>();
     try 
     {
         db.Database.Migrate();
         Console.WriteLine("✅ Database migrated successfully!");
+
+        // Automatic Demo Data Seeding
+        await Gym.Infrastructure.Data.DataSeeder.SeedDemoDataAsync(services);
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"❌ Migration error: {ex.Message}");
+        Console.WriteLine($"❌ Initialization error: {ex.Message}");
     }
 }
 
