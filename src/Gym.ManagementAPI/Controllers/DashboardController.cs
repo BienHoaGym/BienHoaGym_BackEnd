@@ -323,7 +323,8 @@ public class DashboardController : ControllerBase
     {
         try
         {
-            var today = DateTime.UtcNow.Date;
+            var utcNow = DateTime.UtcNow;
+            var today = DateTime.SpecifyKind(utcNow.Date, DateTimeKind.Utc);
             var sevenDaysAgo = today.AddDays(-6);
 
             // Tối ưu: Chỉ lấy dữ liệu trong khoảng 7 ngày qua

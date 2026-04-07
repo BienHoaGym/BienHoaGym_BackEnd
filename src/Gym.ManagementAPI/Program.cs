@@ -21,6 +21,10 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Fix for PostgreSQL DateTimeKind issues
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
+
 // ==========================================
 // 1. CONFIGURATION & DATABASE
 // ==========================================
