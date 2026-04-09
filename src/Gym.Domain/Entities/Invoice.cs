@@ -31,6 +31,7 @@ public class InvoiceDetail : BaseEntity
 
     public string ItemType { get; set; } = string.Empty; // Package, Product, PT_Session
     public Guid? ReferenceId { get; set; } // Id của Package hoặc Product
+    public Guid? SubscriptionId { get; set; } // Id của Gói tập (nếu thanh toán cho gói Pending)
     public string ItemName { get; set; } = string.Empty;
     
     public int Quantity { get; set; }

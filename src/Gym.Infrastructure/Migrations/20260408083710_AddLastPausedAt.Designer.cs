@@ -3,6 +3,7 @@ using System;
 using Gym.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Gym.Infrastructure.Migrations
 {
     [DbContext(typeof(GymDbContext))]
-    partial class GymDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260408083710_AddLastPausedAt")]
+    partial class AddLastPausedAt
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.0");
@@ -1038,9 +1041,6 @@ namespace Gym.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("AutoPauseExtensionDays")
-                        .HasColumnType("INTEGER");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
@@ -1949,7 +1949,7 @@ namespace Gym.Infrastructure.Migrations
                             Email = "admin@gym.com",
                             FullName = "System Administrator",
                             IsActive = true,
-                            PasswordHash = "AQAAAAIAAYagAAAAEIjmsO4jHQy/ho/hnTISnipHaZn1xR3L8ef272Vkskzy1zoeuHrWrgz7dWii2Sqh8g==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEDAOUpiA9kImd5Bh66adLSZlbHsYD5tvNr0VLFK/CoauMOsC+kdjbGqkAwuUf7RSUQ==",
                             PhoneNumber = "0901234567",
                             Username = "admin"
                         },
@@ -1960,7 +1960,7 @@ namespace Gym.Infrastructure.Migrations
                             Email = "manager@gym.com",
                             FullName = "Nguyễn Văn Manager",
                             IsActive = true,
-                            PasswordHash = "AQAAAAIAAYagAAAAEBBR0yXYcwLPoD29PBW06sFqWuR2624ftOvPt2NtZKlPCKSmKr7uXY5y6GlCQYAdXw==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEPHHwXGzuEYEJwc2A4wLKrAqZbGLiNkMoRqgyPeAGmtoqd5Kq4eUWV/SVa1Io6jVnQ==",
                             PhoneNumber = "0902345678",
                             Username = "manager"
                         },
@@ -1971,7 +1971,7 @@ namespace Gym.Infrastructure.Migrations
                             Email = "trainer1@gym.com",
                             FullName = "Trần Thị Hương",
                             IsActive = true,
-                            PasswordHash = "AQAAAAIAAYagAAAAEDPqQAhCWTeNpN801Ldyb6MEJ65lkmdca68XJQpS9NU/+1hEyIcBvP7Yrz5i3dMFqw==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEDYBD4GRsfXG9d2hWfKuuVoPCuvcrG0mwxd2YejmK/N8lv0QCcglOqVtZGAfNk+GgA==",
                             PhoneNumber = "0903456789",
                             Username = "trainer1"
                         },
@@ -1982,7 +1982,7 @@ namespace Gym.Infrastructure.Migrations
                             Email = "trainer2@gym.com",
                             FullName = "Lê Văn Nam",
                             IsActive = true,
-                            PasswordHash = "AQAAAAIAAYagAAAAEAykY1OVQCBRCA+Dgo2CesDdsKs32c7LDNy36U1rEbwtREgacSJeNPFj5i4NXq0QNw==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEOT7TSh192w/TmxISilijcfmycjPr8VWcZdZNFn7DQyj0LLaWy1Kc808Pea1WRcI4A==",
                             PhoneNumber = "0904567890",
                             Username = "trainer2"
                         },
@@ -1993,7 +1993,7 @@ namespace Gym.Infrastructure.Migrations
                             Email = "receptionist@gym.com",
                             FullName = "Phạm Thị Lan",
                             IsActive = true,
-                            PasswordHash = "AQAAAAIAAYagAAAAEE+eKzzwRLjorkQM+fdSd6xiA9D1miYB9SYc2gKi8lKV403wAlO/0wlu6D8AeWcKVg==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEBtp/8Zjm465ndKLJGU13lGgGfgfPj/fCB3n6TrXxUAQWsdtjVssk2VObsxb0yVysQ==",
                             PhoneNumber = "0905678901",
                             Username = "receptionist"
                         },
@@ -2004,7 +2004,7 @@ namespace Gym.Infrastructure.Migrations
                             Email = "levanc@gym.com",
                             FullName = "Lê Văn C",
                             IsActive = true,
-                            PasswordHash = "AQAAAAIAAYagAAAAEBo6lL8kKPSQ5tSAJDOfJddfKXd9MYe7YS0O9nEL0pvEE1QnzYOV9do6VuZTUtyMtQ==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEJdP41YuexhJK+9FD3QHaIRfN5g2Rl/mYL7dTBo2p9mHC/CZ3S3VsOxUidvENEeRVA==",
                             PhoneNumber = "0909999999",
                             Username = "levanc"
                         },
@@ -2015,7 +2015,7 @@ namespace Gym.Infrastructure.Migrations
                             Email = "nguyenvana@gmail.com",
                             FullName = "Nguyễn Văn A",
                             IsActive = true,
-                            PasswordHash = "AQAAAAIAAYagAAAAEOBPUfpALrtKfqjg9ck5VR9ytmgUZBA17HoSrt4kSFo4ddQNxvU19H8UPjGWEQw86w==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEBm4JZ7cuXF0ZxdjpFLFNSZKzg2gKhtcDEWoqBdTJvtzFSjV1PDo3QMu55pYMF4Rmw==",
                             PhoneNumber = "0906789012",
                             Username = "member001"
                         },
@@ -2026,7 +2026,7 @@ namespace Gym.Infrastructure.Migrations
                             Email = "tranthib@gmail.com",
                             FullName = "Trần Thị B",
                             IsActive = true,
-                            PasswordHash = "AQAAAAIAAYagAAAAEAiXGK+gs18b31ol25pflqRWtzBqIFNsOhLuz3+o2QptrkE5tc3CT0yhyykEODbDqg==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEHG28mOfCG5k9binxKYw22/hEsEGyJVMNhbYXM2JZU8iaGXpP/TXvWUKf5utG9MUKg==",
                             PhoneNumber = "0907890123",
                             Username = "member002"
                         },
@@ -2037,7 +2037,7 @@ namespace Gym.Infrastructure.Migrations
                             Email = "levanc_member@gmail.com",
                             FullName = "Lê Văn C (Member)",
                             IsActive = true,
-                            PasswordHash = "AQAAAAIAAYagAAAAENqepuc/tEC/bAemVazZfoTat9wpEj0yi9Yf9nXdhX0U+eC7NfU7XqIzqIwnaeB9VA==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEAxtz38jtzosOB0gWG6ix7NvDuxDm0aBCQiNEI5GuMAFEsU9uxbMWMFxq6+1rNnHVg==",
                             PhoneNumber = "0908901234",
                             Username = "member003"
                         });
@@ -2065,61 +2065,61 @@ namespace Gym.Infrastructure.Migrations
                         {
                             UserId = new Guid("11111111-1111-1111-1111-111111111111"),
                             RoleId = 1,
-                            AssignedAt = new DateTime(2026, 4, 8, 9, 42, 7, 291, DateTimeKind.Utc).AddTicks(8943)
+                            AssignedAt = new DateTime(2026, 4, 8, 8, 37, 5, 456, DateTimeKind.Utc).AddTicks(9293)
                         },
                         new
                         {
                             UserId = new Guid("22222222-2222-2222-2222-222222222222"),
                             RoleId = 2,
-                            AssignedAt = new DateTime(2026, 4, 8, 9, 42, 7, 291, DateTimeKind.Utc).AddTicks(8948)
+                            AssignedAt = new DateTime(2026, 4, 8, 8, 37, 5, 456, DateTimeKind.Utc).AddTicks(9301)
                         },
                         new
                         {
                             UserId = new Guid("33333333-3333-3333-3333-333333333333"),
                             RoleId = 3,
-                            AssignedAt = new DateTime(2026, 4, 8, 9, 42, 7, 291, DateTimeKind.Utc).AddTicks(8950)
+                            AssignedAt = new DateTime(2026, 4, 8, 8, 37, 5, 456, DateTimeKind.Utc).AddTicks(9302)
                         },
                         new
                         {
                             UserId = new Guid("44444444-4444-4444-4444-444444444444"),
                             RoleId = 3,
-                            AssignedAt = new DateTime(2026, 4, 8, 9, 42, 7, 291, DateTimeKind.Utc).AddTicks(8951)
+                            AssignedAt = new DateTime(2026, 4, 8, 8, 37, 5, 456, DateTimeKind.Utc).AddTicks(9304)
                         },
                         new
                         {
                             UserId = new Guid("55555555-5555-5555-5555-555555555555"),
                             RoleId = 4,
-                            AssignedAt = new DateTime(2026, 4, 8, 9, 42, 7, 291, DateTimeKind.Utc).AddTicks(8953)
+                            AssignedAt = new DateTime(2026, 4, 8, 8, 37, 5, 456, DateTimeKind.Utc).AddTicks(9305)
                         },
                         new
                         {
                             UserId = new Guid("99999999-9999-9999-9999-999999999999"),
                             RoleId = 4,
-                            AssignedAt = new DateTime(2026, 4, 8, 9, 42, 7, 291, DateTimeKind.Utc).AddTicks(8954)
+                            AssignedAt = new DateTime(2026, 4, 8, 8, 37, 5, 456, DateTimeKind.Utc).AddTicks(9306)
                         },
                         new
                         {
                             UserId = new Guid("99999999-9999-9999-9999-999999999999"),
                             RoleId = 3,
-                            AssignedAt = new DateTime(2026, 4, 8, 9, 42, 7, 291, DateTimeKind.Utc).AddTicks(8955)
+                            AssignedAt = new DateTime(2026, 4, 8, 8, 37, 5, 456, DateTimeKind.Utc).AddTicks(9308)
                         },
                         new
                         {
                             UserId = new Guid("66666666-6666-6666-6666-666666666666"),
                             RoleId = 5,
-                            AssignedAt = new DateTime(2026, 4, 8, 9, 42, 7, 291, DateTimeKind.Utc).AddTicks(8956)
+                            AssignedAt = new DateTime(2026, 4, 8, 8, 37, 5, 456, DateTimeKind.Utc).AddTicks(9309)
                         },
                         new
                         {
                             UserId = new Guid("77777777-7777-7777-7777-777777777777"),
                             RoleId = 5,
-                            AssignedAt = new DateTime(2026, 4, 8, 9, 42, 7, 291, DateTimeKind.Utc).AddTicks(8958)
+                            AssignedAt = new DateTime(2026, 4, 8, 8, 37, 5, 456, DateTimeKind.Utc).AddTicks(9310)
                         },
                         new
                         {
                             UserId = new Guid("88888888-8888-8888-8888-888888888888"),
                             RoleId = 5,
-                            AssignedAt = new DateTime(2026, 4, 8, 9, 42, 7, 291, DateTimeKind.Utc).AddTicks(8959)
+                            AssignedAt = new DateTime(2026, 4, 8, 8, 37, 5, 456, DateTimeKind.Utc).AddTicks(9312)
                         });
                 });
 

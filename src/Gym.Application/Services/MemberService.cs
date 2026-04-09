@@ -14,11 +14,14 @@ public class MemberService : IMemberService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
     private readonly IAuditLogService _auditLogService;
-    public MemberService(IUnitOfWork unitOfWork, IMapper mapper, IAuditLogService auditLogService)
+    private readonly ISubscriptionService _subscriptionService;
+
+    public MemberService(IUnitOfWork unitOfWork, IMapper mapper, IAuditLogService auditLogService, ISubscriptionService subscriptionService)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _auditLogService = auditLogService;
+        _subscriptionService = subscriptionService;
     }
 
 
@@ -36,6 +39,7 @@ public class MemberService : IMemberService
     public async Task<ResponseDto<PaginatedResultDto<MemberListDto>>> GetAllAsync(int pageNumber = 1, int pageSize = 10)
     {
         await ScanAndExpireProspectiveMembersAsync();
+        await _subscriptionService.ProcessStatusScanAsync();
 
         var query = _unitOfWork.Members.GetQueryable()
             .Where(m => !m.IsDeleted)

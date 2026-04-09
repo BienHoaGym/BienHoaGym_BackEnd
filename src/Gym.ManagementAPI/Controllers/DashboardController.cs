@@ -66,8 +66,11 @@ public class DashboardController : ControllerBase
 
             var activeSubsCount = await activeSubsQuery.CountAsync();
 
-            var expiringSoonCount = await activeSubsQuery
-                .CountAsync(s => s.EndDate >= today && s.EndDate <= expiryThreshold);
+            var expiringSoonCount = await _unitOfWork.Subscriptions.GetQueryable()
+                .Where(s => !s.IsDeleted && (s.Status == SubscriptionStatus.Active || s.Status == SubscriptionStatus.Pending))
+                .GroupBy(s => s.MemberId)
+                .Select(g => g.Max(s => s.EndDate))
+                .CountAsync(endDate => endDate >= today && endDate <= expiryThreshold);
 
             var expiredSubsCount = await _unitOfWork.Subscriptions.GetQueryable()
                 .CountAsync(s => s.Status == SubscriptionStatus.Expired && !s.IsDeleted);
@@ -133,8 +136,15 @@ public class DashboardController : ControllerBase
                 .ToListAsync();
 
             // 6. Expiring Soon List (Added PhoneNumber for actions)
-            var expiringSoonList = await activeSubsQuery
+            var expiringSoonList = await _unitOfWork.Subscriptions.GetQueryable()
+                .Where(s => !s.IsDeleted && (s.Status == SubscriptionStatus.Active || s.Status == SubscriptionStatus.Pending))
                 .Where(s => s.EndDate >= today && s.EndDate <= expiryThreshold)
+                // CHẶN: Chỉ lấy những gói là gói MỚI NHẤT của hội viên (nếu đã gia hạn thì không hiện gói cũ sắp hết hạn nữa)
+                .Where(s => !_unitOfWork.Subscriptions.GetQueryable()
+                    .Any(futureSub => futureSub.MemberId == s.MemberId && 
+                                     !futureSub.IsDeleted && 
+                                     (futureSub.Status == SubscriptionStatus.Active || futureSub.Status == SubscriptionStatus.Pending) && 
+                                     futureSub.EndDate > s.EndDate))
                 .Include(s => s.Member)
                 .Include(s => s.Package)
                 .OrderBy(s => s.EndDate)

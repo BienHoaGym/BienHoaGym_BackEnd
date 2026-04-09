@@ -17,14 +17,12 @@ public class MemberSubscription : BaseEntity
     public DateTime EndDate { get; set; }
     public SubscriptionStatus Status { get; set; } = SubscriptionStatus.Pending;
     public int? RemainingSessions { get; set; }
+    public DateTime? LastPausedAt { get; set; } // Ngày bắt đầu tạm dừng gần nhất
+    public int? AutoPauseExtensionDays { get; set; } // Số ngày đã tự động gia hạn khi tạm dừng (Trường hợp 1)
 
-    // Quan h? v?i thanh to�n
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
-
-    // ? �� s?a l?i: Th�m danh s�ch Check-in
     public virtual ICollection<CheckIn> CheckIns { get; set; } = new List<CheckIn>();
 
-    // --- NGHI?P V? I.3 (SNAPSHOT DATA) ---
     public string OriginalPackageName { get; set; } = string.Empty;
     public decimal OriginalPrice { get; set; }
     public decimal DiscountApplied { get; set; }

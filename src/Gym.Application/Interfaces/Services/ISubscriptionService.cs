@@ -17,5 +17,7 @@ public interface ISubscriptionService
     Task<ResponseDto<bool>> CancelAsync(Guid id, string reason);
     Task<ResponseDto<List<SubscriptionDto>>> GetExpiringAsync(int days = 7);
     Task<ResponseDto<SubscriptionDto>> RenewAsync(Guid id, Guid packageId);
-    Task<ResponseDto<bool>> PauseAsync(Guid id);
+    Task<ResponseDto<bool>> PauseAsync(Guid id, int? durationDays = null);
+    Task<ResponseDto<bool>> ResumeAsync(Guid id);
+    Task ProcessStatusScanAsync();
 }
