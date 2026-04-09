@@ -240,7 +240,7 @@ app.Use(async (context, next) => {
     } catch (Exception ex) {
         context.Response.StatusCode = 500;
         context.Response.ContentType = "application/json";
-        context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
+        context.Response.Headers["Access-Control-Allow-Origin"] = "*";
         var result = System.Text.Json.JsonSerializer.Serialize(new { 
             error = "CORTEX_DEBUG_ERROR", 
             message = ex.Message, 
