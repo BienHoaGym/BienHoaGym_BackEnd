@@ -34,6 +34,10 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
+# COPY FILE DỮ LIỆU SQLITE TỪ LOCAL VÀO DOCKER
+# Đường dẫn: /src/src/Gym.ManagementAPI/GymManagement.sqlite
+COPY src/Gym.ManagementAPI/GymManagement.sqlite .
+
 # Fix for inotify limit on Linux/Render
 ENV DOTNET_USE_POLLING_FILE_WATCHER=1
 ENV DOTNET_RUNNING_IN_CONTAINER=true
