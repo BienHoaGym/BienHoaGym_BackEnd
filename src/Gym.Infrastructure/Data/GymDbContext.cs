@@ -389,36 +389,36 @@ public class GymDbContext : DbContext
     {
         modelBuilder.Entity<User>().HasIndex(u => u.Email).IsUnique();
         modelBuilder.Entity<User>().HasIndex(u => u.Username).IsUnique();
-        modelBuilder.Entity<Member>().HasIndex(m => m.MemberCode).IsUnique().HasFilter("\"IsDeleted\" = false");
+        modelBuilder.Entity<Member>().HasIndex(m => m.MemberCode).IsUnique().HasFilter("IsDeleted = 0");
         modelBuilder.Entity<Member>().HasIndex(m => m.Email);
         modelBuilder.Entity<Member>().HasIndex(m => m.PhoneNumber);
         modelBuilder.Entity<Member>().HasIndex(m => m.UserId);
-        modelBuilder.Entity<Member>().HasIndex(m => m.Status).HasFilter("\"IsDeleted\" = false");
-        modelBuilder.Entity<MembershipPackage>().HasIndex(p => p.IsActive).HasFilter("\"IsDeleted\" = false");
+        modelBuilder.Entity<Member>().HasIndex(m => m.Status).HasFilter("IsDeleted = 0");
+        modelBuilder.Entity<MembershipPackage>().HasIndex(p => p.IsActive).HasFilter("IsDeleted = 0");
         modelBuilder.Entity<MemberSubscription>().HasIndex(s => s.MemberId);
         modelBuilder.Entity<MemberSubscription>().HasIndex(s => s.PackageId);
-        modelBuilder.Entity<MemberSubscription>().HasIndex(s => s.Status).HasFilter("\"IsDeleted\" = false");
-        modelBuilder.Entity<MemberSubscription>().HasIndex(s => s.EndDate).HasFilter("\"Status\" = 2");
+        modelBuilder.Entity<MemberSubscription>().HasIndex(s => s.Status).HasFilter("IsDeleted = 0");
+        modelBuilder.Entity<MemberSubscription>().HasIndex(s => s.EndDate).HasFilter("Status = 2");
         modelBuilder.Entity<MemberSubscription>().HasIndex(s => new { s.MemberId, s.Status });
         modelBuilder.Entity<Payment>().HasIndex(p => p.MemberSubscriptionId);
         modelBuilder.Entity<Payment>().HasIndex(p => p.PaymentDate);
         modelBuilder.Entity<Payment>().HasIndex(p => p.Status);
-        modelBuilder.Entity<Payment>().HasIndex(p => p.TransactionId).HasFilter("\"TransactionId\" IS NOT NULL");
+        modelBuilder.Entity<Payment>().HasIndex(p => p.TransactionId).HasFilter("TransactionId IS NOT NULL");
         modelBuilder.Entity<CheckIn>().HasIndex(c => c.MemberId);
         modelBuilder.Entity<CheckIn>().HasIndex(c => c.SubscriptionId);
         modelBuilder.Entity<CheckIn>().HasIndex(c => c.CheckInTime);
         modelBuilder.Entity<CheckIn>().HasIndex(c => new { c.MemberId, c.CheckInTime });
-        modelBuilder.Entity<Trainer>().HasIndex(t => t.UserId).HasFilter("\"UserId\" IS NOT NULL");
-        modelBuilder.Entity<Trainer>().HasIndex(t => t.Email).HasFilter("\"Email\" IS NOT NULL");
-        modelBuilder.Entity<Trainer>().HasIndex(t => t.IsActive).HasFilter("\"IsDeleted\" = false");
+        modelBuilder.Entity<Trainer>().HasIndex(t => t.UserId).HasFilter("UserId IS NOT NULL");
+        modelBuilder.Entity<Trainer>().HasIndex(t => t.Email).HasFilter("Email IS NOT NULL");
+        modelBuilder.Entity<Trainer>().HasIndex(t => t.IsActive).HasFilter("IsDeleted = 0");
         modelBuilder.Entity<Class>().HasIndex(c => c.TrainerId);
-        modelBuilder.Entity<Class>().HasIndex(c => c.ScheduleDay).HasFilter("\"IsActive\" = true");
-        modelBuilder.Entity<Class>().HasIndex(c => new { c.ScheduleDay, c.StartTime }).HasFilter("\"IsActive\" = true");
+        modelBuilder.Entity<Class>().HasIndex(c => c.ScheduleDay).HasFilter("IsActive = 1");
+        modelBuilder.Entity<Class>().HasIndex(c => new { c.ScheduleDay, c.StartTime }).HasFilter("IsActive = 1");
         modelBuilder.Entity<ClassEnrollment>().HasIndex(ce => ce.MemberId);
         modelBuilder.Entity<ClassEnrollment>().HasIndex(ce => ce.ClassId);
         modelBuilder.Entity<ClassEnrollment>().HasIndex(ce => ce.EnrolledDate);
-        modelBuilder.Entity<Product>().HasIndex(p => p.SKU).IsUnique().HasFilter("\"IsDeleted\" = false");
-        modelBuilder.Entity<Invoice>().HasIndex(i => i.InvoiceNumber).IsUnique().HasFilter("\"IsDeleted\" = false");
+        modelBuilder.Entity<Product>().HasIndex(p => p.SKU).IsUnique().HasFilter("IsDeleted = 0");
+        modelBuilder.Entity<Invoice>().HasIndex(i => i.InvoiceNumber).IsUnique().HasFilter("IsDeleted = 0");
     }
 
     private static void ConfigureEnums(ModelBuilder modelBuilder)
