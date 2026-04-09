@@ -101,9 +101,18 @@ public class SubscriptionsController : ControllerBase
 
     [HttpPut("{id}/pause")]
     [Authorize(Policy = PermissionConstants.SubscriptionUpdate)]
-    public async Task<IActionResult> PauseSubscription(Guid id)
+    public async Task<IActionResult> PauseSubscription(Guid id, [FromQuery] int? durationDays)
     {
-        var result = await _subscriptionService.PauseAsync(id);
+        var result = await _subscriptionService.PauseAsync(id, durationDays);
+        if (!result.Success) return BadRequest(result);
+        return Ok(result);
+    }
+
+    [HttpPut("{id}/resume")]
+    [Authorize(Policy = PermissionConstants.SubscriptionUpdate)]
+    public async Task<IActionResult> ResumeSubscription(Guid id)
+    {
+        var result = await _subscriptionService.ResumeAsync(id);
         if (!result.Success) return BadRequest(result);
         return Ok(result);
     }

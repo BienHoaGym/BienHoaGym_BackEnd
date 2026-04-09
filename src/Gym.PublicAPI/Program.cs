@@ -282,18 +282,11 @@ using (var scope = app.Services.CreateScope())
         var db = services.GetRequiredService<GymDbContext>();
         try 
         {
-            Console.WriteLine("🔄 Starting Database Migration...");
+            Console.WriteLine("🔄 Starting Database Sync & Migration...");
             
-            // Log danh sách migration đã áp dụng
-            var appliedMigrations = db.Database.GetAppliedMigrations();
-            Console.WriteLine($"📊 Applied Migrations: {string.Join(", ", appliedMigrations)}");
-            
-            db.Database.Migrate();
-            Console.WriteLine("✅ Database migrated successfully!");
-
             // --- CỨU HỎA: TỰ ĐỘNG SỬA BẢNG NẾU THIẾU CỘT (DO LỖI SYNC) ---
             try {
-                Console.WriteLine("🛠️ Checking for missing columns in MemberSubscriptions...");
+                Console.WriteLine("🛠️ Running Database self-healing...");
                 db.Database.ExecuteSqlRaw(@"
                     DO $$ 
                     BEGIN 
@@ -314,6 +307,13 @@ using (var scope = app.Services.CreateScope())
             } catch (Exception ex) {
                 Console.WriteLine($"🔍 Self-healing info: {ex.Message}");
             }
+
+            // Log danh sách migration đã áp dụng
+            var appliedMigrations = db.Database.GetAppliedMigrations();
+            Console.WriteLine($"📊 Applied Migrations: {string.Join(", ", appliedMigrations)}");
+            
+            db.Database.Migrate();
+            Console.WriteLine("✅ Database migrated successfully!");
 
         if (app.Environment.IsDevelopment())
         {

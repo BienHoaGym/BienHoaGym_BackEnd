@@ -316,24 +316,16 @@ using (var scope = app.Services.CreateScope())
     try 
     {
         var db = services.GetRequiredService<GymDbContext>();
-        Console.WriteLine("🔄 Starting Database Migration...");
+        Console.WriteLine("🔄 Starting Database Sync & Migration...");
         
-        // Log danh sách migration đã áp dụng
-        var appliedMigrations = db.Database.GetAppliedMigrations();
-        Console.WriteLine($"📊 Applied Migrations: {string.Join(", ", appliedMigrations)}");
-        
-        db.Database.Migrate();
-        Console.WriteLine("✅ Database migrated successfully!");
-
         // --- CỨU HỎA: TỰ ĐỘNG SỬA BẢNG NẾU THIẾU CỘT (DO LỖI SYNC) ---
         try {
-            Console.WriteLine("🛠️ Checking for missing columns in MemberSubscriptions...");
+            Console.WriteLine("🛠️ Running Database self-healing...");
             db.Database.ExecuteSqlRaw(@"
                 DO $$ 
                 BEGIN 
                     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='MemberSubscriptions' AND column_name='AutoPauseExtensionDays') THEN
                         ALTER TABLE ""MemberSubscriptions"" ADD COLUMN ""AutoPauseExtensionDays"" integer;
-                        RAISE NOTICE 'Added AutoPauseExtensionDays column';
                     END IF;
                     
                     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='MemberSubscriptions' AND column_name='LastPausedAt') THEN
@@ -349,6 +341,13 @@ using (var scope = app.Services.CreateScope())
         } catch (Exception ex) {
             Console.WriteLine($"🔍 Self-healing info: {ex.Message}");
         }
+
+        // Log danh sách migration đã áp dụng
+        var appliedMigrations = db.Database.GetAppliedMigrations();
+        Console.WriteLine($"📊 Applied Migrations: {string.Join(", ", appliedMigrations)}");
+        
+        db.Database.Migrate();
+        Console.WriteLine("✅ Database migrated successfully!");
 
         // CHỈ SEED DỮ LIỆU NẾU LÀ MÔI TRƯỜNG DEVELOPMENT 
         // Trên Production/Render chúng ta đã có file SQLite đi kèm hoặc dùng DB ngoài
