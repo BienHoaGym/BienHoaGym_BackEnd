@@ -205,7 +205,7 @@ builder.Services.AddScoped<IAuthorizationHandler, PermissionHandler>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
-        policy => policy.WithOrigins("https://bienhoagym.github.io", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:3000")
+        policy => policy.SetIsOriginAllowed(_ => true) // Cho phép tất cả các nguồn
                         .AllowAnyHeader()
                         .AllowAnyMethod());
 });
@@ -215,6 +215,23 @@ var app = builder.Build();
 // ==========================================
 // 5. MIDDLEWARE PIPELINE
 // ==========================================
+
+// Cấu hình bắt lỗi chi tiết để debug trên Render
+app.Use(async (context, next) => {
+    try {
+        await next();
+    } catch (Exception ex) {
+        context.Response.StatusCode = 500;
+        context.Response.ContentType = "application/json";
+        context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
+        var result = System.Text.Json.JsonSerializer.Serialize(new { 
+            error = "CORTEX_DEBUG_ERROR", 
+            message = ex.Message, 
+            stack = ex.StackTrace 
+        });
+        await context.Response.WriteAsync(result);
+    }
+});
 
 app.UseSwagger();
 app.UseSwaggerUI(options =>
