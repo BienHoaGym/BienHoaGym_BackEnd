@@ -231,6 +231,31 @@ app.UseSwaggerUI(options =>
 });
 
 app.UseCors("AllowAll");
+
+// Cấu hình bắt lỗi chi tiết để debug trên Render
+app.Use(async (context, next) => {
+    try {
+        await next();
+    } catch (Exception ex) {
+        context.Response.StatusCode = 500;
+        context.Response.ContentType = "application/json";
+        
+        // Đảm bảo CORS luôn được phép ngay cả khi lỗi 500
+        context.Response.Headers["Access-Control-Allow-Origin"] = "*";
+        context.Response.Headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";
+        context.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization";
+        
+        var errorDetails = new { 
+            error = "CORTEX_CRITICAL_DEBUG", 
+            message = ex.Message,
+            inner = ex.InnerException?.Message,
+            stack = ex.StackTrace,
+            type = ex.GetType().Name
+        };
+        
+        await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(errorDetails));
+    }
+});
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
@@ -254,11 +279,17 @@ Console.WriteLine("DB: " + builder.Configuration.GetConnectionString("DefaultCon
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-    var db = services.GetRequiredService<GymDbContext>();
-    try 
-    {
-        db.Database.Migrate();
-        Console.WriteLine("✅ Database migrated successfully!");
+        var db = services.GetRequiredService<GymDbContext>();
+        try 
+        {
+            Console.WriteLine("🔄 Starting Database Migration...");
+            
+            // Log danh sách migration đã áp dụng
+            var appliedMigrations = db.Database.GetAppliedMigrations();
+            Console.WriteLine($"📊 Applied Migrations: {string.Join(", ", appliedMigrations)}");
+            
+            db.Database.Migrate();
+            Console.WriteLine("✅ Database migrated successfully!");
 
         if (app.Environment.IsDevelopment())
         {

@@ -249,12 +249,17 @@ app.Use(async (context, next) => {
     } catch (Exception ex) {
         context.Response.StatusCode = 500;
         context.Response.ContentType = "application/json";
+        
+        // Đảm bảo CORS luôn được phép ngay cả khi lỗi 500
         context.Response.Headers["Access-Control-Allow-Origin"] = "*";
+        context.Response.Headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";
+        context.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization";
         
         var errorDetails = new { 
             error = "CORTEX_CRITICAL_DEBUG", 
             message = ex.Message,
             inner = ex.InnerException?.Message,
+            stack = ex.StackTrace, // Thêm StackTrace để biết chính xác lỗi ở đâu
             type = ex.GetType().Name
         };
         
@@ -312,6 +317,11 @@ using (var scope = app.Services.CreateScope())
     {
         var db = services.GetRequiredService<GymDbContext>();
         Console.WriteLine("🔄 Starting Database Migration...");
+        
+        // Log danh sách migration đã áp dụng để kiểm tra trạng thái DB
+        var appliedMigrations = db.Database.GetAppliedMigrations();
+        Console.WriteLine($"📊 Applied Migrations: {string.Join(", ", appliedMigrations)}");
+        
         db.Database.Migrate();
         Console.WriteLine("✅ Database migrated successfully!");
 
