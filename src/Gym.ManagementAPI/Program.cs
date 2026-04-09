@@ -239,6 +239,9 @@ var app = builder.Build();
 // 5. MIDDLEWARE PIPELINE
 // ==========================================
 
+// ĐƯA CORS LÊN ĐẦU TIÊN ĐỂ KHÔNG BỊ CHẶN BỞI TRÌNH DUYỆT
+app.UseCors("AllowAll");
+
 // Cấu hình bắt lỗi chi tiết để debug trên Render
 app.Use(async (context, next) => {
     try {
@@ -247,12 +250,15 @@ app.Use(async (context, next) => {
         context.Response.StatusCode = 500;
         context.Response.ContentType = "application/json";
         context.Response.Headers["Access-Control-Allow-Origin"] = "*";
-        var result = System.Text.Json.JsonSerializer.Serialize(new { 
-            error = "CORTEX_DEBUG_ERROR", 
-            message = ex.Message, 
-            stack = ex.StackTrace 
-        });
-        await context.Response.WriteAsync(result);
+        
+        var errorDetails = new { 
+            error = "CORTEX_CRITICAL_DEBUG", 
+            message = ex.Message,
+            inner = ex.InnerException?.Message,
+            type = ex.GetType().Name
+        };
+        
+        await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(errorDetails));
     }
 });
 
@@ -262,9 +268,6 @@ app.UseSwaggerUI(options =>
     options.SwaggerEndpoint("/swagger/v1/swagger.json", "Gym Management API V1");
     options.RoutePrefix = "swagger";
 });
-
-// CORS phải đứng trước Auth
-app.UseCors("AllowAll");
 
 // Thêm Endpoint Health Check công khai (Không cần Auth) để kiểm tra CORS/DB
 app.MapGet("/api/health", async (GymDbContext db) => {
