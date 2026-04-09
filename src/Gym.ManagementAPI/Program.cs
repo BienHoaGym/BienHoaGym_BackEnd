@@ -57,7 +57,24 @@ builder.Services.AddDbContext<GymDbContext>(options =>
     // Tự động nhận diện Provider: Nếu là file .sqlite hoặc chuỗi cho SQLite thì dùng UseSqlite
     if (connectionString.Contains(".sqlite") || connectionString.Contains("Data Source") || connectionString.Contains("Filename"))
     {
-        options.UseSqlite(connectionString);
+        // LOGIC SỬA ĐƯỜNG DẪN SQLITE CHO RENDER
+        var sqliteFile = "GymManagement.sqlite";
+        if (connectionString.Contains("Data Source=")) {
+            sqliteFile = connectionString.Split("Data Source=")[1].Split(';')[0];
+        }
+
+        // Kiểm tra các đường dẫn có thể tồn tại trên Render
+        var possiblePaths = new[] {
+            sqliteFile,
+            Path.Combine("src", "Gym.ManagementAPI", sqliteFile),
+            Path.Combine(Directory.GetCurrentDirectory(), sqliteFile),
+            Path.Combine(Directory.GetCurrentDirectory(), "src", "Gym.ManagementAPI", sqliteFile)
+        };
+
+        var actualPath = possiblePaths.FirstOrDefault(p => File.Exists(p)) ?? sqliteFile;
+        Console.WriteLine($"🔍 Using SQLite at: {Path.GetFullPath(actualPath)}");
+        
+        options.UseSqlite($"Data Source={actualPath}");
     }
     else
     {
@@ -242,6 +259,16 @@ app.UseSwaggerUI(options =>
 
 // CORS phải đứng trước Auth
 app.UseCors("AllowAll");
+
+// Thêm Endpoint Health Check công khai (Không cần Auth) để kiểm tra CORS/DB
+app.MapGet("/api/health", async (GymDbContext db) => {
+    var canConnect = await db.Database.CanConnectAsync();
+    return Results.Ok(new { 
+        status = "Online", 
+        database = canConnect ? "Connected" : "Disconnected",
+        time = DateTime.UtcNow 
+    });
+});
 
 app.UseAuthentication();
 app.UseAuthorization();
