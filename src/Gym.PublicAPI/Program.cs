@@ -264,7 +264,7 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine($"❌ Initialization error: {ex.Message}");
     }
 }
-
+–
 
 // Lấy PORT từ môi trường
 var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
