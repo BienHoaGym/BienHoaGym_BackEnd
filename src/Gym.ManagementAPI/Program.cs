@@ -295,22 +295,25 @@ Console.WriteLine("🚀 Gym Management API is running!");
 Console.WriteLine("📖 Swagger UI: /swagger");
 Console.WriteLine("DB: " + builder.Configuration.GetConnectionString("DefaultConnection"));
 
-// Auto Migrate & Seed
+// Auto Migrate & Seed (Bọc trong try-catch an toàn để tránh sập App)
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-    var db = services.GetRequiredService<GymDbContext>();
     try 
     {
+        var db = services.GetRequiredService<GymDbContext>();
+        Console.WriteLine("🔄 Starting Database Migration...");
         db.Database.Migrate();
         Console.WriteLine("✅ Database migrated successfully!");
 
         // Automatic Demo Data Seeding
         await Gym.Infrastructure.Data.DataSeeder.SeedDemoDataAsync(services);
+        Console.WriteLine("✅ Seeding completed!");
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"❌ Initialization error: {ex.Message}");
+        Console.WriteLine($"⚠️ Database Initialization bypass: {ex.Message}");
+        // Không quăng lỗi ra ngoài để App tiếp tục chạy
     }
 }
 
