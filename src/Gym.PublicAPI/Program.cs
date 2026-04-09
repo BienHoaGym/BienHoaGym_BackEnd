@@ -291,6 +291,25 @@ using (var scope = app.Services.CreateScope())
             db.Database.Migrate();
             Console.WriteLine("✅ Database migrated successfully!");
 
+            // --- CỨU HỎA: TỰ ĐỘNG SỬA BẢNG NẾU THIẾU CỘT (DO LỖI SYNC) ---
+            try {
+                Console.WriteLine("🛠️ Checking for missing columns in MemberSubscriptions...");
+                db.Database.ExecuteSqlRaw(@"
+                    DO $$ 
+                    BEGIN 
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='MemberSubscriptions' AND column_name='AutoPauseExtensionDays') THEN
+                            ALTER TABLE ""MemberSubscriptions"" ADD COLUMN ""AutoPauseExtensionDays"" integer;
+                        END IF;
+                        
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='MemberSubscriptions' AND column_name='LastPausedAt') THEN
+                            ALTER TABLE ""MemberSubscriptions"" ADD COLUMN ""LastPausedAt"" timestamp with time zone;
+                        END IF;
+                    END $$;");
+                Console.WriteLine("✅ Database self-healing completed!");
+            } catch (Exception ex) {
+                Console.WriteLine($"🔍 Self-healing info: {ex.Message}");
+            }
+
         if (app.Environment.IsDevelopment())
         {
             await Gym.Infrastructure.Data.DataSeeder.SeedDemoDataAsync(services);

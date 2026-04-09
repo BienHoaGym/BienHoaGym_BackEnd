@@ -318,12 +318,33 @@ using (var scope = app.Services.CreateScope())
         var db = services.GetRequiredService<GymDbContext>();
         Console.WriteLine("🔄 Starting Database Migration...");
         
-        // Log danh sách migration đã áp dụng để kiểm tra trạng thái DB
+        // Log danh sách migration đã áp dụng
         var appliedMigrations = db.Database.GetAppliedMigrations();
         Console.WriteLine($"📊 Applied Migrations: {string.Join(", ", appliedMigrations)}");
         
         db.Database.Migrate();
         Console.WriteLine("✅ Database migrated successfully!");
+
+        // --- CỨU HỎA: TỰ ĐỘNG SỬA BẢNG NẾU THIẾU CỘT (DO LỖI SYNC) ---
+        try {
+            Console.WriteLine("🛠️ Checking for missing columns in MemberSubscriptions...");
+            db.Database.ExecuteSqlRaw(@"
+                DO $$ 
+                BEGIN 
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='MemberSubscriptions' AND column_name='AutoPauseExtensionDays') THEN
+                        ALTER TABLE ""MemberSubscriptions"" ADD COLUMN ""AutoPauseExtensionDays"" integer;
+                        RAISE NOTICE 'Added AutoPauseExtensionDays column';
+                    END IF;
+                    
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='MemberSubscriptions' AND column_name='LastPausedAt') THEN
+                        ALTER TABLE ""MemberSubscriptions"" ADD COLUMN ""LastPausedAt"" timestamp with time zone;
+                        RAISE NOTICE 'Added LastPausedAt column';
+                    END IF;
+                END $$;");
+            Console.WriteLine("✅ Database self-healing completed!");
+        } catch (Exception ex) {
+            Console.WriteLine($"🔍 Self-healing info: {ex.Message}");
+        }
 
         // CHỈ SEED DỮ LIỆU NẾU LÀ MÔI TRƯỜNG DEVELOPMENT 
         // Trên Production/Render chúng ta đã có file SQLite đi kèm hoặc dùng DB ngoài
