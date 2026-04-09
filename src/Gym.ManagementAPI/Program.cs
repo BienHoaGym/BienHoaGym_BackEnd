@@ -19,13 +19,17 @@ using Gym.Infrastructure.Auth;
 using System.Security.Claims; // Cần cái này cho ClaimTypes
 using System.Text;
 
+// Fix for inotify limit on Linux/Render - MUST BE AT THE VERY TOP
+Environment.SetEnvironmentVariable("DOTNET_USE_POLLING_FILE_WATCHER", "1");
+Environment.SetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER", "true");
+
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
     Args = args,
     ContentRootPath = Directory.GetCurrentDirectory()
 });
 
-// Fix for inotify limit on Linux/Render
+// Suppress default configuration sources that might use watchers
 builder.Configuration.Sources.Clear();
 builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
                      .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: false)
