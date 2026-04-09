@@ -211,7 +211,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.WithOrigins("https://bienhoagym.github.io", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:3000")
+        policy.AllowAnyOrigin()
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
@@ -260,8 +260,11 @@ using (var scope = app.Services.CreateScope())
         db.Database.Migrate();
         Console.WriteLine("✅ Database migrated successfully!");
 
-        // Automatic Demo Data Seeding
-        await Gym.Infrastructure.Data.DataSeeder.SeedDemoDataAsync(services);
+        if (app.Environment.IsDevelopment())
+        {
+            await Gym.Infrastructure.Data.DataSeeder.SeedDemoDataAsync(services);
+            Console.WriteLine("✅ Seeding completed!");
+        }
     }
     catch (Exception ex)
     {

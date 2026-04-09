@@ -222,13 +222,15 @@ builder.Services.AddAuthorization();
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
 builder.Services.AddScoped<IAuthorizationHandler, PermissionHandler>();
 
-// Configure CORS (Cho phép Frontend gọi vào)
+// Configure CORS (Hỗ trợ tuyệt đối cho Frontend trên GitHub Pages)
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll",
-        policy => policy.SetIsOriginAllowed(_ => true) // Cho phép tất cả các nguồn
-                        .AllowAnyHeader()
-                        .AllowAnyMethod());
+    options.AddPolicy("AllowAll", policy => 
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
 });
 
 var app = builder.Build();
@@ -310,9 +312,14 @@ using (var scope = app.Services.CreateScope())
         db.Database.Migrate();
         Console.WriteLine("✅ Database migrated successfully!");
 
-        // Automatic Demo Data Seeding
-        await Gym.Infrastructure.Data.DataSeeder.SeedDemoDataAsync(services);
-        Console.WriteLine("✅ Seeding completed!");
+        // CHỈ SEED DỮ LIỆU NẾU LÀ MÔI TRƯỜNG DEVELOPMENT 
+        // Trên Production/Render chúng ta đã có file SQLite đi kèm hoặc dùng DB ngoài
+        if (app.Environment.IsDevelopment())
+        {
+            Console.WriteLine("🌱 Seeding demo data in Development...");
+            await Gym.Infrastructure.Data.DataSeeder.SeedDemoDataAsync(services);
+            Console.WriteLine("✅ Seeding completed!");
+        }
     }
     catch (Exception ex)
     {
