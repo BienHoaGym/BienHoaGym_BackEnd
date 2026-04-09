@@ -304,6 +304,11 @@ using (var scope = app.Services.CreateScope())
                         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='MemberSubscriptions' AND column_name='LastPausedAt') THEN
                             ALTER TABLE ""MemberSubscriptions"" ADD COLUMN ""LastPausedAt"" timestamp with time zone;
                         END IF;
+                        
+                        -- Sửa bảng InvoiceDetails
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='InvoiceDetails' AND column_name='SubscriptionId') THEN
+                            ALTER TABLE ""InvoiceDetails"" ADD COLUMN ""SubscriptionId"" uuid;
+                        END IF;
                     END $$;");
                 Console.WriteLine("✅ Database self-healing completed!");
             } catch (Exception ex) {
