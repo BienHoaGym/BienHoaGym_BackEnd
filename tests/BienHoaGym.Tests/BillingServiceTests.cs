@@ -158,7 +158,7 @@ public class BillingServiceTests
 
         // 3. Assert
         Assert.False(result.Success);
-        // Sử dụng Unicode escape để tránh lỗi Encoding trên môi trường GitHub Actions/Linux
-        Assert.Contains("\u1EABn c\u00F2n h\u1EA1n", result.Message);
+        // Kiểm tra thông điệp lỗi bằng mã Unicode chuẩn để vượt qua lỗi Encoding trên CI/CD
+        Assert.Contains("v\u1EABn c\u00F2n h\u1EA1n", result.Message);
     }
 }
