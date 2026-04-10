@@ -74,12 +74,12 @@ public class BillingController : ControllerBase
 
     [HttpGet("invoices/{id}/pdf")]
     [Authorize(Policy = PermissionConstants.BillingRead)]
-    public async Task<IActionResult> GetInvoicePdf(Guid id, [FromServices] IPdfService pdfService)
+    public async Task<IActionResult> DownloadInvoicePdf(Guid id)
     {
-        var result = await _billingService.GetInvoiceByIdAsync(id);
-        if (!result.Success) return NotFound(result);
+        var pdfBytes = await _billingService.ExportInvoicePdfAsync(id);
+        if (pdfBytes == null || pdfBytes.Length == 0)
+            return NotFound(new { message = "Kh\u00F4ng th\u1EC3 t\u1EA1o PDF. H\u00F3a \u0111\u01A1n kh\u00F4ng t\u1ED3n t\u1EA1i." });
 
-        var pdfBytes = pdfService.GenerateInvoicePdf(result.Data!);
-        return File(pdfBytes, "application/pdf", $"Invoice-{id}.pdf");
+        return File(pdfBytes, "application/pdf", $"HoaDon_{id}.pdf");
     }
 }

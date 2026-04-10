@@ -58,9 +58,10 @@ public class ReportsService : IReportsService
                 .ToListAsync();
 
             var revenueThisMonth = await _unitOfWork.Payments.GetQueryable().Where(p => p.Status == PaymentStatus.Completed && !p.IsDeleted && p.PaymentDate >= monthStart).SumAsync(p => (decimal)p.Amount) +
-                                   await _unitOfWork.Invoices.GetQueryable().Where(i => i.Status == PaymentStatus.Completed && !i.IsDeleted && i.CreatedAt >= monthStart).SumAsync(i => (decimal)i.FinalAmount);
+                                   await _unitOfWork.Invoices.GetQueryable().Where(i => i.Status == PaymentStatus.Completed && !i.IsDeleted && i.CreatedAt >= monthStart).SumAsync(i => i.TotalAmount - i.DiscountAmount);
 
-            var revenueThisYear = await _unitOfWork.Payments.GetQueryable().Where(p => p.Status == PaymentStatus.Completed && !p.IsDeleted && p.PaymentDate >= yearStart).SumAsync(p => (decimal)p.Amount);
+            var revenueThisYear = await _unitOfWork.Payments.GetQueryable().Where(p => p.Status == PaymentStatus.Completed && !p.IsDeleted && p.PaymentDate >= yearStart).SumAsync(p => (decimal)p.Amount) +
+                                   await _unitOfWork.Invoices.GetQueryable().Where(i => i.Status == PaymentStatus.Completed && !i.IsDeleted && i.CreatedAt >= yearStart).SumAsync(i => i.TotalAmount - i.DiscountAmount);
 
             var maintExpenseMonth = await _unitOfWork.MaintenanceLogs.GetQueryable().Where(m => m.Date >= monthStart && m.Status == MaintenanceStatus.Completed).SumAsync(m => (decimal)m.Cost);
             var depExpenseMonth = await _unitOfWork.Depreciations.GetQueryable().Where(d => d.PeriodMonth == now.Month && d.PeriodYear == now.Year).SumAsync(d => (decimal)d.Amount);
@@ -68,7 +69,7 @@ public class ReportsService : IReportsService
             var overview = new RevenueOverviewDto
             {
                 RevenueToday = (decimal)(payments.Where(p => p.PaymentDate.Date == today).Sum(p => (double)p.Amount) + 
-                                       invoices.Where(i => i.CreatedAt.Date == today).Sum(i => (double)i.FinalAmount)),
+                                       invoices.Where(i => i.CreatedAt.Date == today).Sum(i => (double)(i.TotalAmount - i.DiscountAmount))),
                 RevenueThisMonth = revenueThisMonth,
                 RevenueThisYear = revenueThisYear,
                 TotalExpenseThisMonth = maintExpenseMonth + depExpenseMonth,
@@ -80,7 +81,7 @@ public class ReportsService : IReportsService
                 .Select(i => {
                     var d = start.Date.AddDays(i);
                     var pRev = payments.Where(p => p.PaymentDate.Date == d).Sum(p => (decimal)p.Amount);
-                    var iRev = invoices.Where(i => i.CreatedAt.Date == d).Sum(i => (decimal)i.FinalAmount);
+                    var iRev = invoices.Where(i => i.CreatedAt.Date == d).Sum(i => (decimal)(i.TotalAmount - i.DiscountAmount));
                     var oRev = orders.Where(o => o.CreatedDate.Date == d).Sum(o => (decimal)o.TotalAmount);
                     return new RevenueChartItemDto { Label = d.ToString("dd/MM"), Revenue = pRev + iRev + oRev };
                 }).ToList();
@@ -98,7 +99,7 @@ public class ReportsService : IReportsService
                 .OrderByDescending(x => x.TotalRevenue).ToList();
 
             var revByHour = payments.Select(p => new { Date = p.PaymentDate, Amount = (decimal)p.Amount })
-                .Concat(invoices.Select(i => new { Date = i.CreatedAt, Amount = (decimal)i.FinalAmount }))
+                .Concat(invoices.Select(i => new { Date = i.CreatedAt, Amount = (decimal)(i.TotalAmount - i.DiscountAmount) }))
                 .Concat(orders.Select(o => new { Date = o.CreatedDate, Amount = o.TotalAmount }))
                 .GroupBy(x => x.Date.Hour)
                 .Select(g => new RevenueByHourDto {
@@ -119,7 +120,7 @@ public class ReportsService : IReportsService
                 })
                 .Concat(invoices.Select(i => new TransactionDetailDto {
                     Date = i.CreatedAt,
-                    Amount = (decimal)i.FinalAmount,
+                    Amount = (decimal)(i.TotalAmount - i.DiscountAmount),
                     MemberName = i.Member?.FullName ?? "Kh\u00E1ch l\u1EBB/POS",
                     PackageName = "S\u1EA3n ph\u1EA9m/D\u1ECBch v\u1EE5 l\u1EBB",
                     Status = "Completed"
@@ -174,9 +175,50 @@ public class ReportsService : IReportsService
         }
     }
 
-    public Task<ResponseDto<AssetInventoryStatsDto>> GetAssetInventoryStatsAsync()
+    public async Task<ResponseDto<AssetInventoryStatsDto>> GetAssetInventoryStatsAsync()
     {
-        return Task.FromResult(ResponseDto<AssetInventoryStatsDto>.SuccessResult(new AssetInventoryStatsDto()));
+        try
+        {
+            var products = await _unitOfWork.Products.GetQueryable()
+                .Where(p => !p.IsDeleted)
+                .ToListAsync();
+
+            var equipments = await _unitOfWork.Equipments.GetQueryable()
+                .Where(e => !e.IsDeleted)
+                .ToListAsync();
+
+            var maintenanceLogs = await _unitOfWork.MaintenanceLogs.GetQueryable()
+                .Where(m => !m.IsDeleted && m.Status == MaintenanceStatus.Completed)
+                .ToListAsync();
+
+            var stats = new AssetInventoryStatsDto
+            {
+                // Inventory
+                TotalProducts = products.Count,
+                TotalStockItems = products.Sum(p => p.StockQuantity),
+                TotalStockValue = (decimal)products.Sum(p => (double)p.StockQuantity * (double)p.Price),
+                LowStockItems = products.Where(p => p.StockQuantity < 10)
+                    .OrderBy(p => p.StockQuantity)
+                    .Take(5)
+                    .Select(p => new TopProductItemDto { Name = p.Name, Quantity = p.StockQuantity })
+                    .ToList(),
+
+                // Equipment
+                TotalEquipments = equipments.Count,
+                TotalOriginalValue = equipments.Sum(e => e.PurchasePrice),
+                TotalCurrentValue = equipments.Sum(e => e.RemainingValue),
+                TotalMaintenanceCosts = maintenanceLogs.Sum(m => m.Cost),
+                StatusCounts = equipments.GroupBy(e => e.Status.ToString())
+                    .Select(g => new EquipmentStatusCountDto { Status = g.Key, Count = g.Count() })
+                    .ToList()
+            };
+
+            return ResponseDto<AssetInventoryStatsDto>.SuccessResult(stats);
+        }
+        catch (Exception ex)
+        {
+            return ResponseDto<AssetInventoryStatsDto>.FailureResult($"L\u1ED7i th\u1ED1ng k\u00EA t\u00E0i s\u1EA3n: {ex.Message}");
+        }
     }
 
     public Task<ResponseDto<DepreciationReportDto>> GetDepreciationReportAsync(int month, int year)
