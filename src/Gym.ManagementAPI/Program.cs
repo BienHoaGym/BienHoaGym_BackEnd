@@ -313,10 +313,33 @@ using (var scope = app.Services.CreateScope())
                 db.Database.ExecuteSqlRaw(@"
                     DO $$ 
                     BEGIN 
+                        -- Sửa bảng Users (Thêm các cột nhân sự thiếu)
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Users' AND column_name='Address') THEN
+                            ALTER TABLE ""Users"" ADD COLUMN ""Address"" text;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Users' AND column_name='IdentityNumber') THEN
+                            ALTER TABLE ""Users"" ADD COLUMN ""IdentityNumber"" text;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Users' AND column_name='BirthDate') THEN
+                            ALTER TABLE ""Users"" ADD COLUMN ""BirthDate"" timestamp with time zone;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Users' AND column_name='Gender') THEN
+                            ALTER TABLE ""Users"" ADD COLUMN ""Gender"" text;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Users' AND column_name='HireDate') THEN
+                            ALTER TABLE ""Users"" ADD COLUMN ""HireDate"" timestamp with time zone;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Users' AND column_name='BankCardNumber') THEN
+                            ALTER TABLE ""Users"" ADD COLUMN ""BankCardNumber"" text;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Users' AND column_name='BankName') THEN
+                            ALTER TABLE ""Users"" ADD COLUMN ""BankName"" text;
+                        END IF;
+
+                        -- Sửa bảng MemberSubscriptions
                         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='MemberSubscriptions' AND column_name='AutoPauseExtensionDays') THEN
                             ALTER TABLE ""MemberSubscriptions"" ADD COLUMN ""AutoPauseExtensionDays"" integer;
                         END IF;
-                        
                         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='MemberSubscriptions' AND column_name='LastPausedAt') THEN
                             ALTER TABLE ""MemberSubscriptions"" ADD COLUMN ""LastPausedAt"" timestamp with time zone;
                         END IF;
