@@ -6,6 +6,9 @@ using Gym.Application.Interfaces.Services;
 using Gym.Domain.Entities;
 using Gym.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
 
 namespace Gym.Application.Services;
 
