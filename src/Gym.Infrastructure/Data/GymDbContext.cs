@@ -677,7 +677,10 @@ public class GymDbContext : DbContext
 
             if (entry.State == EntityState.Added)
             {
-                entity.CreatedAt = DateTime.UtcNow;
+                if (entity.CreatedAt == default)
+                {
+                    entity.CreatedAt = DateTime.UtcNow;
+                }
             }
 
             if (entry.State == EntityState.Modified)

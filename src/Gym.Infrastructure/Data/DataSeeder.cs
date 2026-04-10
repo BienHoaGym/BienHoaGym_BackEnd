@@ -45,7 +45,7 @@ public static class DataSeeder
             }
 
             // 3. Members & Subscriptions & Payments
-            if (!await context.Invoices.AnyAsync())
+            if (await context.Invoices.CountAsync() < 10)
             {
                 var packages = await context.MembershipPackages.ToListAsync();
                 var random = new Random();

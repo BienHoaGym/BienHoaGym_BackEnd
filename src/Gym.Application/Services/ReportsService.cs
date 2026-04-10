@@ -11,16 +11,23 @@ using Gym.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using MiniExcelLibs;
 using System.IO;
+using Microsoft.Extensions.DependencyInjection;
+using AutoMapper;
+using Gym.Infrastructure.Persistence;
 
 namespace Gym.Application.Services;
 
 public class ReportsService : IReportsService
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
 
-    public ReportsService(IUnitOfWork unitOfWork)
+    public ReportsService(IUnitOfWork unitOfWork, IMapper mapper, IServiceScopeFactory serviceScopeFactory)
     {
         _unitOfWork = unitOfWork;
+        _mapper = mapper;
+        _serviceScopeFactory = serviceScopeFactory;
     }
 
     public async Task<ResponseDto<RevenueReportDto>> GetRevenueReportAsync(DateTime? startDate = null, DateTime? endDate = null)
@@ -185,17 +192,20 @@ public class ReportsService : IReportsService
         return Task.FromResult(ResponseDto<OperatingCostReportDto>.SuccessResult(new OperatingCostReportDto { Month = month, Year = year }));
     }
 
-    public Task<ResponseDto<bool>> SeedReportDataAsync()
+    public async Task<ResponseDto<bool>> SeedReportDataAsync()
     {
         try
         {
-            // Seed trực tiếp từ service nếu cần
-            // Tuy nhiên chúng ta đã có ở Program.cs.
-            return Task.FromResult(ResponseDto<bool>.SuccessResult(true, "D\u1EEF li\u1EC7u \u0111ang \u0111\u01B0\u1EE3c \u0111\u1ED3ng b\u1ED9. Vui l\u00F2ng l\u00E0m m\u1EDBi trang sau 5 gi\u00E2y."));
+            using (var scope = _serviceScopeFactory.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                await Gym.Infrastructure.Data.DataSeeder.SeedDemoDataAsync(services);
+            }
+            return ResponseDto<bool>.SuccessResult(true, "D\u1EEF li\u1EC7u \u0111\u00E3 \u0111\u01B0\u1EE3c n\u1EA1p. Vui l\u00F2ng l\u00E0m m\u1EDBi trang.");
         }
         catch (Exception ex)
         {
-            return Task.FromResult(ResponseDto<bool>.FailureResult($"L\u1ED7i seed: {ex.Message}"));
+            return ResponseDto<bool>.FailureResult($"L\u1ED7i seed: {ex.Message}");
         }
     }
 }
