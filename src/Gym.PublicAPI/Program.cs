@@ -285,14 +285,13 @@ using (var scope = app.Services.CreateScope())
 
         // LUÔN ĐẢM BẢO CÓ ADMIN VÀ DỮ LIỆU DEMO NẾU DB TRỐNG (KỂ CẢ TRÊN PRODUCTION ĐỂ VẬN HÀNH THỬ)
         var userCount = await db.Users.CountAsync();
-        if (userCount == 0) {
-            Console.WriteLine("⚠️ No users found. Creating default Admin & Demo Data for first-run setup...");
-            await Gym.Infrastructure.Data.DataSeeder.SeedDefaultAdminAsync(services);
+        var invoiceCount = await db.Invoices.CountAsync();
+        
+        if (userCount == 0 || invoiceCount == 0) {
+            Console.WriteLine("⚠️ Database is empty or missing invoices. Seeding management data...");
+            if (userCount == 0) await Gym.Infrastructure.Data.DataSeeder.SeedDefaultAdminAsync(services);
             await Gym.Infrastructure.Data.DataSeeder.SeedDemoDataAsync(services);
-            Console.WriteLine("✅ Default Admin & Demo data created!");
-        } else if (app.Environment.IsDevelopment()) {
-            await Gym.Infrastructure.Data.DataSeeder.SeedDemoDataAsync(services);
-            Console.WriteLine("✅ Demo data seeded!");
+            Console.WriteLine("✅ Seeding completed successfully!");
         }
     } catch (Exception ex) {
         Console.WriteLine($"❌ Initialization error: {ex.Message}");

@@ -9,6 +9,8 @@ using Gym.Application.Interfaces.Services;
 using Gym.Domain.Entities;
 using Gym.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
+using MiniExcelLibs;
+using System.IO;
 
 namespace Gym.Application.Services;
 
@@ -23,63 +25,53 @@ public class ReportsService : IReportsService
 
     public async Task<ResponseDto<RevenueReportDto>> GetRevenueReportAsync(DateTime? startDate = null, DateTime? endDate = null)
     {
-        var today = DateTime.UtcNow.Date;
-        var monthStart = new DateTime(today.Year, today.Month, 1);
-        var yearStart = new DateTime(today.Year, 1, 1);
+        var start = startDate?.Date ?? DateTime.UtcNow.Date.AddDays(-29);
+        var end = (endDate?.Date ?? DateTime.UtcNow.Date).AddHours(23).AddMinutes(59).AddSeconds(59);
 
-        var start = startDate?.Date ?? today.AddDays(-29);
-        var end = (endDate ?? today).Date.AddHours(23).AddMinutes(59).AddSeconds(59);
+        var now = DateTime.UtcNow;
+        var monthStart = new DateTime(now.Year, now.Month, 1);
+        var yearStart = new DateTime(now.Year, 1, 1);
+        var today = now.Date;
 
         try 
         {
             var payments = await _unitOfWork.Payments.GetQueryable()
-                .Where(p => p.Status == PaymentStatus.Completed && !p.IsDeleted)
+                .Where(p => p.Status == PaymentStatus.Completed && !p.IsDeleted && p.PaymentDate >= start && p.PaymentDate <= end)
                 .Include(p => p.Subscription).ThenInclude(s => s!.Package)
                 .Include(p => p.Subscription).ThenInclude(s => s!.Member)
                 .ToListAsync();
 
             var invoices = await _unitOfWork.Invoices.GetQueryable()
-                .Where(i => i.Status == PaymentStatus.Completed && !i.IsDeleted)
+                .Where(i => i.Status == PaymentStatus.Completed && !i.IsDeleted && i.CreatedAt >= start && i.CreatedAt <= end)
                 .Include(i => i.Member)
                 .Include(i => i.Details)
                 .ToListAsync();
 
             var orders = await _unitOfWork.Orders.GetQueryable()
-                .Where(o => (o.Status == "Completed" || o.Status == "completed") && !o.IsDeleted)
+                .Where(o => (o.Status == "Completed" || o.Status == "completed") && !o.IsDeleted && o.CreatedDate >= start && o.CreatedDate <= end)
                 .Include(o => o.Member)
                 .Include(o => o.OrderDetails).ThenInclude(od => od.Product)
                 .ToListAsync();
 
-            // 1. Overview
-            var revMonth = payments.Where(p => p.PaymentDate >= monthStart).Sum(p => (double)p.Amount) +
-                           invoices.Where(i => i.CreatedAt >= monthStart).Sum(i => (double)i.FinalAmount) +
-                           orders.Where(o => o.CreatedDate >= monthStart).Sum(o => (double)o.TotalAmount);
-                           
-            // Expenses
-            var matExpense = (await _unitOfWork.StockTransactions.GetQueryable()
-                .Include(t => t.Product)
-                .Where(t => t.Date >= monthStart && (t.Type == StockTransactionType.InternalUse || t.Type == StockTransactionType.Damage || t.Type == StockTransactionType.Loss))
-                .ToListAsync()).Sum(t => (double)(t.Quantity * (t.Product?.CostPrice ?? 0)));
-            
-            var maintExpense = (await _unitOfWork.MaintenanceLogs.GetQueryable()
-                .Where(m => m.Date >= monthStart && m.Status == MaintenanceStatus.Completed)
-                .ToListAsync()).Sum(m => (double)m.Cost);
-                
-            var depExpense = (await _unitOfWork.Depreciations.GetQueryable()
-                .Where(d => d.PeriodMonth == monthStart.Month && d.PeriodYear == monthStart.Year)
-                .ToListAsync()).Sum(d => (double)d.Amount);
+            var revenueThisMonth = await _unitOfWork.Payments.GetQueryable().Where(p => p.Status == PaymentStatus.Completed && !p.IsDeleted && p.PaymentDate >= monthStart).SumAsync(p => (decimal)p.Amount) +
+                                   await _unitOfWork.Invoices.GetQueryable().Where(i => i.Status == PaymentStatus.Completed && !i.IsDeleted && i.CreatedAt >= monthStart).SumAsync(i => (decimal)i.FinalAmount);
+
+            var revenueThisYear = await _unitOfWork.Payments.GetQueryable().Where(p => p.Status == PaymentStatus.Completed && !p.IsDeleted && p.PaymentDate >= yearStart).SumAsync(p => (decimal)p.Amount);
+
+            var maintExpenseMonth = await _unitOfWork.MaintenanceLogs.GetQueryable().Where(m => m.Date >= monthStart && m.Status == MaintenanceStatus.Completed).SumAsync(m => (decimal)m.Cost);
+            var depExpenseMonth = await _unitOfWork.Depreciations.GetQueryable().Where(d => d.PeriodMonth == now.Month && d.PeriodYear == now.Year).SumAsync(d => (decimal)d.Amount);
 
             var overview = new RevenueOverviewDto
             {
-                RevenueToday = (decimal)(payments.Where(p => p.PaymentDate.Date == today).Sum(p => (double)p.Amount) + invoices.Where(p => p.CreatedAt.Date == today).Sum(p => (double)p.FinalAmount)),
-                RevenueThisMonth = (decimal)revMonth,
-                RevenueThisYear = (decimal)(payments.Where(p => p.PaymentDate >= yearStart).Sum(p => (double)p.Amount)),
-                TotalExpenseThisMonth = (decimal)(matExpense + maintExpense + depExpense),
-                NewMembersCount = await _unitOfWork.Members.GetQueryable().CountAsync(m => m.JoinedDate >= start && m.JoinedDate <= end),
-                TotalPackagesSold = await _unitOfWork.Subscriptions.GetQueryable().CountAsync(s => s.CreatedAt >= start && s.CreatedAt <= end)
+                RevenueToday = (decimal)(payments.Where(p => p.PaymentDate.Date == today).Sum(p => (double)p.Amount) + 
+                                       invoices.Where(i => i.CreatedAt.Date == today).Sum(i => (double)i.FinalAmount)),
+                RevenueThisMonth = revenueThisMonth,
+                RevenueThisYear = revenueThisYear,
+                TotalExpenseThisMonth = maintExpenseMonth + depExpenseMonth,
+                NewMembersCount = await _unitOfWork.Members.GetQueryable().CountAsync(m => !m.IsDeleted && m.JoinedDate >= start && m.JoinedDate <= end),
+                TotalPackagesSold = await _unitOfWork.Subscriptions.GetQueryable().CountAsync(s => !s.IsDeleted && s.CreatedAt >= start && s.CreatedAt <= end)
             };
 
-            // 2. Charts
             var chartItems = Enumerable.Range(0, (end.Date - start.Date).Days + 1)
                 .Select(i => {
                     var d = start.Date.AddDays(i);
@@ -89,29 +81,21 @@ public class ReportsService : IReportsService
                     return new RevenueChartItemDto { Label = d.ToString("dd/MM"), Revenue = pRev + iRev + oRev };
                 }).ToList();
 
-            // 3. Category Breakdown
             var revByPackage = payments
-                .Where(p => p.PaymentDate >= start && p.PaymentDate <= end)
-                .GroupBy(p => p.Subscription?.Package?.Name ?? "Dịch vụ Membership")
+                .GroupBy(p => p.Subscription?.Package?.Name ?? "D\u1ECBch v\u1EE5 Membership")
                 .Select(g => new RevenueByPackageDto { PackageName = g.Key, Quantity = g.Count(), TotalRevenue = (decimal)g.Sum(p => p.Amount) })
                 .OrderByDescending(x => x.TotalRevenue).ToList();
 
             var revByProduct = invoices
-                .Where(i => i.CreatedAt >= start && i.CreatedAt <= end)
                 .SelectMany(i => i.Details)
                 .Where(d => d.ItemType == "Product")
                 .GroupBy(d => d.ItemName)
                 .Select(g => new RevenueByPackageDto { PackageName = g.Key, Quantity = g.Sum(x => x.Quantity), TotalRevenue = g.Sum(x => x.Quantity * x.UnitPrice) })
                 .OrderByDescending(x => x.TotalRevenue).ToList();
 
-            // 4. Hourly Distribution (Real Data)
-            var allTrans = payments.Select(p => new { Date = p.PaymentDate, Amount = (decimal)p.Amount })
+            var revByHour = payments.Select(p => new { Date = p.PaymentDate, Amount = (decimal)p.Amount })
                 .Concat(invoices.Select(i => new { Date = i.CreatedAt, Amount = (decimal)i.FinalAmount }))
                 .Concat(orders.Select(o => new { Date = o.CreatedDate, Amount = o.TotalAmount }))
-                .Where(x => x.Date >= start && x.Date <= end)
-                .ToList();
-
-            var revByHour = allTrans
                 .GroupBy(x => x.Date.Hour)
                 .Select(g => new RevenueByHourDto {
                     Hour = $"{g.Key:D2}:00",
@@ -121,27 +105,26 @@ public class ReportsService : IReportsService
                 .OrderBy(x => x.Hour)
                 .ToList();
 
-            // 5. Recent Transactions (Real Detailed Data)
             var transactions = payments
                 .Select(p => new TransactionDetailDto {
                     Date = p.PaymentDate,
                     Amount = (decimal)p.Amount,
                     MemberName = p.Subscription?.Member?.FullName ?? "N/A",
-                    PackageName = "Gói: " + (p.Subscription?.Package?.Name ?? "Dịch vụ"),
+                    PackageName = "G\u00F3i: " + (p.Subscription?.Package?.Name ?? "D\u1ECBch v\u1EE5"),
                     Status = "Completed"
                 })
                 .Concat(invoices.Select(i => new TransactionDetailDto {
                     Date = i.CreatedAt,
                     Amount = (decimal)i.FinalAmount,
-                    MemberName = i.Member?.FullName ?? "Khách lẻ/POS",
-                    PackageName = "Sản phẩm/Dịch vụ lẻ",
+                    MemberName = i.Member?.FullName ?? "Kh\u00E1ch l\u1EBB/POS",
+                    PackageName = "S\u1EA3n ph\u1EA9m/D\u1ECBch v\u1EE5 l\u1EBB",
                     Status = "Completed"
                 }))
                 .Concat(orders.Select(o => new TransactionDetailDto {
                     Date = o.CreatedDate,
                     Amount = o.TotalAmount,
-                    MemberName = o.Member?.FullName ?? "Đơn hàng Web",
-                    PackageName = "Sản phẩm từ Store",
+                    MemberName = o.Member?.FullName ?? "\u0110\u01A1n h\u00E0ng Web",
+                    PackageName = "S\u1EA3n ph\u1EA9m t\u1EEB Store",
                     Status = "Completed"
                 }))
                 .OrderByDescending(x => x.Date)
@@ -154,15 +137,36 @@ public class ReportsService : IReportsService
                 RevenueByPackage = revByPackage,
                 RevenueByProduct = revByProduct,
                 RevenueByHour = revByHour,
-                RecentTransactions = transactions,
-                TotalMaterialExpense = (decimal)matExpense,
-                TotalMaintenanceExpense = (decimal)maintExpense,
-                TotalDepreciationExpense = (decimal)depExpense
+                RecentTransactions = transactions
             });
         }
         catch (Exception ex)
         {
-            return ResponseDto<RevenueReportDto>.FailureResult($"Lỗi báo cáo: {ex.Message}");
+            return ResponseDto<RevenueReportDto>.FailureResult($"L\u1ED7i b\u00E1o c\u00E1o: {ex.Message}");
+        }
+    }
+
+    public async Task<byte[]> ExportRevenueToExcelAsync(DateTime? startDate = null, DateTime? endDate = null)
+    {
+        var reportResponse = await GetRevenueReportAsync(startDate, endDate);
+        if (!reportResponse.IsSuccess || reportResponse.Data == null)
+            return Array.Empty<byte>();
+
+        var data = reportResponse.Data;
+        
+        // Chuẩn bị dữ liệu xuất Excel
+        var excelData = data.RecentTransactions.Select(t => new {
+            Ngay = t.Date.ToString("dd/MM/yyyy HH:mm"),
+            KhachHang = t.MemberName,
+            NoiDung = t.PackageName,
+            SoTien = t.Amount,
+            TrangThai = t.Status
+        }).ToList();
+
+        using (var ms = new MemoryStream())
+        {
+            await ms.SaveAsAsync(excelData);
+            return ms.ToArray();
         }
     }
 
@@ -183,6 +187,6 @@ public class ReportsService : IReportsService
 
     public Task<ResponseDto<bool>> SeedReportDataAsync()
     {
-        return Task.FromResult(ResponseDto<bool>.SuccessResult(true, "Chức năng Seed dữ liệu đang được bảo trì."));
+        return Task.FromResult(ResponseDto<bool>.SuccessResult(true, "Ch\u1EE9c n\u0103ng Seed d\u1EE7 li\u1EC7u \u0111\u00E3 ho\u00E0n t\u1EA5t th\u00F4ng qua Program startup."));
     }
 }

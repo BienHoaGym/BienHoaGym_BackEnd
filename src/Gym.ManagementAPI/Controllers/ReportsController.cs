@@ -25,6 +25,15 @@ public class ReportsController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("revenue/export")]
+    [Authorize(Policy = PermissionConstants.ReportFinancial)]
+    public async Task<IActionResult> ExportRevenueExcel([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
+    {
+        var fileContent = await _reportsService.ExportRevenueToExcelAsync(startDate, endDate);
+        string fileName = $"BaoCaoDoanhThu_{DateTime.Now:yyyyMMdd}.xlsx";
+        return File(fileContent, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+    }
+
     [HttpGet("assets-inventory")]
     [Authorize(Policy = PermissionConstants.ReportRead)]
     public async Task<IActionResult> GetAssetInventoryStats()
