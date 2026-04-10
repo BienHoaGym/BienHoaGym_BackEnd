@@ -1,5 +1,7 @@
 using Gym.Application.Interfaces.Services;
 using Gym.Domain.Constants;
+using Gym.Application.DTOs.Common;
+using Gym.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -54,7 +56,11 @@ public class ReportsController : ControllerBase
     [Authorize(Policy = PermissionConstants.SettingsManage)]
     public async Task<IActionResult> SeedData()
     {
-        var result = await _reportsService.SeedReportDataAsync();
-        return Ok(result);
+        try {
+            await DataSeeder.SeedDemoDataAsync(HttpContext.RequestServices);
+            return Ok(ResponseDto<bool>.SuccessResult(true, "D\u1EEF li\u1EC7u \u0111\u00E3 \u0111\u01B0\u1EE3c n\u1EA1p th\u00E0nh c\u00F4ng."));
+        } catch (Exception ex) {
+            return BadRequest(ResponseDto<bool>.FailureResult($"L\u1ED7i seed: {ex.Message}"));
+        }
     }
 }
