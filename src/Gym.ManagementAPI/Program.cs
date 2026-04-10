@@ -344,6 +344,14 @@ using (var scope = app.Services.CreateScope())
                             ALTER TABLE ""MemberSubscriptions"" ADD COLUMN ""LastPausedAt"" timestamp with time zone;
                         END IF;
                         
+                        -- Sửa bảng Invoices (Thêm các cột audit)
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Invoices' AND column_name='CreatedByUserId') THEN
+                            ALTER TABLE ""Invoices"" ADD COLUMN ""CreatedByUserId"" uuid;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Invoices' AND column_name='CreatedByUserName') THEN
+                            ALTER TABLE ""Invoices"" ADD COLUMN ""CreatedByUserName"" text;
+                        END IF;
+
                         -- Sửa bảng InvoiceDetails
                         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='InvoiceDetails' AND column_name='SubscriptionId') THEN
                             ALTER TABLE ""InvoiceDetails"" ADD COLUMN ""SubscriptionId"" uuid;
