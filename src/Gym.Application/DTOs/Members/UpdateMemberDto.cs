@@ -11,7 +11,7 @@ public class UpdateMemberDto
     public string? Address { get; set; }
     public string? EmergencyContact { get; set; }
     public string? EmergencyPhone { get; set; }
-    public string? Notes { get; set; } // Map vào Member.Note
+    public string? Notes { get; set; } // Giữ tên này để khớp với Form, Mapping sẽ xử lý sang entity.Note
 
     public string? FaceEncoding { get; set; }
 }

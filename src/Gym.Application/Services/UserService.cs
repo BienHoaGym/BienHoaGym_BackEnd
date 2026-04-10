@@ -44,7 +44,14 @@ public class UserService : IUserService
             Specialization = u.Trainer?.Specialization,
             ExperienceYears = u.Trainer?.ExperienceYears,
             TrainerCode = u.Trainer?.TrainerCode,
-            Salary = u.Trainer?.Salary
+            Salary = u.Trainer?.Salary,
+            IdentityNumber = u.IdentityNumber,
+            Address = u.Address,
+            BirthDate = u.BirthDate,
+            Gender = u.Gender,
+            HireDate = u.HireDate,
+            BankCardNumber = u.BankCardNumber,
+            BankName = u.BankName
         }).ToList();
 
         return ResponseDto<List<UserListDto>>.SuccessResult(dtos);
@@ -76,7 +83,14 @@ public class UserService : IUserService
             Specialization = u.Trainer?.Specialization,
             ExperienceYears = u.Trainer?.ExperienceYears,
             TrainerCode = u.Trainer?.TrainerCode,
-            Salary = u.Trainer?.Salary
+            Salary = u.Trainer?.Salary,
+            IdentityNumber = u.IdentityNumber,
+            Address = u.Address,
+            BirthDate = u.BirthDate,
+            Gender = u.Gender,
+            HireDate = u.HireDate,
+            BankCardNumber = u.BankCardNumber,
+            BankName = u.BankName
         };
 
         return ResponseDto<UserListDto>.SuccessResult(dto);
@@ -95,6 +109,13 @@ public class UserService : IUserService
         user.Email = dto.Email;
         user.PhoneNumber = dto.PhoneNumber;
         user.IsActive = dto.IsActive;
+        user.IdentityNumber = dto.IdentityNumber;
+        user.Address = dto.Address;
+        user.BirthDate = dto.BirthDate;
+        user.Gender = dto.Gender;
+        user.HireDate = dto.HireDate;
+        user.BankCardNumber = dto.BankCardNumber;
+        user.BankName = dto.BankName;
         user.UpdatedAt = DateTime.UtcNow;
 
         // Cập nhật roles (Chủ động để tránh lỗi Concurrency khi Clear/Add)
@@ -174,6 +195,13 @@ public class UserService : IUserService
             FullName = dto.FullName,
             Email = dto.Email,
             PhoneNumber = dto.PhoneNumber,
+            IdentityNumber = dto.IdentityNumber,
+            Address = dto.Address,
+            BirthDate = dto.BirthDate,
+            Gender = dto.Gender,
+            HireDate = dto.HireDate,
+            BankCardNumber = dto.BankCardNumber,
+            BankName = dto.BankName,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };

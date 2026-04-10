@@ -23,10 +23,10 @@ public class AuditLogsController : ControllerBase
     /// </summary>
     [HttpGet]
     [Authorize(Roles = "Admin,Manager")] 
-    public async Task<IActionResult> GetLogs([FromQuery] string? userId = null, [FromQuery] int? severity = null)
+    public async Task<IActionResult> GetLogs([FromQuery] string? userId = null, [FromQuery] int? severity = null, [FromQuery] string? action = null, [FromQuery] DateTime? fromDate = null, [FromQuery] DateTime? toDate = null)
     {
-        _logger.LogInformation("Lấy danh sách nhật ký hệ thống: UserId={userId}, Severity={severity}", userId, severity);
-        var result = await _auditLogService.GetAllAsync(userId, severity);
+        _logger.LogInformation("Lấy danh sách nhật ký hệ thống: UserId={userId}, Action={action}", userId, action);
+        var result = await _auditLogService.GetAllAsync(userId, severity, action, fromDate, toDate);
         return Ok(result);
     }
 }

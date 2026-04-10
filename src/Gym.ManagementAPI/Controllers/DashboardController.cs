@@ -190,14 +190,17 @@ public class DashboardController : ControllerBase
             var maintenanceRequiredCount = await _unitOfWork.Equipments.GetQueryable()
                 .CountAsync(e => (e.Status == EquipmentStatus.Maintenance || (e.NextMaintenanceDate != null && e.NextMaintenanceDate <= today)) && !e.IsDeleted);
 
-            // Thống kê Doanh thu theo gói
-            var revenueByPackage = await _unitOfWork.Payments.GetQueryable()
+            // Thống kê Doanh thu theo gói - Fix SQLite Decimal OrderBy
+            var revenueByPackageRaw = await _unitOfWork.Payments.GetQueryable()
                 .Where(p => p.Status == PaymentStatus.Completed && p.Subscription != null && p.Subscription.Package != null)
                 .GroupBy(p => p.Subscription!.Package!.Name)
                 .Select(g => new { Category = g.Key ?? "N/A", Value = g.Sum(p => (double)p.Amount) })
+                .ToListAsync();
+
+            var revenueByPackage = revenueByPackageRaw
                 .OrderByDescending(x => x.Value)
                 .Take(5)
-                .ToListAsync();
+                .ToList();
 
             // --- NEW: REVENUE TARGET LOGIC (2.3) ---
             decimal monthlyTarget = 50000000; // Mock target 50M

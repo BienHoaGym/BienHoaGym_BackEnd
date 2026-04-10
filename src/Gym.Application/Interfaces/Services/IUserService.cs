@@ -27,6 +27,14 @@ public class UserListDto
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
     
+    public string? IdentityNumber { get; set; }
+    public string? Address { get; set; }
+    public DateTime? BirthDate { get; set; }
+    public string? Gender { get; set; }
+    public DateTime? HireDate { get; set; }
+    public string? BankCardNumber { get; set; }
+    public string? BankName { get; set; }
+    
     // Trainer specific fields
     public string? Specialization { get; set; }
     public int? ExperienceYears { get; set; }
@@ -42,6 +50,14 @@ public class CreateStaffDto
     public string Email { get; set; } = string.Empty;
     public string? PhoneNumber { get; set; }
     public List<int> RoleIds { get; set; } = new();
+
+    public string? IdentityNumber { get; set; }
+    public string? Address { get; set; }
+    public DateTime? BirthDate { get; set; }
+    public string? Gender { get; set; }
+    public DateTime? HireDate { get; set; }
+    public string? BankCardNumber { get; set; }
+    public string? BankName { get; set; }
     
     // Trainer info if applicable
     public string? Specialization { get; set; }
@@ -56,6 +72,14 @@ public class UpdateStaffDto
     public string? PhoneNumber { get; set; }
     public List<int> RoleIds { get; set; } = new();
     public bool IsActive { get; set; }
+
+    public string? IdentityNumber { get; set; }
+    public string? Address { get; set; }
+    public DateTime? BirthDate { get; set; }
+    public string? Gender { get; set; }
+    public DateTime? HireDate { get; set; }
+    public string? BankCardNumber { get; set; }
+    public string? BankName { get; set; }
     
     // Trainer info
     public string? Specialization { get; set; }

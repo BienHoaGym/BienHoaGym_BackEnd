@@ -1,6 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System;
 using FluentValidation;
 using Gym.Application.DTOs.Members;
 
@@ -11,18 +9,20 @@ public class CreateMemberValidator : AbstractValidator<CreateMemberDto>
     public CreateMemberValidator()
     {
         RuleFor(x => x.FullName)
-            .NotEmpty().WithMessage("H? v� t�n kh�ng du?c d? tr?ng")
-            .MaximumLength(100).WithMessage("H? v� t�n kh�ng qu� 100 k� t?");
+            .NotEmpty().WithMessage("Họ và tên không được để trống")
+            .MaximumLength(100).WithMessage("Họ và tên không quá 100 ký tự");
 
         RuleFor(x => x.Email)
-            .NotEmpty().WithMessage("Email l� b?t bu?c")
-            .EmailAddress().WithMessage("Email kh�ng d�ng d?nh d?ng");
+            .EmailAddress().When(x => !string.IsNullOrEmpty(x.Email))
+            .WithMessage("Email không đúng định dạng");
 
         RuleFor(x => x.PhoneNumber)
-            .NotEmpty().WithMessage("S? di?n tho?i l� b?t bu?c")
-            .Matches(@"^\d{10}$").WithMessage("S? di?n tho?i ph?i c� 10 ch? s?");
+            .NotEmpty().WithMessage("Số điện thoại là bắt buộc")
+            .Matches(@"^0\d{9}$").WithMessage("Số điện thoại phải có 10 chữ số và bắt đầu bằng số 0");
 
         RuleFor(x => x.DateOfBirth)
-            .LessThan(DateTime.UtcNow.AddYears(-12)).WithMessage("H?i vi�n ph?i tr�n 12 tu?i");
+            .LessThan(DateTime.UtcNow.AddYears(-12))
+            .When(x => x.DateOfBirth.HasValue)
+            .WithMessage("Hội viên phải trên 12 tuổi");
     }
 }

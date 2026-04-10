@@ -53,6 +53,13 @@ public class TransactionDetailDto
     public string PaymentMethod { get; set; } = string.Empty;
 }
 
+public class RevenueByHourDto
+{
+    public string Hour { get; set; } = string.Empty; // e.g., "08:00"
+    public decimal Revenue { get; set; }
+    public int TransactionCount { get; set; }
+}
+
 public class RevenueReportDto
 {
     public RevenueOverviewDto Overview { get; set; } = new();
@@ -60,9 +67,11 @@ public class RevenueReportDto
     public List<RevenueByPackageDto> RevenueByPackage { get; set; } = new();
     public List<RevenueByTrainerDto> RevenueByTrainer { get; set; } = new();
     public List<RevenueByClassDto> RevenueByClass { get; set; } = new();
+    public List<RevenueByPackageDto> RevenueByProduct { get; set; } = new(); // For retail products
+    public List<RevenueByHourDto> RevenueByHour { get; set; } = new(); // NEW: For hourly heatmaps
     public List<TransactionDetailDto> RecentTransactions { get; set; } = new();
     
-    // NEW: Financial Analysis
+    // Financial Analysis
     public decimal TotalMaterialExpense { get; set; }
     public decimal TotalMaintenanceExpense { get; set; }
     public decimal TotalDepreciationExpense { get; set; }

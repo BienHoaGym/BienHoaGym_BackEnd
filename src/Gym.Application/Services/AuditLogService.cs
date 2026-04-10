@@ -82,7 +82,7 @@ namespace Gym.Application.Services
         // ========================================================
         // THÊM HÀM NÀY ĐỂ FRONTEND CÓ THỂ LẤY DANH SÁCH LOGS
         // ========================================================
-        public async Task<ResponseDto<List<AuditLogDto>>> GetAllAsync(string? userId = null, int? severity = null)
+        public async Task<ResponseDto<List<AuditLogDto>>> GetAllAsync(string? userId = null, int? severity = null, DateTime? fromDate = null, DateTime? toDate = null, string? action = null)
         {
             var query = _unitOfWork.AuditLogs.GetQueryable();
 
@@ -94,6 +94,21 @@ namespace Gym.Application.Services
             if (severity.HasValue)
             {
                 query = query.Where(x => (int)x.Severity == severity.Value);
+            }
+
+            if (!string.IsNullOrEmpty(action))
+            {
+                query = query.Where(x => x.Action.Contains(action));
+            }
+
+            if (fromDate.HasValue)
+            {
+                query = query.Where(x => x.Timestamp >= fromDate.Value);
+            }
+
+            if (toDate.HasValue)
+            {
+                query = query.Where(x => x.Timestamp <= toDate.Value);
             }
 
             var logs = await query

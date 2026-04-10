@@ -15,6 +15,7 @@ public class InvoiceDto
     public PaymentStatus Status { get; set; }
     public DateTime CreatedAt { get; set; }
     public string? Note { get; set; }
+    public string? CreatedByUserName { get; set; }
     public List<InvoiceDetailDto> Details { get; set; } = new();
 }
 

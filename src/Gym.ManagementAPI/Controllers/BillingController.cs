@@ -56,8 +56,30 @@ public class BillingController : ControllerBase
     [Authorize(Policy = PermissionConstants.BillingCreate)]
     public async Task<IActionResult> CreateInvoice([FromBody] CreateInvoiceDto dto)
     {
-        var result = await _billingService.CreateInvoiceAsync(dto);
+        // Get user info from claims
+        Guid? userId = null;
+        string? userName = null;
+
+        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (Guid.TryParse(userIdClaim, out var parsedId)) userId = parsedId;
+
+        userName = User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value 
+                   ?? User.FindFirst("given_name")?.Value
+                   ?? User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
+
+        var result = await _billingService.CreateInvoiceAsync(dto, userId, userName);
         if (!result.Success) return BadRequest(result);
         return Ok(result);
+    }
+
+    [HttpGet("invoices/{id}/pdf")]
+    [Authorize(Policy = PermissionConstants.BillingRead)]
+    public async Task<IActionResult> GetInvoicePdf(Guid id, [FromServices] IPdfService pdfService)
+    {
+        var result = await _billingService.GetInvoiceByIdAsync(id);
+        if (!result.Success) return NotFound(result);
+
+        var pdfBytes = pdfService.GenerateInvoicePdf(result.Data!);
+        return File(pdfBytes, "application/pdf", $"Invoice-{id}.pdf");
     }
 }

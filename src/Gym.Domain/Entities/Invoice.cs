@@ -20,6 +20,9 @@ public class Invoice : BaseEntity
     public PaymentStatus Status { get; set; } = PaymentStatus.Completed;
     
     public string? Note { get; set; }
+    
+    public Guid? CreatedByUserId { get; set; }
+    public string? CreatedByUserName { get; set; }
 
     public virtual ICollection<InvoiceDetail> Details { get; set; } = new List<InvoiceDetail>();
 }

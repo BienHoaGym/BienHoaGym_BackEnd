@@ -75,18 +75,28 @@ public class DashboardController : ControllerBase
             var currentlyInGym = await _unitOfWork.CheckIns.GetQueryable()
                 .CountAsync(c => c.CheckInTime >= today && c.CheckInTime < tomorrow && c.CheckOutTime == null && !c.IsDeleted);
 
-            // 4. Revenue
+            // 4. Revenue (Combined Payments & Invoices)
             var paymentsQuery = _unitOfWork.Payments.GetQueryable()
                 .Where(p => p.Status == PaymentStatus.Completed && !p.IsDeleted);
-            var paymentsToday = await paymentsQuery.Where(p => p.PaymentDate >= today && p.PaymentDate < tomorrow).ToListAsync();
-            var revenueToday = (double)paymentsToday.Sum(p => p.Amount);
-            var paymentsYesterday = await paymentsQuery.Where(p => p.PaymentDate >= yesterday && p.PaymentDate < today).ToListAsync();
-            var revenueYesterday = (double)paymentsYesterday.Sum(p => p.Amount);
+            var invoicesQuery = _unitOfWork.Invoices.GetQueryable()
+                .Where(i => i.Status == PaymentStatus.Completed && !i.IsDeleted);
+
+            var revenueToday = (double)await paymentsQuery.Where(p => p.PaymentDate >= today && p.PaymentDate < tomorrow).Select(p => (double)p.Amount).SumAsync()
+                             + (double)await invoicesQuery.Where(i => i.CreatedAt >= today && i.CreatedAt < tomorrow).Select(i => (double)(i.TotalAmount - i.DiscountAmount)).SumAsync();
+
+            var revenueYesterday = (double)await paymentsQuery.Where(p => p.PaymentDate >= yesterday && p.PaymentDate < today).Select(p => (double)p.Amount).SumAsync()
+                                 + (double)await invoicesQuery.Where(i => i.CreatedAt >= yesterday && i.CreatedAt < today).Select(i => (double)(i.TotalAmount - i.DiscountAmount)).SumAsync();
+
             var revenueTrend = revenueYesterday == 0 ? (revenueToday > 0 ? 100 : 0) : Math.Round(((double)(revenueToday - revenueYesterday) / revenueYesterday) * 100, 1);
 
-            var revenueMonthDirect = await paymentsQuery.Where(p => p.PaymentDate >= monthStart).Select(p => (double)p.Amount).SumAsync();
-            var revenueMonthLast = await paymentsQuery.Where(p => p.PaymentDate >= lastMonthStart && p.PaymentDate <= lastMonthEnd).Select(p => (double)p.Amount).SumAsync();
-            var revenueTotal = await paymentsQuery.Select(p => (double)p.Amount).SumAsync();
+            var revenueMonthDirect = (double)await paymentsQuery.Where(p => p.PaymentDate >= monthStart).Select(p => (double)p.Amount).SumAsync()
+                                   + (double)await invoicesQuery.Where(i => i.CreatedAt >= monthStart).Select(i => (double)(i.TotalAmount - i.DiscountAmount)).SumAsync();
+
+            var revenueMonthLast = (double)await paymentsQuery.Where(p => p.PaymentDate >= lastMonthStart && p.PaymentDate <= lastMonthEnd).Select(p => (double)p.Amount).SumAsync()
+                                 + (double)await invoicesQuery.Where(i => i.CreatedAt >= lastMonthStart && i.CreatedAt <= lastMonthEnd).Select(i => (double)(i.TotalAmount - i.DiscountAmount)).SumAsync();
+
+            var revenueTotal = (double)await paymentsQuery.Select(p => (double)p.Amount).SumAsync()
+                             + (double)await invoicesQuery.Select(i => (double)(i.TotalAmount - i.DiscountAmount)).SumAsync();
 
             // 5. Advanced Data
             var recentPayments = await paymentsQuery
@@ -96,11 +106,16 @@ public class DashboardController : ControllerBase
                 .Select(p => new { p.Id, p.Amount, Method = p.Method.ToString(), p.PaymentDate, p.TransactionId, MemberName = p.Subscription != null && p.Subscription.Member != null ? p.Subscription.Member.FullName : "Khách vãng lai", PackageName = p.Subscription != null && p.Subscription.Package != null ? p.Subscription.Package.Name : "N/A" })
                 .ToListAsync();
 
-            var revenueByPackage = await _unitOfWork.Payments.GetQueryable()
+            var revenueByPackageRaw = await _unitOfWork.Payments.GetQueryable()
                 .Where(p => p.Status == PaymentStatus.Completed && p.Subscription != null && p.Subscription.Package != null)
                 .GroupBy(p => p.Subscription!.Package!.Name)
                 .Select(g => new { Category = g.Key ?? "N/A", Value = g.Sum(p => (double)p.Amount) })
-                .OrderByDescending(x => x.Value).Take(5).ToListAsync();
+                .ToListAsync();
+
+            var revenueByPackage = revenueByPackageRaw
+                .OrderByDescending(x => x.Value)
+                .Take(5)
+                .ToList();
 
             var rawCheckins = await _unitOfWork.CheckIns.GetQueryable()
                .Where(c => c.CheckInTime >= today.AddDays(-6) && !c.IsDeleted)

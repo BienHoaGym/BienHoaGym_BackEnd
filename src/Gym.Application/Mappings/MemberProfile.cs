@@ -12,6 +12,8 @@ public class MemberProfile : Profile
         CreateMap<Member, MemberListDto>().ReverseMap();
         CreateMap<CreateMemberDto, Member>();
         CreateMap<UpdateMemberDto, Member>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore()) // Không bao giờ cho phép ghi đè ID khi Update
+            .ForMember(dest => dest.Note, opt => opt.MapFrom(src => src.Notes))
             .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
     }
 

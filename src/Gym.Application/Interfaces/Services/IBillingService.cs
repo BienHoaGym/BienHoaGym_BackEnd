@@ -10,7 +10,7 @@ public interface IBillingService
     Task<ResponseDto<ProductDto>> CreateProductAsync(CreateProductDto dto);
     
     // Invoices
-    Task<ResponseDto<InvoiceDto>> CreateInvoiceAsync(CreateInvoiceDto dto);
+    Task<ResponseDto<InvoiceDto>> CreateInvoiceAsync(CreateInvoiceDto dto, Guid? userId = null, string? userName = null);
     Task<ResponseDto<List<InvoiceDto>>> GetInvoicesAsync();
     Task<ResponseDto<InvoiceDto>> GetInvoiceByIdAsync(Guid id);
 }

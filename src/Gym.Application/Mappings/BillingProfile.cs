@@ -21,6 +21,7 @@ public class BillingProfile : Profile
             .ForMember(d => d.Unit, o => o.MapFrom(s => "Gói"));
 
         CreateMap<Invoice, InvoiceDto>()
+            .ForMember(dest => dest.CreatedByUserName, opt => opt.MapFrom(src => src.CreatedByUserName))
             .ForMember(dest => dest.MemberName, opt => opt.MapFrom(src => src.Member != null ? src.Member.FullName : "Khách vãng lai"));
 
         CreateMap<InvoiceDetail, InvoiceDetailDto>();

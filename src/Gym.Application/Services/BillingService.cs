@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using Gym.Application.DTOs.Billing;
 using Gym.Application.DTOs.Common;
 using Gym.Application.Interfaces;
@@ -22,14 +22,14 @@ public class BillingService : IBillingService
 
     public async Task<ResponseDto<List<ProductDto>>> GetProductsAsync()
     {
-        // 1. Lấy sản phẩm (Bỏ qua Service vì Service giờ được quản lý ở bảng Packages)
+        // 1. Láº¥y sáº£n pháº©m (Bá» qua Service vÃ¬ Service giá» Ä‘Æ°á»£c quáº£n lÃ½ á»Ÿ báº£ng Packages)
         var products = await _unitOfWork.Products.GetQueryable()
             .Where(p => !p.IsDeleted && p.IsActive && p.Type != ProductType.Service)
             .Include(p => p.Provider)
             .AsNoTracking()
             .ToListAsync();
             
-        // 2. Lấy Gói tập (Packages) để gộp chung vào danh mục POS
+        // 2. Láº¥y GÃ³i táº­p (Packages) Ä‘á»ƒ gá»™p chung vÃ o danh má»¥c POS
         var packages = await _unitOfWork.Packages.GetQueryable()
             .Where(p => !p.IsDeleted && p.IsActive)
             .AsNoTracking()
@@ -38,7 +38,7 @@ public class BillingService : IBillingService
         var productDtos = _mapper.Map<List<ProductDto>>(products);
         var packageDtos = _mapper.Map<List<ProductDto>>(packages);
         
-        // Trộn chung vào một danh sách duy nhất cho POS dễ xử lý
+        // Trá»™n chung vÃ o má»™t danh sÃ¡ch duy nháº¥t cho POS dá»… xá»­ lÃ½
         productDtos.AddRange(packageDtos);
             
         return ResponseDto<List<ProductDto>>.SuccessResult(productDtos);
@@ -52,7 +52,7 @@ public class BillingService : IBillingService
         return ResponseDto<ProductDto>.SuccessResult(_mapper.Map<ProductDto>(product));
     }
 
-    public async Task<ResponseDto<InvoiceDto>> CreateInvoiceAsync(CreateInvoiceDto dto)
+    public async Task<ResponseDto<InvoiceDto>> CreateInvoiceAsync(CreateInvoiceDto dto, Guid? userId = null, string? userName = null)
     {
         try
         {
@@ -63,7 +63,9 @@ public class BillingService : IBillingService
                 DiscountAmount = dto.DiscountAmount,
                 Note = dto.Note,
                 Status = PaymentStatus.Completed,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                CreatedByUserId = userId,
+                CreatedByUserName = userName
             };
 
             // Generate Invoice Number - Consider using a sequence in DB for production
@@ -73,20 +75,20 @@ public class BillingService : IBillingService
             // Prepare Details
             decimal total = 0;
             
-            // --- XỬ LÝ CHẶN BÁN/GIA HẠN GÓI TẬP (BACKEND BUSINESS LOGIC) ---
+            // --- Xá»¬ LÃ CHáº¶N BÃN/GIA Háº N GÃ“I Táº¬P (BACKEND BUSINESS LOGIC) ---
             DateTime? nextStartDate = null;
             if (dto.MemberId.HasValue)
             {
                 var packageItems = dto.Details.Where(d => d.ItemType == "Package" && !d.SubscriptionId.HasValue).ToList();
                 if (packageItems.Any())
                 {
-                    // 1. Chặn nếu trong giỏ hàng có hơn 1 gói tập mới
+                    // 1. Cháº·n náº¿u trong giá» hÃ ng cÃ³ hÆ¡n 1 gÃ³i táº­p má»›i
                     if (packageItems.Count > 1)
                     {
-                        return ResponseDto<InvoiceDto>.FailureResult("Mỗi hóa đơn chỉ được phép đăng ký tối đa 1 gói tập mới. Vui lòng tách hóa đơn hoặc kiểm tra lại giỏ hàng.");
+                        return ResponseDto<InvoiceDto>.FailureResult("Má»—i hÃ³a Ä‘Æ¡n chá»‰ Ä‘Æ°á»£c phÃ©p Ä‘Äƒng kÃ½ tá»‘i Ä‘a 1 gÃ³i táº­p má»›i. Vui lÃ²ng tÃ¡ch hÃ³a Ä‘Æ¡n hoáº·c kiá»ƒm tra láº¡i giá» hÃ ng.");
                     }
 
-                    // 2. Kiểm tra gói hiện tại để tính toán ngày bắt đầu (Stacking/Gia hạn)
+                    // 2. Kiá»ƒm tra gÃ³i hiá»‡n táº¡i Ä‘á»ƒ tÃ­nh toÃ¡n ngÃ y báº¯t Ä‘áº§u (Stacking/Gia háº¡n)
                     var today = DateTime.UtcNow.Date;
                     var activeOrSuspendedSub = await _unitOfWork.Subscriptions.GetQueryable()
                         .Where(s => s.MemberId == dto.MemberId.Value && !s.IsDeleted && 
@@ -98,19 +100,19 @@ public class BillingService : IBillingService
                     
                     if (activeOrSuspendedSub != null)
                     {
-                        // Nếu đang tạm dừng (Suspended), chặn không cho mua gói mới
+                        // Náº¿u Ä‘ang táº¡m dá»«ng (Suspended), cháº·n khÃ´ng cho mua gÃ³i má»›i
                         if (activeOrSuspendedSub.Status == SubscriptionStatus.Suspended)
                         {
-                            return ResponseDto<InvoiceDto>.FailureResult("Hội viên đang bị tạm dừng gói tập. Vui lòng kích hoạt lại gói tập cũ trước khi mua gói mới.");
+                            return ResponseDto<InvoiceDto>.FailureResult("Há»™i viÃªn Ä‘ang bá»‹ táº¡m dá»«ng gÃ³i táº­p. Vui lÃ²ng kÃ­ch hoáº¡t láº¡i gÃ³i táº­p cÅ© trÆ°á»›c khi mua gÃ³i má»›i.");
                         }
 
-                        // Nếu đang có gói chờ thanh toán (Pending), yêu cầu xử lý gói đó trước
+                        // Náº¿u Ä‘ang cÃ³ gÃ³i chá» thanh toÃ¡n (Pending), yÃªu cáº§u xá»­ lÃ½ gÃ³i Ä‘Ã³ trÆ°á»›c
                         if (activeOrSuspendedSub.Status == SubscriptionStatus.Pending)
                         {
-                            return ResponseDto<InvoiceDto>.FailureResult("Hội viên đang có một giao dịch đăng ký đang chờ thanh toán. Vui lòng thanh toán hoặc hủy giao dịch đó trước khi bán gói mới.");
+                            return ResponseDto<InvoiceDto>.FailureResult("Há»™i viÃªn Ä‘ang cÃ³ má»™t giao dá»‹ch Ä‘Äƒng kÃ½ Ä‘ang chá» thanh toÃ¡n. Vui lÃ²ng thanh toÃ¡n hoáº·c há»§y giao dá»‹ch Ä‘Ã³ trÆ°á»›c khi bÃ¡n gÃ³i má»›i.");
                         }
 
-                        // Nếu đang có gói Active, kiểm tra thời hạn còn lại (Nghiệp vụ: Chỉ cho gia hạn nếu còn 1 ngày)
+                        // Náº¿u Ä‘ang cÃ³ gÃ³i Active, kiá»ƒm tra thá»i háº¡n cÃ²n láº¡i (Nghiá»‡p vá»¥: Chá»‰ cho gia háº¡n náº¿u cÃ²n 1 ngÃ y)
                         if (activeOrSuspendedSub.Status == SubscriptionStatus.Active)
                         {
                             if (activeOrSuspendedSub.EndDate >= today)
@@ -118,10 +120,10 @@ public class BillingService : IBillingService
                                 var daysLeft = (activeOrSuspendedSub.EndDate - today).Days;
                                 if (daysLeft > 1)
                                 {
-                                    return ResponseDto<InvoiceDto>.FailureResult($"Gói tập hiện tại ('{activeOrSuspendedSub.OriginalPackageName}') vẫn còn hạn đến {activeOrSuspendedSub.EndDate:dd/MM/yyyy} ({daysLeft} ngày). Hệ thống chỉ cho phép gia hạn khi gói tập sắp hết hạn trong vòng 1 ngày. Nếu muốn đổi gói ngay, vui lòng Hủy gói cũ tại hồ sơ hội viên.");
+                                    return ResponseDto<InvoiceDto>.FailureResult($"GÃ³i táº­p hiá»‡n táº¡i ('{activeOrSuspendedSub.OriginalPackageName}') váº«n cÃ²n háº¡n Ä‘áº¿n {activeOrSuspendedSub.EndDate:dd/MM/yyyy} ({daysLeft} ngÃ y). Há»‡ thá»‘ng chá»‰ cho phÃ©p gia háº¡n khi gÃ³i táº­p sáº¯p háº¿t háº¡n trong vÃ²ng 1 ngÃ y. Náº¿u muá»‘n Ä‘á»•i gÃ³i ngay, vui lÃ²ng Há»§y gÃ³i cÅ© táº¡i há»“ sÆ¡ há»™i viÃªn.");
                                 }
 
-                                // Nếu còn <= 1 ngày, tính ngày bắt đầu mới là ngày sau ngày hết hạn gói cũ
+                                // Náº¿u cÃ²n <= 1 ngÃ y, tÃ­nh ngÃ y báº¯t Ä‘áº§u má»›i lÃ  ngÃ y sau ngÃ y háº¿t háº¡n gÃ³i cÅ©
                                 nextStartDate = activeOrSuspendedSub.EndDate.AddDays(1);
                             }
                         }
@@ -143,12 +145,12 @@ public class BillingService : IBillingService
                     var product = await _unitOfWork.Products.GetByIdAsync(d.ReferenceId.Value);
                     if (product != null)
                     {
-                        // 1. Cập nhật tồn kho tổng (Global)
+                        // 1. Cáº­p nháº­t tá»“n kho tá»•ng (Global)
                         product.StockQuantity -= d.Quantity;
                         _unitOfWork.Products.Update(product);
 
-                        // 2. Cập nhật tồn kho theo kho (Warehouse Inventory)
-                        // Mặc định trừ vào "Kho Quầy" (ID: 20000000-0000-0000-0000-000000000002)
+                        // 2. Cáº­p nháº­t tá»“n kho theo kho (Warehouse Inventory)
+                        // Máº·c Ä‘á»‹nh trá»« vÃ o "Kho Quáº§y" (ID: 20000000-0000-0000-0000-000000000002)
                         var counterWarehouseId = Guid.Parse("20000000-0000-0000-0000-000000000002");
                         var inventory = await _unitOfWork.Inventories.GetQueryable()
                             .FirstOrDefaultAsync(i => i.ProductId == product.Id && i.WarehouseId == counterWarehouseId);
@@ -160,7 +162,7 @@ public class BillingService : IBillingService
                         }
                         else
                         {
-                            // Nếu chưa có trong kho quầy, tạo mới để ghi nhận (có thể âm nếu bán vượt)
+                            // Náº¿u chÆ°a cÃ³ trong kho quáº§y, táº¡o má»›i Ä‘á»ƒ ghi nháº­n (cÃ³ thá»ƒ Ã¢m náº¿u bÃ¡n vÆ°á»£t)
                             var newInv = new Inventory
                             {
                                 ProductId = product.Id,
@@ -170,22 +172,22 @@ public class BillingService : IBillingService
                             await _unitOfWork.Inventories.AddAsync(newInv);
                         }
 
-                        // 3. Ghi nhận lịch sử giao dịch kho (Stock Transaction)
+                        // 3. Ghi nháº­n lá»‹ch sá»­ giao dá»‹ch kho (Stock Transaction)
                         var stockTx = new StockTransaction
                         {
                             ProductId = product.Id,
                             FromWarehouseId = counterWarehouseId,
                             Quantity = d.Quantity,
-                            Type = StockTransactionType.Export, // Xuất bán
+                            Type = StockTransactionType.Export, // Xuáº¥t bÃ¡n
                             Date = DateTime.UtcNow,
-                            Note = $"Xuất bán tự động từ hóa đơn {invoice.InvoiceNumber}"
+                            Note = $"Xuáº¥t bÃ¡n tá»± Ä‘á»™ng tá»« hÃ³a Ä‘Æ¡n {invoice.InvoiceNumber}"
                         };
                         await _unitOfWork.StockTransactions.AddAsync(stockTx);
                     }
                 }
 
-                // --- XỬ LÝ GÓI TẬP ---
-                // Case 1: Thanh toán gói Pending đã có sẵn (Dựa vào SubscriptionId)
+                // --- Xá»¬ LÃ GÃ“I Táº¬P ---
+                // Case 1: Thanh toÃ¡n gÃ³i Pending Ä‘Ã£ cÃ³ sáºµn (Dá»±a vÃ o SubscriptionId)
                 if (d.SubscriptionId.HasValue)
                 {
                     var existingSub = await _unitOfWork.Subscriptions.GetByIdAsync(d.SubscriptionId.Value);
@@ -196,7 +198,7 @@ public class BillingService : IBillingService
                         _unitOfWork.Subscriptions.Update(existingSub);
                     }
                 }
-                // Case 2: Đăng ký gói MỚI (Dựa vào ItemType là Package và KO CÓ SubscriptionId)
+                // Case 2: ÄÄƒng kÃ½ gÃ³i Má»šI (Dá»±a vÃ o ItemType lÃ  Package vÃ  KO CÃ“ SubscriptionId)
                 else if (d.ItemType == "Package" && d.ReferenceId.HasValue && dto.MemberId.HasValue)
                 {
                     var startDate = nextStartDate ?? DateTime.UtcNow;
@@ -206,7 +208,7 @@ public class BillingService : IBillingService
                         PackageId = d.ReferenceId.Value,
                         StartDate = startDate,
                         EndDate = startDate.AddDays(30),
-                        Status = SubscriptionStatus.Active, // Bán tại POS là Active luôn (hoặc chờ tới ngày start)
+                        Status = SubscriptionStatus.Active, // BÃ¡n táº¡i POS lÃ  Active luÃ´n (hoáº·c chá» tá»›i ngÃ y start)
                         CreatedAt = DateTime.UtcNow,
                         // Snapshot data
                         OriginalPackageName = d.ItemName,
@@ -227,7 +229,7 @@ public class BillingService : IBillingService
 
             invoice.TotalAmount = total;
             
-            // NGHIỆP VỤ: Khi đã có gói tập được kích hoạt/tạo mới, cập nhật trạng thái Hội viên là Active
+            // NGHIá»†P Vá»¤: Khi Ä‘Ã£ cÃ³ gÃ³i táº­p Ä‘Æ°á»£c kÃ­ch hoáº¡t/táº¡o má»›i, cáº­p nháº­t tráº¡ng thÃ¡i Há»™i viÃªn lÃ  Active
             if (dto.MemberId.HasValue && (invoice.Details.Any(d => d.ItemType == "Package") || invoice.Details.Any(d => d.SubscriptionId.HasValue)))
             {
                 var member = await _unitOfWork.Members.GetByIdAsync(dto.MemberId.Value);
@@ -241,11 +243,11 @@ public class BillingService : IBillingService
             await _unitOfWork.Invoices.AddAsync(invoice);
             await _unitOfWork.SaveChangesAsync(); // Atomic operation
 
-            return ResponseDto<InvoiceDto>.SuccessResult(_mapper.Map<InvoiceDto>(invoice), "Tạo hóa đơn thành công");
+            return ResponseDto<InvoiceDto>.SuccessResult(_mapper.Map<InvoiceDto>(invoice), "Táº¡o hÃ³a Ä‘Æ¡n thÃ nh cÃ´ng");
         }
         catch (Exception ex)
         {
-            return ResponseDto<InvoiceDto>.FailureResult($"Lỗi khi tạo hóa đơn: {ex.Message}");
+            return ResponseDto<InvoiceDto>.FailureResult($"Lá»—i khi táº¡o hÃ³a Ä‘Æ¡n: {ex.Message}");
         }
     }
 
@@ -267,7 +269,7 @@ public class BillingService : IBillingService
             .Include(i => i.Details)
             .FirstOrDefaultAsync(i => i.Id == id);
             
-        if (invoice == null) return ResponseDto<InvoiceDto>.FailureResult("Không tìm thấy hóa đơn");
+        if (invoice == null) return ResponseDto<InvoiceDto>.FailureResult("KhÃ´ng tÃ¬m tháº¥y hÃ³a Ä‘Æ¡n");
         
         return ResponseDto<InvoiceDto>.SuccessResult(_mapper.Map<InvoiceDto>(invoice));
     }

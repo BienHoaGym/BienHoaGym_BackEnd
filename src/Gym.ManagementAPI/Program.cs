@@ -1,5 +1,6 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using System.IO;
 using Gym.Application.Interfaces;
 using Gym.Application.Interfaces.Repositories;
 using Gym.Application.Interfaces.Services;
@@ -58,27 +59,12 @@ builder.Services.AddDbContext<GymDbContext>(options =>
         throw new Exception("Connection string 'DefaultConnection' or 'DATABASE_URL' not found.");
     }
 
-    // Tự động nhận diện Provider: Nếu là file .sqlite hoặc chuỗi cho SQLite thì dùng UseSqlite
+    // CỐ ĐỊNH: Chỉ sử dụng 1 file duy nhất tại thư mục chạy để tránh dữ liệu bị "lan mang"
     if (connectionString.Contains(".sqlite") || connectionString.Contains("Data Source") || connectionString.Contains("Filename"))
     {
-        // LOGIC SỬA ĐƯỜNG DẪN SQLITE CHO RENDER
-        var sqliteFile = "GymManagement.sqlite";
-        if (connectionString.Contains("Data Source=")) {
-            sqliteFile = connectionString.Split("Data Source=")[1].Split(';')[0];
-        }
-
-        // Kiểm tra các đường dẫn có thể tồn tại trên Render
-        var possiblePaths = new[] {
-            sqliteFile,
-            Path.Combine("src", "Gym.ManagementAPI", sqliteFile),
-            Path.Combine(Directory.GetCurrentDirectory(), sqliteFile),
-            Path.Combine(Directory.GetCurrentDirectory(), "src", "Gym.ManagementAPI", sqliteFile)
-        };
-
-        var actualPath = possiblePaths.FirstOrDefault(p => File.Exists(p)) ?? sqliteFile;
-        Console.WriteLine($"🔍 Using SQLite at: {Path.GetFullPath(actualPath)}");
-        
-        options.UseSqlite($"Data Source={actualPath}");
+        var dbPath = Path.Combine(builder.Environment.ContentRootPath, "GymManagement.sqlite");
+        Console.WriteLine($"📌 DATABASE FIXED PATH: {dbPath}");
+        options.UseSqlite($"Data Source={dbPath}");
     }
     else
     {
@@ -186,6 +172,7 @@ builder.Services.AddScoped<IEquipmentCategoryService, EquipmentCategoryService>(
 builder.Services.AddScoped<IProviderService, ProviderService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
+builder.Services.AddScoped<IPdfService, Gym.Infrastructure.Services.QuestPdfService>();
 builder.Services.AddScoped<IUserService, UserService>();
 
 // ĐĂNG KÝ CHO AUDIT LOG: Cho phép DbContext lấy được thông tin người dùng từ request hiện tại
@@ -318,28 +305,35 @@ using (var scope = app.Services.CreateScope())
         var db = services.GetRequiredService<GymDbContext>();
         Console.WriteLine("🔄 Starting Database Sync & Migration...");
         
-        // --- CỨU HỎA: TỰ ĐỘNG SỬA BẢNG NẾU THIẾU CỘT (DO LỖI SYNC) ---
-        try {
-            Console.WriteLine("🛠️ Running Database self-healing...");
-            db.Database.ExecuteSqlRaw(@"
-                DO $$ 
-                BEGIN 
-                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='MemberSubscriptions' AND column_name='AutoPauseExtensionDays') THEN
-                        ALTER TABLE ""MemberSubscriptions"" ADD COLUMN ""AutoPauseExtensionDays"" integer;
-                    END IF;
-                    
-                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='MemberSubscriptions' AND column_name='LastPausedAt') THEN
-                        ALTER TABLE ""MemberSubscriptions"" ADD COLUMN ""LastPausedAt"" timestamp with time zone;
-                    END IF;
-                    
-                    -- Sửa bảng InvoiceDetails
-                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='InvoiceDetails' AND column_name='SubscriptionId') THEN
-                        ALTER TABLE ""InvoiceDetails"" ADD COLUMN ""SubscriptionId"" uuid;
-                    END IF;
-                END $$;");
-            Console.WriteLine("✅ Database self-healing completed!");
-        } catch (Exception ex) {
-            Console.WriteLine($"🔍 Self-healing info: {ex.Message}");
+        // --- CỨU HỎA: TỰ ĐỘNG SỬA BẢNG NẾU THIẾU CỘT (DO LỖI SYNC TRÊN POSTGRES) ---
+        if (db.Database.IsNpgsql())
+        {
+            try {
+                Console.WriteLine("🛠️ Running Database self-healing (Postgres)...");
+                db.Database.ExecuteSqlRaw(@"
+                    DO $$ 
+                    BEGIN 
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='MemberSubscriptions' AND column_name='AutoPauseExtensionDays') THEN
+                            ALTER TABLE ""MemberSubscriptions"" ADD COLUMN ""AutoPauseExtensionDays"" integer;
+                        END IF;
+                        
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='MemberSubscriptions' AND column_name='LastPausedAt') THEN
+                            ALTER TABLE ""MemberSubscriptions"" ADD COLUMN ""LastPausedAt"" timestamp with time zone;
+                        END IF;
+                        
+                        -- Sửa bảng InvoiceDetails
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='InvoiceDetails' AND column_name='SubscriptionId') THEN
+                            ALTER TABLE ""InvoiceDetails"" ADD COLUMN ""SubscriptionId"" uuid;
+                        END IF;
+                    END $$;");
+                Console.WriteLine("✅ Database self-healing completed!");
+            } catch (Exception ex) {
+                Console.WriteLine($"🔍 Self-healing info: {ex.Message}");
+            }
+        }
+        else 
+        {
+            Console.WriteLine("ℹ️ Skipping Postgres self-healing (Provider: " + db.Database.ProviderName + ")");
         }
 
         // Log danh sách migration đã áp dụng
@@ -349,8 +343,43 @@ using (var scope = app.Services.CreateScope())
         db.Database.Migrate();
         Console.WriteLine("✅ Database migrated successfully!");
 
+        // 🟢 LOGIC TỰ ĐỘNG DỌN DẸP DỮ LIỆU LỖI PHÔNG CHỮ (BÃ¡n lÃ° -> Bán lẻ, GA3i -> Gói)
+        try {
+            var connection = db.Database.GetDbConnection();
+            await connection.OpenAsync();
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+                -- Sửa tên gói trong MembershipPackages
+                UPDATE MembershipPackages SET Name = REPLACE(Name, 'GA3i', 'Gói');
+                UPDATE MembershipPackages SET Name = REPLACE(Name, 'ThAng', 'Tháng');
+                UPDATE MembershipPackages SET Name = REPLACE(Name, 'Nm', 'Năm');
+
+                -- Sửa tên gói trong Subscriptions
+                UPDATE MemberSubscriptions SET OriginalPackageName = REPLACE(OriginalPackageName, 'GA3i', 'Gói');
+                UPDATE MemberSubscriptions SET OriginalPackageName = REPLACE(OriginalPackageName, 'ThAng', 'Tháng');
+                
+                -- Sửa tên sản phẩm và dịch vụ
+                UPDATE Products SET Name = 'Nước suối Aquafina' WHERE Name LIKE '%Aquafina%';
+                UPDATE Products SET Name = 'Whey Protein Gold' WHERE Name LIKE '%Whey%';
+                UPDATE Products SET Category = 'Thực phẩm bổ sung' WHERE Category LIKE '%Th%c ph%cm%';
+                UPDATE Products SET Category = 'Đồ uống' WHERE Category LIKE '%u%ng%';
+                UPDATE Products SET Unit = 'Cái' WHERE Unit = 'CAi';
+
+                -- Sửa lỗi 'Bán lẻ' bị lỗi thành 'BÃ¡n lÃ°'
+                UPDATE Invoices SET MemberName = 'Khách lẻ' WHERE MemberName LIKE '%Kh%ch l%';
+                UPDATE Invoices SET Note = 'Bán lẻ' WHERE Note LIKE '%B%n l%';
+
+                -- Cập nhật lại các hóa đơn Demo trong báo cáo (Dựa vào hình ảnh)
+                UPDATE InvoiceDetails SET ItemName = REPLACE(ItemName, 'GA3i', 'Gói');
+                UPDATE InvoiceDetails SET ItemName = REPLACE(ItemName, 'ThAng', 'Tháng');
+            ";
+            await command.ExecuteNonQueryAsync();
+            Console.WriteLine("✨ Database Cleanup: Corrupted characters fixed!");
+        } catch (Exception ex) {
+            Console.WriteLine($"⚠️ Database Cleanup Warning: {ex.Message}");
+        }
+
         // CHỈ SEED DỮ LIỆU NẾU LÀ MÔI TRƯỜNG DEVELOPMENT 
-        // Trên Production/Render chúng ta đã có file SQLite đi kèm hoặc dùng DB ngoài
         if (app.Environment.IsDevelopment())
         {
             Console.WriteLine("🌱 Seeding demo data in Development...");

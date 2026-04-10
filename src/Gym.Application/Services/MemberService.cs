@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using Gym.Application.DTOs.Common;
 using Gym.Application.DTOs.Members;
 using Gym.Application.Interfaces;
@@ -31,7 +31,7 @@ public class MemberService : IMemberService
     {
         var member = await _unitOfWork.Members.GetByIdAsync(id);
         if (member == null || member.IsDeleted)
-            return ResponseDto<MemberDto>.FailureResult("Không tìm thấy hội viên");
+            return ResponseDto<MemberDto>.FailureResult("KhÃ´ng tÃ¬m tháº¥y há»™i viÃªn");
 
         return ResponseDto<MemberDto>.SuccessResult(_mapper.Map<MemberDto>(member));
     }
@@ -76,14 +76,14 @@ public class MemberService : IMemberService
         await _unitOfWork.Members.AddAsync(member);
         await _unitOfWork.SaveChangesAsync();
 
-        return ResponseDto<MemberDto>.SuccessResult(_mapper.Map<MemberDto>(member), "Thêm hội viên thành công");
+        return ResponseDto<MemberDto>.SuccessResult(_mapper.Map<MemberDto>(member), "ThÃªm há»™i viÃªn thÃ nh cÃ´ng");
     }
 
     public async Task<ResponseDto<MemberDto>> UpdateAsync(Guid id, UpdateMemberDto dto)
     {
         var member = await _unitOfWork.Members.GetByIdAsync(id);
         if (member == null || member.IsDeleted)
-            return ResponseDto<MemberDto>.FailureResult("Không tìm thấy hội viên");
+            return ResponseDto<MemberDto>.FailureResult("KhÃ´ng tÃ¬m tháº¥y há»™i viÃªn");
 
         var emailError = await ValidateEmailUniquenessAsync(dto.Email, id);
         if (emailError != null) return ResponseDto<MemberDto>.FailureResult(emailError);
@@ -97,14 +97,14 @@ public class MemberService : IMemberService
         _unitOfWork.Members.Update(member);
         await _unitOfWork.SaveChangesAsync();
 
-        return ResponseDto<MemberDto>.SuccessResult(_mapper.Map<MemberDto>(member), "Cập nhật thông tin thành công");
+        return ResponseDto<MemberDto>.SuccessResult(_mapper.Map<MemberDto>(member), "Cáº­p nháº­t thÃ´ng tin thÃ nh cÃ´ng");
     }
 
     public async Task<ResponseDto<bool>> DeleteAsync(Guid id)
     {
         var member = await _unitOfWork.Members.GetByIdAsync(id);
         if (member == null || member.IsDeleted)
-            return ResponseDto<bool>.FailureResult("Không tìm thấy hội viên");
+            return ResponseDto<bool>.FailureResult("KhÃ´ng tÃ¬m tháº¥y há»™i viÃªn");
 
         member.IsDeleted = true;
         member.UpdatedAt = DateTime.UtcNow;
@@ -112,7 +112,7 @@ public class MemberService : IMemberService
         _unitOfWork.Members.Update(member);
         await _unitOfWork.SaveChangesAsync();
 
-        return ResponseDto<bool>.SuccessResult(true, "Xóa hội viên thành công");
+        return ResponseDto<bool>.SuccessResult(true, "XÃ³a há»™i viÃªn thÃ nh cÃ´ng");
     }
 
     #endregion
@@ -124,7 +124,7 @@ public class MemberService : IMemberService
         var member = await _unitOfWork.Members.GetQueryable()
             .FirstOrDefaultAsync(m => m.MemberCode == memberCode && !m.IsDeleted);
 
-        if (member == null) return ResponseDto<MemberDto>.FailureResult("Không tìm thấy hội viên");
+        if (member == null) return ResponseDto<MemberDto>.FailureResult("KhÃ´ng tÃ¬m tháº¥y há»™i viÃªn");
 
         return ResponseDto<MemberDto>.SuccessResult(_mapper.Map<MemberDto>(member));
     }
@@ -132,7 +132,7 @@ public class MemberService : IMemberService
     public async Task<ResponseDto<List<MemberListDto>>> SearchAsync(string keyword)
     {
         if (string.IsNullOrWhiteSpace(keyword))
-            return ResponseDto<List<MemberListDto>>.FailureResult("Vui lòng nhập từ khóa tìm kiếm");
+            return ResponseDto<List<MemberListDto>>.FailureResult("Vui lÃ²ng nháº­p tá»« khÃ³a tÃ¬m kiáº¿m");
 
         var members = await _unitOfWork.Members.GetQueryable()
             .Where(m => !m.IsDeleted &&
@@ -151,14 +151,14 @@ public class MemberService : IMemberService
             .FirstOrDefaultAsync(m => m.PhoneNumber == dto.PhoneNumber && !m.IsDeleted);
 
         if (existing != null)
-            return ResponseDto<MemberDto>.SuccessResult(_mapper.Map<MemberDto>(existing), "Thông tin của bạn đã có trong hệ thống");
+            return ResponseDto<MemberDto>.SuccessResult(_mapper.Map<MemberDto>(existing), "ThÃ´ng tin cá»§a báº¡n Ä‘Ã£ cÃ³ trong há»‡ thá»‘ng");
 
         var member = new Member
         {
             FullName = dto.FullName,
             PhoneNumber = dto.PhoneNumber,
             Email = dto.Email ?? string.Empty,
-            Note = $"NGUỒN: MARKETING WEB. Quan tâm: {dto.PackageInterest}. Ghi chú: {dto.Notes}",
+            Note = $"NGUá»’N: MARKETING WEB. Quan tÃ¢m: {dto.PackageInterest}. Ghi chÃº: {dto.Notes}",
             Status = MemberStatus.Prospective,
             JoinedDate = DateTime.UtcNow,
             MemberCode = await GenerateUniqueMemberCodeAsync()
@@ -167,7 +167,7 @@ public class MemberService : IMemberService
         await _unitOfWork.Members.AddAsync(member);
         await _unitOfWork.SaveChangesAsync();
 
-        return ResponseDto<MemberDto>.SuccessResult(_mapper.Map<MemberDto>(member), "Đăng ký thành công! Chúng tôi sẽ liên hệ sớm.");
+        return ResponseDto<MemberDto>.SuccessResult(_mapper.Map<MemberDto>(member), "ÄÄƒng kÃ½ thÃ nh cÃ´ng! ChÃºng tÃ´i sáº½ liÃªn há»‡ sá»›m.");
     }
 
     #endregion
@@ -207,7 +207,7 @@ public class MemberService : IMemberService
             query = query.Where(m => m.Id != excludeId.Value);
 
         if (await query.AnyAsync())
-            return excludeId.HasValue ? "Email đã được sử dụng bởi hội viên khác" : "Email đã tồn tại trong hệ thống";
+            return excludeId.HasValue ? "Email Ä‘Ã£ Ä‘Æ°á»£c sá»­ dá»¥ng bá»Ÿi há»™i viÃªn khÃ¡c" : "Email Ä‘Ã£ tá»“n táº¡i trong há»‡ thá»‘ng";
 
         return null;
     }
@@ -223,7 +223,7 @@ public class MemberService : IMemberService
             query = query.Where(m => m.Id != excludeId.Value);
 
         if (await query.AnyAsync())
-            return excludeId.HasValue ? "Số điện thoại đã được sử dụng bởi hội viên khác" : "Số điện thoại đã tồn tại trong hệ thống";
+            return excludeId.HasValue ? "Sá»‘ Ä‘iá»‡n thoáº¡i Ä‘Ã£ Ä‘Æ°á»£c sá»­ dá»¥ng bá»Ÿi há»™i viÃªn khÃ¡c" : "Sá»‘ Ä‘iá»‡n thoáº¡i Ä‘Ã£ tá»“n táº¡i trong há»‡ thá»‘ng";
 
         return null;
     }
