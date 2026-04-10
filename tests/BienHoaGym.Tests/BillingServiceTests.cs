@@ -158,6 +158,7 @@ public class BillingServiceTests
 
         // 3. Assert
         Assert.False(result.Success);
-        Assert.Contains("vẫn còn hạn", result.Message);
+        // Sử dụng Unicode escape để tránh lỗi Encoding trên môi trường GitHub Actions/Linux
+        Assert.Contains("\u1EABn c\u00F2n h\u1EA1n", result.Message);
     }
 }
