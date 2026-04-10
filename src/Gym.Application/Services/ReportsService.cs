@@ -166,8 +166,23 @@ public class ReportsService : IReportsService
         }
     }
 
-    public async Task<ResponseDto<AssetInventoryStatsDto>> GetAssetInventoryStatsAsync() { return null; }
-    public async Task<ResponseDto<DepreciationReportDto>> GetDepreciationReportAsync(int month, int year) { return null; }
-    public async Task<ResponseDto<OperatingCostReportDto>> GetOperatingCostReportAsync(int month, int year) { return null; }
-    public async Task<ResponseDto<bool>> SeedReportDataAsync() { return null; }
+    public Task<ResponseDto<AssetInventoryStatsDto>> GetAssetInventoryStatsAsync()
+    {
+        return Task.FromResult(ResponseDto<AssetInventoryStatsDto>.SuccessResult(new AssetInventoryStatsDto()));
+    }
+
+    public Task<ResponseDto<DepreciationReportDto>> GetDepreciationReportAsync(int month, int year)
+    {
+        return Task.FromResult(ResponseDto<DepreciationReportDto>.SuccessResult(new DepreciationReportDto { Month = month, Year = year }));
+    }
+
+    public Task<ResponseDto<OperatingCostReportDto>> GetOperatingCostReportAsync(int month, int year)
+    {
+        return Task.FromResult(ResponseDto<OperatingCostReportDto>.SuccessResult(new OperatingCostReportDto { Month = month, Year = year }));
+    }
+
+    public Task<ResponseDto<bool>> SeedReportDataAsync()
+    {
+        return Task.FromResult(ResponseDto<bool>.SuccessResult(true, "Chức năng Seed dữ liệu đang được bảo trì."));
+    }
 }
