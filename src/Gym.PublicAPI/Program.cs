@@ -28,6 +28,7 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
     Args = args,
     ContentRootPath = Directory.GetCurrentDirectory()
 });
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 // Suppress default configuration sources that might use watchers
 builder.Configuration.Sources.Clear();

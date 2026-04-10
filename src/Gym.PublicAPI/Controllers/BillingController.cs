@@ -60,4 +60,15 @@ public class BillingController : ControllerBase
         if (!result.Success) return BadRequest(result);
         return Ok(result);
     }
+
+    [HttpGet("invoices/{id}/pdf")]
+    [Authorize(Policy = PermissionConstants.BillingRead)]
+    public async Task<IActionResult> DownloadInvoicePdf(Guid id)
+    {
+        var fileContent = await _billingService.ExportInvoicePdfAsync(id);
+        if (fileContent == null || fileContent.Length == 0) return NotFound("Kh\u00F4ng th\u1EC3 t\u1EA1o PDF");
+        
+        string fileName = $"HoaDon_{id}.pdf";
+        return File(fileContent, "application/pdf", fileName);
+    }
 }

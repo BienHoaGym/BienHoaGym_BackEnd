@@ -19,11 +19,13 @@ using Microsoft.AspNetCore.Authorization;
 using Gym.Infrastructure.Auth;
 using System.Security.Claims; // Cần cái này cho ClaimTypes
 using System.Text;
+using QuestPDF;
 
 // Fix for inotify limit on Linux/Render - MUST BE AT THE VERY TOP
 Environment.SetEnvironmentVariable("DOTNET_USE_POLLING_FILE_WATCHER", "1");
 Environment.SetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER", "true");
 
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
     Args = args,

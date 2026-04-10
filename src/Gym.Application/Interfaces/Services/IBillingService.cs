@@ -13,4 +13,5 @@ public interface IBillingService
     Task<ResponseDto<InvoiceDto>> CreateInvoiceAsync(CreateInvoiceDto dto, Guid? userId = null, string? userName = null);
     Task<ResponseDto<List<InvoiceDto>>> GetInvoicesAsync();
     Task<ResponseDto<InvoiceDto>> GetInvoiceByIdAsync(Guid id);
+    Task<byte[]> ExportInvoicePdfAsync(Guid id);
 }
