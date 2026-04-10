@@ -108,8 +108,8 @@ public class AuthService : IAuthService
         return ResponseDto<LoginResponseDto>.SuccessResult(response, "Đăng nhập thành công");
     }
 
-    public async Task<ResponseDto<bool>> LogoutAsync(Guid userId)
+    public Task<ResponseDto<bool>> LogoutAsync(Guid userId)
     {
-        return ResponseDto<bool>.SuccessResult(true, "Đăng xuất thành công");
+        return Task.FromResult(ResponseDto<bool>.SuccessResult(true, "Đăng xuất thành công"));
     }
 }
