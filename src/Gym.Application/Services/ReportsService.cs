@@ -149,10 +149,10 @@ public class ReportsService : IReportsService
     public async Task<byte[]> ExportRevenueToExcelAsync(DateTime? startDate = null, DateTime? endDate = null)
     {
         var reportResponse = await GetRevenueReportAsync(startDate, endDate);
-        if (!reportResponse.IsSuccess || reportResponse.Data == null)
+        if (!reportResponse.Success || reportResponse.Data == null)
             return Array.Empty<byte>();
 
-        var data = reportResponse.Data;
+        var data = reportResponse.Data!;
         
         // Chuẩn bị dữ liệu xuất Excel
         var excelData = data.RecentTransactions.Select(t => new {
