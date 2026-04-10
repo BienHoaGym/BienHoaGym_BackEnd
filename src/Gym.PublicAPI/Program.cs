@@ -283,12 +283,13 @@ using (var scope = app.Services.CreateScope())
         db.Database.Migrate();
         Console.WriteLine("✅ Database migrated successfully!");
 
-        // LUÔN ĐẢM BẢO CÓ ADMIN ĐỂ ĐĂNG NHẬP
+        // LUÔN ĐẢM BẢO CÓ ADMIN VÀ DỮ LIỆU DEMO NẾU DB TRỐNG (KỂ CẢ TRÊN PRODUCTION ĐỂ VẬN HÀNH THỬ)
         var userCount = await db.Users.CountAsync();
         if (userCount == 0) {
-            Console.WriteLine("⚠️ No users found. Creating default Admin...");
+            Console.WriteLine("⚠️ No users found. Creating default Admin & Demo Data for first-run setup...");
             await Gym.Infrastructure.Data.DataSeeder.SeedDefaultAdminAsync(services);
-            Console.WriteLine("✅ Default Admin created (admin / 123456)");
+            await Gym.Infrastructure.Data.DataSeeder.SeedDemoDataAsync(services);
+            Console.WriteLine("✅ Default Admin & Demo data created!");
         } else if (app.Environment.IsDevelopment()) {
             await Gym.Infrastructure.Data.DataSeeder.SeedDemoDataAsync(services);
             Console.WriteLine("✅ Demo data seeded!");
