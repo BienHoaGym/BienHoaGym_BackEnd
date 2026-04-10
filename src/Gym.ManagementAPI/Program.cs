@@ -379,8 +379,15 @@ using (var scope = app.Services.CreateScope())
             Console.WriteLine($"⚠️ Database Cleanup Warning: {ex.Message}");
         }
 
-        // CHỈ SEED DỮ LIỆU NẾU LÀ MÔI TRƯỜNG DEVELOPMENT 
-        if (app.Environment.IsDevelopment())
+        // LUÔN ĐẢM BẢO CÓ ÍT NHẤT 1 ADMIN TRÊN PRODUCTION ĐỂ ĐĂNG NHẬP
+        var userCount = await db.Users.CountAsync();
+        if (userCount == 0)
+        {
+            Console.WriteLine("⚠️ No users found in database. Creating default Admin for first-time setup...");
+            await Gym.Infrastructure.Data.DataSeeder.SeedDefaultAdminAsync(services);
+            Console.WriteLine("✅ Default Admin created (admin / 123456)");
+        }
+        else if (app.Environment.IsDevelopment())
         {
             Console.WriteLine("🌱 Seeding demo data in Development...");
             await Gym.Infrastructure.Data.DataSeeder.SeedDemoDataAsync(services);
