@@ -143,7 +143,7 @@ public class AuthService : IAuthService
         return Task.FromResult(ResponseDto<bool>.SuccessResult(true, "Đăng xuất thành công"));
     }
 
-    public async Task<List<string>> GetPermissionsByRoleIdsAsync(List<int> roleIds)
+    public Task<List<string>> GetPermissionsByRoleIdsAsync(List<int> roleIds)
     {
         var permissions = new HashSet<string>();
         var roles = _unitOfWork.Roles.GetQueryable().Where(r => roleIds.Contains(r.Id)).ToList();
@@ -173,6 +173,6 @@ public class AuthService : IAuthService
             }
         }
         
-        return permissions.ToList();
+        return Task.FromResult(permissions.ToList());
     }
 }

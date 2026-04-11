@@ -3,6 +3,7 @@ using Gym.Application.DTOs.Roles;
 using Gym.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Gym.Domain.Constants;
 
 namespace Gym.PublicAPI.Controllers;
 

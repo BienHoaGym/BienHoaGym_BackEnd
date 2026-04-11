@@ -247,36 +247,62 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     var db = services.GetRequiredService<GymDbContext>();
     try {
-        Console.WriteLine("🔄 Starting Public API Database Sync...");
+        Console.WriteLine("🔄 Starting Public API Database Sync & Self-Healing...");
         
         if (db.Database.IsNpgsql()) {
             try {
+                // Postgres Self-healing
                 db.Database.ExecuteSqlRaw(@"
                     DO $$ 
                     BEGIN 
-                        -- Sửa bảng Users
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Users' AND column_name='Address') THEN
-                            ALTER TABLE ""Users"" ADD COLUMN ""Address"" text;
-                        END IF;
-                        -- (Cac cot khac tuong tu nhu trong Management)
                         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Invoices' AND column_name='CreatedByUserId') THEN
                             ALTER TABLE ""Invoices"" ADD COLUMN ""CreatedByUserId"" uuid;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='InvoiceDetails' AND column_name='SubscriptionId') THEN
+                            ALTER TABLE ""InvoiceDetails"" ADD COLUMN ""SubscriptionId"" uuid;
                         END IF;
                     END $$;");
             } catch { }
         }
         
         db.Database.Migrate();
+        Console.WriteLine("✅ Public API: Database migrated successfully!");
 
-        // 🚨 ADMIN & PERMISSION SYNC (ĐỒNG BỘ NỀN TẢNG)
+        // 🟢 LOGIC TỰ ĐỘNG DỌN DẸP DỮ LIỆU LỖI PHÔNG CHỮ (ĐỒNG BỘ NỀN TẢNG)
+        try {
+            var connection = db.Database.GetDbConnection();
+            await connection.OpenAsync();
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+                UPDATE MembershipPackages SET Name = REPLACE(Name, 'GA3i', 'Gói');
+                UPDATE MembershipPackages SET Name = REPLACE(Name, 'ThAng', 'Tháng');
+                UPDATE MembershipPackages SET Name = REPLACE(Name, 'Nm', 'Năm');
+                UPDATE MemberSubscriptions SET OriginalPackageName = REPLACE(OriginalPackageName, 'GA3i', 'Gói');
+                UPDATE MemberSubscriptions SET OriginalPackageName = REPLACE(OriginalPackageName, 'ThAng', 'Tháng');
+                UPDATE Products SET Name = 'Nước suối Aquafina' WHERE Name LIKE '%Aquafina%';
+                UPDATE Products SET Category = 'Thực phẩm bổ sung' WHERE Category LIKE '%Th%c ph%cm%';
+                UPDATE Invoices SET Note = 'Bán lẻ' WHERE Note LIKE '%B%n l%';
+                UPDATE InvoiceDetails SET ItemName = REPLACE(ItemName, 'GA3i', 'Gói');
+                UPDATE InvoiceDetails SET ItemName = REPLACE(ItemName, 'ThAng', 'Tháng');
+            ";
+            await command.ExecuteNonQueryAsync();
+            Console.WriteLine("✨ Public API: Database Cleanup completed.");
+        } catch { }
+
+        // 🚨 FORCED ADMIN SYNC (Cấp cứu đăng nhập cho bản Deployed)
         var systemAdmin = await db.Users.Include(u => u.UserRoles).FirstOrDefaultAsync(u => u.Username.ToLower() == "admin");
         if (systemAdmin != null) {
             var hasher = new PasswordHasher<User>();
             systemAdmin.PasswordHash = hasher.HashPassword(systemAdmin, "Admin@123");
+            
+            if (!systemAdmin.UserRoles.Any(ur => ur.RoleId == 1)) {
+                systemAdmin.UserRoles.Add(new UserRole { RoleId = 1, UserId = systemAdmin.Id });
+            }
             await db.SaveChangesAsync();
-            Console.WriteLine("🚑 Public API: Admin rescue password synced.");
+            Console.WriteLine("🚑 Public API: Admin rescue password and role synced.");
         }
 
+        // 🛡️ ĐỒNG BỘ QUYỀN TRUY CẬP (Fix lỗi mất Sidebar)
         var adminRoles = await db.Roles.Where(r => r.RoleName == "Admin").ToListAsync();
         foreach (var role in adminRoles) {
             if (string.IsNullOrEmpty(role.Permissions) || role.Permissions == "[]") {
@@ -285,15 +311,14 @@ using (var scope = app.Services.CreateScope())
             }
         }
         await db.SaveChangesAsync();
-        Console.WriteLine("🛡️ Public API: RBAC sync completed.");
+        Console.WriteLine("🛡️ Public API: RBAC permission sync completed.");
 
-        var userCount = await db.Users.CountAsync();
-        if (userCount == 0) {
+        if (systemAdmin == null) {
             await DataSeeder.SeedDefaultAdminAsync(services);
-            Console.WriteLine("✅ Default Admin created via Public API");
+            Console.WriteLine("✅ Default Admin created via Public API.");
         }
     } catch (Exception ex) {
-        Console.WriteLine($"❌ Initialization error: {ex.Message}");
+        Console.WriteLine($"🔍 Public API Initialization info: {ex.Message}");
     }
 }
 
