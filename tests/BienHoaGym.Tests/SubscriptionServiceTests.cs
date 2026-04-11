@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Moq;
 using AutoMapper;
 using Gym.Application.Services;
@@ -210,6 +210,6 @@ public class SubscriptionServiceTests
 
         // 3. Assert
         Assert.False(result.Success);
-        Assert.Contains("váº«n cÃ²n háº¡n 5 ngÃ y", result.Message);
+        Assert.Contains("vẫn còn hạn 5 ngày", result.Message);
     }
 }
