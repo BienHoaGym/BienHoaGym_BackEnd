@@ -345,9 +345,15 @@ using (var scope = app.Services.CreateScope())
                             ALTER TABLE ""Providers"" ADD COLUMN ""SupplyType"" text;
                         END IF;
 
-                        -- Sửa bảng StockTransactions (Audit & Payment)
+                        -- Sửa bảng StockTransactions (Chi tiết giao dịch kho)
                         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='StockTransactions' AND column_name='PaidAmount') THEN
                             ALTER TABLE ""StockTransactions"" ADD COLUMN ""PaidAmount"" decimal DEFAULT 0;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='StockTransactions' AND column_name='TotalAmount') THEN
+                            ALTER TABLE ""StockTransactions"" ADD COLUMN ""TotalAmount"" decimal DEFAULT 0;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='StockTransactions' AND column_name='VatPercentage') THEN
+                            ALTER TABLE ""StockTransactions"" ADD COLUMN ""VatPercentage"" decimal DEFAULT 0;
                         END IF;
                         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='StockTransactions' AND column_name='PaymentMethod') THEN
                             ALTER TABLE ""StockTransactions"" ADD COLUMN ""PaymentMethod"" text;
@@ -358,20 +364,40 @@ using (var scope = app.Services.CreateScope())
                         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='StockTransactions' AND column_name='AttachmentUrl') THEN
                             ALTER TABLE ""StockTransactions"" ADD COLUMN ""AttachmentUrl"" text;
                         END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='StockTransactions' AND column_name='ReferenceNumber') THEN
+                            ALTER TABLE ""StockTransactions"" ADD COLUMN ""ReferenceNumber"" text;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='StockTransactions' AND column_name='ExpiryDate') THEN
+                            ALTER TABLE ""StockTransactions"" ADD COLUMN ""ExpiryDate"" timestamp with time zone;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='StockTransactions' AND column_name='ProviderId') THEN
+                            ALTER TABLE ""StockTransactions"" ADD COLUMN ""ProviderId"" uuid;
+                        END IF;
 
-                        -- Sửa bảng EquipmentTransactions (Audit & Payment)
+                        -- Sửa bảng EquipmentTransactions (Giao dịch thiết bị)
                         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='EquipmentTransactions' AND column_name='PaidAmount') THEN
                             ALTER TABLE ""EquipmentTransactions"" ADD COLUMN ""PaidAmount"" decimal DEFAULT 0;
                         END IF;
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='EquipmentTransactions' AND column_name='PaymentMethod') THEN
-                            ALTER TABLE ""EquipmentTransactions"" ADD COLUMN ""PaymentMethod"" text;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='EquipmentTransactions' AND column_name='TotalAmount') THEN
+                            ALTER TABLE ""EquipmentTransactions"" ADD COLUMN ""TotalAmount"" decimal DEFAULT 0;
                         END IF;
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='EquipmentTransactions' AND column_name='PaymentDueDate') THEN
-                            ALTER TABLE ""EquipmentTransactions"" ADD COLUMN ""PaymentDueDate"" timestamp with time zone;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='EquipmentTransactions' AND column_name='ProviderId') THEN
+                            ALTER TABLE ""EquipmentTransactions"" ADD COLUMN ""ProviderId"" uuid;
                         END IF;
                         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='EquipmentTransactions' AND column_name='AttachmentUrl') THEN
                             ALTER TABLE ""EquipmentTransactions"" ADD COLUMN ""AttachmentUrl"" text;
                         END IF;
+
+                        -- Khởi tạo giá trị mặc định cho dữ liệu cũ (Tránh lỗi NULL)
+                        UPDATE ""Providers"" SET ""TotalDebt"" = 0 WHERE ""TotalDebt"" IS NULL;
+                        UPDATE ""Providers"" SET ""SupplyType"" = 'General' WHERE ""SupplyType"" IS NULL;
+                        
+                        UPDATE ""StockTransactions"" SET ""PaidAmount"" = 0 WHERE ""PaidAmount"" IS NULL;
+                        UPDATE ""StockTransactions"" SET ""TotalAmount"" = 0 WHERE ""TotalAmount"" IS NULL;
+                        UPDATE ""StockTransactions"" SET ""VatPercentage"" = 0 WHERE ""VatPercentage"" IS NULL;
+                        
+                        UPDATE ""EquipmentTransactions"" SET ""PaidAmount"" = 0 WHERE ""PaidAmount"" IS NULL;
+                        UPDATE ""EquipmentTransactions"" SET ""TotalAmount"" = 0 WHERE ""TotalAmount"" IS NULL;
                     END $$;
                 ");
             } catch (Exception ex) {
