@@ -21,7 +21,7 @@ public class TrainersController : ControllerBase
     }
 
     [HttpGet("me/schedule")]
-    [Authorize(Roles = "Trainer,Admin")]
+    [Authorize(Policy = PermissionConstants.TrainerRead)]
     public async Task<IActionResult> GetMySchedule()
     {
         var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
@@ -39,7 +39,7 @@ public class TrainersController : ControllerBase
     }
 
     [HttpGet("summary/schedule")]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [Authorize(Policy = PermissionConstants.TrainerRead)]
     public async Task<IActionResult> GetGlobalSchedule()
     {
         var result = await _trainerService.GetGlobalScheduleAsync();
@@ -48,7 +48,7 @@ public class TrainersController : ControllerBase
     }
 
     [HttpGet("{id:guid}/schedule")]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [Authorize(Policy = PermissionConstants.TrainerRead)]
     public async Task<IActionResult> GetTrainerSchedule(Guid id)
     {
         var result = await _trainerService.GetTrainerScheduleAsync(id);
@@ -104,7 +104,7 @@ public class TrainersController : ControllerBase
     /// URL: POST /api/Trainers
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Policy = PermissionConstants.TrainerCreate)]
     public async Task<IActionResult> CreateTrainer([FromBody] CreateTrainerDto dto)
     {
         _logger.LogInformation("Creating new trainer: {FullName}", dto.FullName);
@@ -121,7 +121,7 @@ public class TrainersController : ControllerBase
     /// URL: PUT /api/Trainers/{id}
     /// </summary>
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Policy = PermissionConstants.TrainerUpdate)]
     public async Task<IActionResult> UpdateTrainer(Guid id, [FromBody] UpdateTrainerDto dto)
     {
         _logger.LogInformation("Updating trainer: {TrainerId}", id);
@@ -138,7 +138,7 @@ public class TrainersController : ControllerBase
     /// URL: DELETE /api/Trainers/{id}
     /// </summary>
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = PermissionConstants.TrainerDelete)]
     public async Task<IActionResult> DeleteTrainer(Guid id)
     {
         _logger.LogInformation("Deleting trainer: {TrainerId}", id);
@@ -159,7 +159,7 @@ public class TrainersController : ControllerBase
     }
 
     [HttpPost("assign")]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [Authorize(Policy = PermissionConstants.TrainerUpdate)]
     public async Task<IActionResult> AssignMember([FromBody] CreateTrainerAssignmentDto dto)
     {
         var result = await _trainerService.AssignMemberAsync(dto);
@@ -168,7 +168,7 @@ public class TrainersController : ControllerBase
     }
 
     [HttpDelete("unassign/{assignmentId:guid}")]
-    [Authorize(Roles = "Admin,Manager,Receptionist")]
+    [Authorize(Policy = PermissionConstants.TrainerUpdate)]
     public async Task<IActionResult> RemoveAssignment(Guid assignmentId)
     {
         var result = await _trainerService.RemoveAssignmentAsync(assignmentId);

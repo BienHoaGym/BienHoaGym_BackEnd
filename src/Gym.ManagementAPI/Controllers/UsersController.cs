@@ -3,11 +3,13 @@ using Gym.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
+using Gym.Domain.Constants;
+
 namespace Gym.ManagementAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Admin,Manager")]
+[Authorize(Policy = PermissionConstants.SettingsManage)]
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
@@ -49,6 +51,13 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<ResponseDto<bool>>> SetRoles(Guid id, [FromBody] List<int> roleIds)
     {
         var result = await _userService.SetUserRolesAsync(id, roleIds);
+        return Ok(result);
+    }
+
+    [HttpPost("{id}/reset-password")]
+    public async Task<ActionResult<ResponseDto<bool>>> ResetPassword(Guid id, [FromBody] string newPassword)
+    {
+        var result = await _userService.ResetPasswordAsync(id, newPassword);
         return Ok(result);
     }
 }

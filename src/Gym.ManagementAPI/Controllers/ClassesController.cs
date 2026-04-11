@@ -2,6 +2,7 @@ using Gym.Application.DTOs.Classes;
 using Gym.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Gym.Domain.Constants;
 
 namespace Gym.ManagementAPI.Controllers;
 
@@ -68,7 +69,7 @@ public class ClassesController : ControllerBase
     /// Create new class
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Policy = PermissionConstants.ClassManage)]
     public async Task<IActionResult> CreateClass([FromBody] CreateClassDto dto)
     {
         _logger.LogInformation("Creating new class: {ClassName}", dto.ClassName);
@@ -85,7 +86,7 @@ public class ClassesController : ControllerBase
     /// Update class
     /// </summary>
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Policy = PermissionConstants.ClassManage)]
     public async Task<IActionResult> UpdateClass(Guid id, [FromBody] UpdateClassDto dto)
     {
         _logger.LogInformation("Updating class: {ClassId}", id);
@@ -102,7 +103,7 @@ public class ClassesController : ControllerBase
     /// Delete class (soft delete)
     /// </summary>
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = PermissionConstants.ClassManage)]
     public async Task<IActionResult> DeleteClass(Guid id)
     {
         _logger.LogInformation("Deleting class: {ClassId}", id);
@@ -119,7 +120,7 @@ public class ClassesController : ControllerBase
     /// Enroll member to class
     /// </summary>
     [HttpPost("{id}/enroll")]
-    [Authorize(Roles = "Admin,Manager,Receptionist,Trainer")]
+    [Authorize(Policy = PermissionConstants.ClassManage)]
     public async Task<IActionResult> EnrollMember(Guid id, [FromBody] EnrollClassDto dto)
     {
         _logger.LogInformation("Enrolling member {MemberId} to class {ClassId}", dto.MemberId, id);
@@ -136,7 +137,7 @@ public class ClassesController : ControllerBase
     /// Unenroll member from class
     /// </summary>
     [HttpPost("{classId}/unenroll/{memberId}")]
-    [Authorize(Roles = "Admin,Manager,Receptionist,Trainer")]
+    [Authorize(Policy = PermissionConstants.ClassManage)]
     public async Task<IActionResult> UnenrollMember(Guid classId, Guid memberId)
     {
         _logger.LogInformation("Unenrolling member {MemberId} from class {ClassId}", memberId, classId);
@@ -153,7 +154,7 @@ public class ClassesController : ControllerBase
     /// Get all enrollments for a class (for attendance)
     /// </summary>
     [HttpGet("{id}/enrollments")]
-    [Authorize(Roles = "Admin,Manager,Trainer,Receptionist")]
+    [Authorize(Policy = PermissionConstants.ClassRead)]
     public async Task<IActionResult> GetEnrollments(Guid id)
     {
         var result = await _classService.GetEnrollmentsAsync(id);
@@ -164,7 +165,7 @@ public class ClassesController : ControllerBase
     /// Mark attendance for a member in a class
     /// </summary>
     [HttpPost("attendance")]
-    [Authorize(Roles = "Admin,Manager,Trainer,Receptionist")]
+    [Authorize(Policy = PermissionConstants.ClassManage)]
     public async Task<IActionResult> MarkAttendance([FromBody] MarkAttendanceDto dto)
     {
         var result = await _classService.MarkAttendanceAsync(dto);

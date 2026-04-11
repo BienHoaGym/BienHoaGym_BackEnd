@@ -4,7 +4,7 @@ public class ProviderDto
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
-    public string Code { get; set; } = string.Empty;
+    public string? Code { get; set; }
     public string? ContactPerson { get; set; }
     public string? Address { get; set; }
     public string? PhoneNumber { get; set; }
@@ -20,7 +20,7 @@ public class ProviderDto
 public class CreateProviderDto
 {
     public string Name { get; set; } = string.Empty;
-    public string Code { get; set; } = string.Empty;
+    public string? Code { get; set; }
     public string? ContactPerson { get; set; }
     public string? Address { get; set; }
     public string? PhoneNumber { get; set; }
@@ -37,7 +37,7 @@ public class ProviderSummaryDto
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
-    public string Code { get; set; } = string.Empty;
+    public string? Code { get; set; }
     public string? PhoneNumber { get; set; }
     public string? ContactPerson { get; set; }
     public string? TaxCode { get; set; }

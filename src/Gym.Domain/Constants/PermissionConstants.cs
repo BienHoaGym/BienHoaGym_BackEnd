@@ -65,7 +65,15 @@ public static class PermissionConstants
     public const string PaymentRead = "payment.read";
     public const string PaymentCreate = "payment.create";
 
+    // Nhà cung cấp (Providers)
+    public const string ProviderRead = "provider.read";
+    public const string ProviderCreate = "provider.create";
+    public const string ProviderUpdate = "provider.update";
+    public const string ProviderDelete = "provider.delete";
+
     // Hệ thống
+    public const string StaffRead = "staff.read";
+    public const string StaffManage = "staff.manage";
     public const string AuditLogRead = "auditlog.read";
     public const string SettingsManage = "settings.manage";
     public const string DashboardRead = "report.read"; // Dashboard sử dụng chung quyền xem báo cáo

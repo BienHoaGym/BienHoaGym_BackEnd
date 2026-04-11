@@ -7,12 +7,12 @@ public class MembershipPackage : BaseEntity
     // Đổi 'PackageName' thành 'Name' (chuẩn Clean Code)
     public string Name { get; set; } = string.Empty;
 
-    public string Description { get; set; } = string.Empty;
+    public string? Description { get; set; }
     public decimal Price { get; set; }
     public decimal? DiscountPrice { get; set; }
 
     // Sửa 'DurationDays' thành 'DurationInDays' để rõ nghĩa hơn
-    public int DurationDays { get; set; }
+    public int DurationInDays { get; set; }
     public int DurationInMonths { get; set; } // Giữ lại nếu cần tính theo tháng
 
     public int? SessionLimit { get; set; }

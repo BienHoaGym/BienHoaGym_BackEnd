@@ -473,36 +473,36 @@ public class GymDbContext : DbContext
         modelBuilder.Entity<Role>().HasData(
             new Role 
             { 
-                Id = 1, RoleName = "Admin", Description = "👑 Admin/Manager (Quản lý chủ gym) - TOÀN QUYỀN", 
-                Permissions = "\"*\"", CreatedAt = seedDate 
+                Id = 1, RoleName = "Admin", Description = "👑 Quản trị viên - TOÀN QUYỀN HỆ THỐNG", 
+                Permissions = System.Text.Json.JsonSerializer.Serialize(new List<string> { "*" }), CreatedAt = seedDate 
             },
             new Role 
             { 
-                Id = 2, RoleName = "Manager", Description = "Tiểu quản lý vận hành", 
+                Id = 2, RoleName = "Manager", Description = "🏢 Quản lý - Điều hành vận hành chung", 
                 Permissions = System.Text.Json.JsonSerializer.Serialize(new List<string> { "*" }), 
                 CreatedAt = seedDate 
             },
             new Role 
             { 
-                Id = 3, RoleName = "Trainer", Description = "🏋️ Trainer - Chuyên môn", 
+                Id = 3, RoleName = "Trainer", Description = "🏋️ Huấn luyện viên (PT) - Chuyên môn", 
                 Permissions = System.Text.Json.JsonSerializer.Serialize(new List<string> 
                 { 
-                    "member.read", "class.manage", "equipment.read", "equipment.report", "inventory.consume", "product.read", "trainer.read" 
+                    "member.read", "checkin.read", "class.read", "class.manage", "equipment.read", "equipment.report", "inventory.consume", "product.read", "trainer.read", "provider.read", "report.read" 
                 }), 
                 CreatedAt = seedDate 
             },
             new Role 
             { 
-                Id = 4, RoleName = "Receptionist", Description = "👩💼 Receptionist - Vận hành hàng ngày", 
+                Id = 4, RoleName = "Receptionist", Description = "👩💼 Lễ tân - Vận hành và Check-in hàng ngày", 
                 Permissions = System.Text.Json.JsonSerializer.Serialize(new List<string> 
                 { 
-                    "member.read", "member.create", "member.update", "checkin.create", "checkin.read", "package.read", "inventory.read", "inventory.consume", "report.read", "subscription.read", "subscription.create", "subscription.update", "payment.read", "payment.create", "billing.read", "billing.create", "product.read", "class.read", "trainer.read"
+                    "member.read", "member.create", "member.update", "checkin.create", "checkin.read", "package.read", "inventory.read", "inventory.consume", "report.read", "subscription.read", "subscription.create", "subscription.update", "payment.read", "payment.create", "billing.read", "billing.create", "product.read", "class.read", "trainer.read", "provider.read"
                 }), 
                 CreatedAt = seedDate 
             },
             new Role 
             { 
-                Id = 5, RoleName = "Member", Description = "👤 Member - Tự phục vụ", 
+                Id = 5, RoleName = "Member", Description = "👤 Hội viên - Tự phục vụ", 
                 Permissions = System.Text.Json.JsonSerializer.Serialize(new List<string> 
                 { 
                     "member.read", "checkin.self", "class.read", "subscription.read" 
@@ -511,10 +511,10 @@ public class GymDbContext : DbContext
             },
             new Role
             {
-                Id = 6, RoleName = "Accountant", Description = "💰 Accountant - Quản lý tài chính",
+                Id = 6, RoleName = "Accountant", Description = "💰 Thủ quỹ/Kế toán - Quản lý tài chính",
                 Permissions = System.Text.Json.JsonSerializer.Serialize(new List<string>
                 {
-                    "billing.read", "billing.create", "payment.read", "payment.create", "report.read", "package.read", "member.read", "subscription.read", "subscription.create", "subscription.update", "checkin.read", "product.read", "class.read", "trainer.read"
+                    "billing.read", "billing.create", "payment.read", "payment.create", "report.read", "package.read", "member.read", "subscription.read", "subscription.create", "subscription.update", "checkin.read", "product.read", "class.read", "trainer.read", "provider.read"
                 }),
                 CreatedAt = seedDate
             }
@@ -579,11 +579,11 @@ public class GymDbContext : DbContext
         var package5Id = Guid.Parse("10101010-1010-1010-1010-101010101010");
 
         modelBuilder.Entity<MembershipPackage>().HasData(
-            new() { Id = package1Id, Name = "Gói Cơ Bản 1 Tháng", Description = "Truy cập phòng gym không giới hạn trong 30 ngày", DurationDays = 30, DurationInMonths = 1, Price = 500000m, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new() { Id = package2Id, Name = "Gói Premium 1 Tháng", Description = "Gym + Tất cả lớp học trong 30 ngày", DurationDays = 30, DurationInMonths = 1, Price = 800000m, DiscountPrice = 750000m, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new() { Id = package3Id, Name = "Gói 10 Buổi Tập", Description = "10 buổi tập, hạn sử dụng 60 ngày", DurationDays = 60, DurationInMonths = 2, Price = 450000m, SessionLimit = 10, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new() { Id = package4Id, Name = "Gói 3 Tháng", Description = "Truy cập không giới hạn 90 ngày", DurationDays = 90, DurationInMonths = 3, Price = 1200000m, DiscountPrice = 1100000m, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-            new() { Id = package5Id, Name = "Gói VIP 1 Năm", Description = "Toàn bộ dịch vụ + PT cá nhân trong 365 ngày", DurationDays = 365, DurationInMonths = 12, Price = 4500000m, DiscountPrice = 4000000m, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+            new() { Id = package1Id, Name = "Gói Cơ Bản 1 Tháng", Description = "Truy cập phòng gym không giới hạn trong 30 ngày", DurationInDays = 30, DurationInMonths = 1, Price = 500000m, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+            new() { Id = package2Id, Name = "Gói Premium 1 Tháng", Description = "Gym + Tất cả lớp học trong 30 ngày", DurationInDays = 30, DurationInMonths = 1, Price = 800000m, DiscountPrice = 750000m, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+            new() { Id = package3Id, Name = "Gói 10 Buổi Tập", Description = "10 buổi tập, hạn sử dụng 60 ngày", DurationInDays = 60, DurationInMonths = 2, Price = 450000m, SessionLimit = 10, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+            new() { Id = package4Id, Name = "Gói 3 Tháng", Description = "Truy cập không giới hạn 90 ngày", DurationInDays = 90, DurationInMonths = 3, Price = 1200000m, DiscountPrice = 1100000m, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+            new() { Id = package5Id, Name = "Gói VIP 1 Năm", Description = "Toàn bộ dịch vụ + PT cá nhân trong 365 ngày", DurationInDays = 365, DurationInMonths = 12, Price = 4500000m, DiscountPrice = 4000000m, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
         );
 
         var memberId1 = Guid.Parse("20202020-2020-2020-2020-202020202020");
@@ -727,8 +727,25 @@ public class GymDbContext : DbContext
                 severity = AuditSeverity.Important;
             }
 
-            // Lấy ResourceId và ResourceName (dùng Reflection để linh hoạt)
-            string? resourceId = entry.Property("Id")?.CurrentValue?.ToString() ?? (entry.Property("Id")?.OriginalValue?.ToString());
+            // Lấy ResourceId (An toàn hơn cho các thực thể mang khóa phức hợp như UserRole)
+            string? resourceId = "N/A";
+            var idProperty = entry.Metadata.FindProperty("Id");
+            
+            if (idProperty != null)
+            {
+                resourceId = entry.Property("Id").CurrentValue?.ToString() ?? entry.Property("Id").OriginalValue?.ToString();
+            }
+            else if (entityName == "UserRole")
+            {
+                var userIdVal = entry.Metadata.FindProperty("UserId") != null 
+                    ? (entry.Property("UserId").CurrentValue ?? entry.Property("UserId").OriginalValue) 
+                    : null;
+                var roleIdVal = entry.Metadata.FindProperty("RoleId") != null 
+                    ? (entry.Property("RoleId").CurrentValue ?? entry.Property("RoleId").OriginalValue) 
+                    : null;
+                resourceId = $"U:{userIdVal}-R:{roleIdVal}";
+            }
+
             string? resourceName = "";
             var nameProp = entityType.GetProperty("Name") ?? entityType.GetProperty("FullName") ?? entityType.GetProperty("ClassName") ?? entityType.GetProperty("MemberCode");
             if (nameProp != null)

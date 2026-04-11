@@ -43,23 +43,7 @@ public class ClassService : IClassService
             .Include(c => c.Trainer)
             .Where(c => !c.IsDeleted);
 
-        // NGHIỆP VỤ (WF - 2.4): HLV chỉ thấy lớp của chính mình
-        var user = _httpContextAccessor.HttpContext?.User;
-        var role = user?.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
-        if (role == "Trainer")
-        {
-            var userIdStr = user?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            if (Guid.TryParse(userIdStr, out var userId))
-            {
-                var trainers = await _unitOfWork.Trainers.FindAsync(t => t.UserId == userId);
-                var trainer = trainers.FirstOrDefault();
-                if (trainer != null)
-                {
-                    classesQuery = classesQuery.Where(c => c.TrainerId == trainer.Id);
-                }
-            }
-        }
-
+        // Lấy danh sách lớp học
         var activeClassesFromDb = await classesQuery.ToListAsync();
 
         var activeClasses = activeClassesFromDb
@@ -89,12 +73,6 @@ public class ClassService : IClassService
 
     public async Task<ResponseDto<ClassDto>> CreateAsync(CreateClassDto dto)
     {
-        // NGHIỆP VỤ (WF - 2.4): Chỉ Admin/Manager được tạo lớp
-        var role = _httpContextAccessor.HttpContext?.User?.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
-        if (role != "Admin" && role != "Manager")
-        {
-            return ResponseDto<ClassDto>.FailureResult("Chỉ Quản lý mới có quyền tạo lịch lớp học.");
-        }
         // Validate trainer exists
         if (dto.TrainerId != Guid.Empty)
         {
@@ -351,19 +329,7 @@ public class ClassService : IClassService
             return ResponseDto<bool>.FailureResult("Không tìm thấy thông tin đăng ký lớp.");
         }
 
-        if (role == "Trainer")
-        {
-             var userIdStr = user?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-             if (Guid.TryParse(userIdStr, out var userId))
-             {
-                 var trainers = await _unitOfWork.Trainers.FindAsync(t => t.UserId == userId);
-                 var trainer = trainers.FirstOrDefault();
-                 if (trainer != null && enrollment.Class != null && enrollment.Class.TrainerId != trainer.Id)
-                 {
-                     return ResponseDto<bool>.FailureResult("Bạn chỉ có quyền điểm danh cho lớp học do bạn phụ trách.");
-                 }
-             }
-        }
+        // Thực hiện điểm danh dựa trên mã đăng ký
 
         enrollment.IsAttended = dto.IsPresent;
         enrollment.AttendanceDate = dto.IsPresent ? DateTime.UtcNow : null;

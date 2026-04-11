@@ -61,6 +61,15 @@ public class MembersController : ControllerBase
         return Ok(result);
     }
 
+    [HttpPut("{id}/face")]
+    [Authorize(Policy = PermissionConstants.MemberUpdate)]
+    public async Task<IActionResult> UpdateFace(Guid id, [FromBody] string faceEncoding)
+    {
+        var result = await _memberService.UpdateFaceEncodingAsync(id, faceEncoding);
+        if (!result.Success) return BadRequest(result);
+        return Ok(result);
+    }
+
     [HttpDelete("{id}")]
     [Authorize(Policy = PermissionConstants.MemberDelete)]
     public async Task<IActionResult> Delete(Guid id)

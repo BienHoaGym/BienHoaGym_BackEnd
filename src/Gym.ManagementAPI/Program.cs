@@ -46,8 +46,13 @@ AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 // 1. CONFIGURATION & DATABASE
 // ==========================================
 
-// Add controllers
-builder.Services.AddControllers();
+// Add controllers with JSON options for camelCase
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.DictionaryKeyPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    });
 builder.Services.AddEndpointsApiExplorer();
 
 // Configure DbContext
@@ -176,6 +181,7 @@ builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IPdfService, Gym.Infrastructure.Services.QuestPdfService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IPermissionService, PermissionService>();
 
 // ĐĂNG KÝ CHO AUDIT LOG: Cho phép DbContext lấy được thông tin người dùng từ request hiện tại
 builder.Services.AddHttpContextAccessor();
@@ -399,7 +405,7 @@ using (var scope = app.Services.CreateScope())
                 UPDATE Products SET Unit = 'Cái' WHERE Unit = 'CAi';
 
                 -- Sửa lỗi 'Bán lẻ' bị lỗi thành 'BÃ¡n lÃ°'
-                UPDATE Invoices SET MemberName = 'Khách lẻ' WHERE MemberName LIKE '%Kh%ch l%';
+                -- UPDATE Invoices SET MemberName = 'Khách lẻ' WHERE MemberName LIKE '%Kh%ch l%';
                 UPDATE Invoices SET Note = 'Bán lẻ' WHERE Note LIKE '%B%n l%';
 
                 -- Cập nhật lại các hóa đơn Demo trong báo cáo (Dựa vào hình ảnh)
@@ -412,15 +418,44 @@ using (var scope = app.Services.CreateScope())
             Console.WriteLine($"⚠️ Database Cleanup Warning: {ex.Message}");
         }
 
-        // LUÔN ĐẢM BẢO CÓ ÍT NHẤT 1 ADMIN TRÊN PRODUCTION ĐỂ ĐĂNG NHẬP
-        var userCount = await db.Users.CountAsync();
-        if (userCount == 0)
+        // 🚨 FORCED ADMIN SYNC (Cấp cứu đăng nhập cho bản Deployed)
+        var systemAdmin = await db.Users.Include(u => u.UserRoles).FirstOrDefaultAsync(u => u.Username.ToLower() == "admin");
+        if (systemAdmin != null)
+        {
+            // Forcing known password for rescue: Admin@123
+            var hasher = new Microsoft.AspNetCore.Identity.PasswordHasher<Gym.Domain.Entities.User>();
+            systemAdmin.PasswordHash = hasher.HashPassword(systemAdmin, "Admin@123");
+            
+            // Ensure has Admin role (Id = 1)
+            if (!systemAdmin.UserRoles.Any(ur => ur.RoleId == 1))
+            {
+                systemAdmin.UserRoles.Add(new Gym.Domain.Entities.UserRole { RoleId = 1, UserId = systemAdmin.Id });
+            }
+            await db.SaveChangesAsync();
+            Console.WriteLine("🚑 Rescue Mode: System 'admin' password synced to 'Admin@123'");
+        }
+        
+        // 🔄 ĐỒNG BỘ QUYỀN TRUY CẬP CHO VAI TRÒ ADMIN (Đảm bảo không bị mất Sidebar)
+        var adminRoles = await db.Roles.Where(r => r.RoleName == "Admin").ToListAsync();
+        foreach (var role in adminRoles)
+        {
+            if (string.IsNullOrEmpty(role.Permissions) || role.Permissions == "[]")
+            {
+                role.Permissions = "[\"*\"]";
+                _ = db.Roles.Update(role);
+                Console.WriteLine($"🛡️ Security Sync: Full permissions restored for role '{role.RoleName}'");
+            }
+        }
+        await db.SaveChangesAsync();
+
+        if (systemAdmin == null)
         {
             Console.WriteLine("⚠️ No users found in database. Creating default Admin for first-time setup...");
             await Gym.Infrastructure.Data.DataSeeder.SeedDefaultAdminAsync(services);
             Console.WriteLine("✅ Default Admin created (admin / 123456)");
         }
-        else if (app.Environment.IsDevelopment())
+
+        if (app.Environment.IsDevelopment())
         {
             Console.WriteLine("🌱 Seeding demo data in Development...");
             await Gym.Infrastructure.Data.DataSeeder.SeedDemoDataAsync(services);

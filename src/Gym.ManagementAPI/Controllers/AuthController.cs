@@ -63,28 +63,32 @@ public class AuthController : ControllerBase
         }
 
         /// <summary>
-        /// Get current user info
+        /// Get current user info - Lấy trực tiếp từ DB để đảm bảo quyền luôn mới
         /// </summary>
         [HttpGet("me")]
         [Authorize]
-        public IActionResult GetCurrentUser()
+        public async Task<IActionResult> GetCurrentUser([FromServices] IUserService userService)
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var username = User.FindFirst(ClaimTypes.Name)?.Value;
-            var email = User.FindFirst(ClaimTypes.Email)?.Value;
-            var fullName = User.FindFirst(ClaimTypes.GivenName)?.Value;
-            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(userIdStr, out var userId)) return Unauthorized();
+
+            var result = await userService.GetByIdAsync(userId);
+            if (!result.Success) return NotFound(result);
+
+            var user = result.Data;
 
             return Ok(new
             {
                 success = true,
                 data = new
                 {
-                    id = userId,
-                    username,
-                    email,
-                    fullName,
-                    role
+                    id = user.Id,
+                    username = user.Username,
+                    email = user.Email,
+                    fullName = user.FullName,
+                    role = user.Role,
+                    roles = user.Roles,
+                    permissions = user.RoleIds != null ? await _authService.GetPermissionsByRoleIdsAsync(user.RoleIds) : new List<string>()
                 }
             });
         }

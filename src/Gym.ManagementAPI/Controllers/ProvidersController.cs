@@ -2,6 +2,7 @@ using Gym.Application.DTOs.Providers;
 using Gym.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Gym.Domain.Constants;
 using System;
 using System.Threading.Tasks;
 
@@ -9,7 +10,7 @@ namespace Gym.ManagementAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Admin,Manager,Receptionist")]
+[Authorize(Policy = PermissionConstants.ProviderRead)]
 public class ProvidersController : ControllerBase
 {
     private readonly IProviderService _providerService;
@@ -41,7 +42,7 @@ public class ProvidersController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Policy = PermissionConstants.SettingsManage)]
     public async Task<IActionResult> Create(CreateProviderDto dto)
     {
         var result = await _providerService.CreateAsync(dto);
@@ -49,7 +50,7 @@ public class ProvidersController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Policy = PermissionConstants.SettingsManage)]
     public async Task<IActionResult> Update(Guid id, CreateProviderDto dto)
     {
         var result = await _providerService.UpdateAsync(id, dto);
@@ -57,7 +58,7 @@ public class ProvidersController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Policy = PermissionConstants.SettingsManage)]
     public async Task<IActionResult> Delete(Guid id)
     {
         var result = await _providerService.DeleteAsync(id);

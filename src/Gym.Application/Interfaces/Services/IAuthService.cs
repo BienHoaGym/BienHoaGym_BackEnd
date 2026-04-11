@@ -7,4 +7,5 @@ public interface IAuthService
 {
     Task<ResponseDto<LoginResponseDto>> LoginAsync(LoginDto dto);
     Task<ResponseDto<bool>> LogoutAsync(Guid userId);
+    Task<List<string>> GetPermissionsByRoleIdsAsync(List<int> roleIds);
 }

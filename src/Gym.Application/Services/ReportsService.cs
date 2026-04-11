@@ -39,38 +39,62 @@ public class ReportsService : IReportsService
 
         try 
         {
-            var payments = await _unitOfWork.Payments.GetQueryable()
-                .Where(p => p.Status == PaymentStatus.Completed && !p.IsDeleted && p.PaymentDate >= start && p.PaymentDate <= end)
+            Console.WriteLine($"🔍 Generating report from {start} to {end}...");
+
+            var paymentsQuery = _unitOfWork.Payments.GetQueryable()
+                .Where(p => p.Status == PaymentStatus.Completed && !p.IsDeleted && p.PaymentDate >= start && p.PaymentDate <= end);
+            
+            var payments = await paymentsQuery
                 .Include(p => p.Subscription).ThenInclude(s => s!.Package)
                 .Include(p => p.Subscription).ThenInclude(s => s!.Member)
                 .ToListAsync();
+            Console.WriteLine($"✅ Found {payments.Count} payments");
 
-            var invoices = await _unitOfWork.Invoices.GetQueryable()
-                .Where(i => i.Status == PaymentStatus.Completed && !i.IsDeleted && i.CreatedAt >= start && i.CreatedAt <= end)
+            var invoicesQuery = _unitOfWork.Invoices.GetQueryable()
+                .Where(i => i.Status == PaymentStatus.Completed && !i.IsDeleted && i.CreatedAt >= start && i.CreatedAt <= end);
+
+            var invoices = await invoicesQuery
                 .Include(i => i.Member)
                 .Include(i => i.Details)
                 .ToListAsync();
+            Console.WriteLine($"✅ Found {invoices.Count} invoices");
 
-            var orders = await _unitOfWork.Orders.GetQueryable()
-                .Where(o => (o.Status == "Completed" || o.Status == "completed") && !o.IsDeleted && o.CreatedDate >= start && o.CreatedDate <= end)
+            var ordersQuery = _unitOfWork.Orders.GetQueryable()
+                .Where(o => (o.Status == "Completed" || o.Status == "completed") && !o.IsDeleted && o.CreatedDate >= start && o.CreatedDate <= end);
+
+            var orders = await ordersQuery
                 .Include(o => o.Member)
                 .Include(o => o.OrderDetails).ThenInclude(od => od.Product)
                 .ToListAsync();
+            Console.WriteLine($"✅ Found {orders.Count} orders");
 
-            var revenueThisMonth = await _unitOfWork.Payments.GetQueryable().Where(p => p.Status == PaymentStatus.Completed && !p.IsDeleted && p.PaymentDate >= monthStart).SumAsync(p => (decimal)p.Amount) +
-                                   await _unitOfWork.Invoices.GetQueryable().Where(i => i.Status == PaymentStatus.Completed && !i.IsDeleted && i.CreatedAt >= monthStart).SumAsync(i => i.TotalAmount - i.DiscountAmount);
+            // Tính toán tổng doanh thu trong KỲ ĐANG XEM (periodRevenue) thay vì cứng thán hiện tại
+            var periodRevenue = payments.Sum(p => p.Amount) + 
+                               invoices.Sum(i => i.TotalAmount - i.DiscountAmount) +
+                               orders.Sum(o => o.TotalAmount);
 
-            var revenueThisYear = await _unitOfWork.Payments.GetQueryable().Where(p => p.Status == PaymentStatus.Completed && !p.IsDeleted && p.PaymentDate >= yearStart).SumAsync(p => (decimal)p.Amount) +
-                                   await _unitOfWork.Invoices.GetQueryable().Where(i => i.Status == PaymentStatus.Completed && !i.IsDeleted && i.CreatedAt >= yearStart).SumAsync(i => i.TotalAmount - i.DiscountAmount);
+            var rawPaymentsThisMonth = await _unitOfWork.Payments.GetQueryable().Where(p => p.Status == PaymentStatus.Completed && !p.IsDeleted && p.PaymentDate >= monthStart).Select(p => p.Amount).ToListAsync();
+            var rawInvoicesThisMonth = await _unitOfWork.Invoices.GetQueryable().Where(i => i.Status == PaymentStatus.Completed && !i.IsDeleted && i.CreatedAt >= monthStart).Select(i => i.TotalAmount - i.DiscountAmount).ToListAsync();
+            var rawOrdersThisMonth = await _unitOfWork.Orders.GetQueryable().Where(o => (o.Status == "Completed" || o.Status == "completed") && !o.IsDeleted && o.CreatedDate >= monthStart).Select(o => o.TotalAmount).ToListAsync();
+            var revenueThisMonth = rawPaymentsThisMonth.Sum() + rawInvoicesThisMonth.Sum() + rawOrdersThisMonth.Sum();
 
-            var maintExpenseMonth = await _unitOfWork.MaintenanceLogs.GetQueryable().Where(m => m.Date >= monthStart && m.Status == MaintenanceStatus.Completed).SumAsync(m => (decimal)m.Cost);
-            var depExpenseMonth = await _unitOfWork.Depreciations.GetQueryable().Where(d => d.PeriodMonth == now.Month && d.PeriodYear == now.Year).SumAsync(d => (decimal)d.Amount);
+            var rawPaymentsThisYear = await _unitOfWork.Payments.GetQueryable().Where(p => p.Status == PaymentStatus.Completed && !p.IsDeleted && p.PaymentDate >= yearStart).Select(p => p.Amount).ToListAsync();
+            var rawInvoicesThisYear = await _unitOfWork.Invoices.GetQueryable().Where(i => i.Status == PaymentStatus.Completed && !i.IsDeleted && i.CreatedAt >= yearStart).Select(i => i.TotalAmount - i.DiscountAmount).ToListAsync();
+            var rawOrdersThisYear = await _unitOfWork.Orders.GetQueryable().Where(o => (o.Status == "Completed" || o.Status == "completed") && !o.IsDeleted && o.CreatedDate >= yearStart).Select(o => o.TotalAmount).ToListAsync();
+            var revenueThisYear = rawPaymentsThisYear.Sum() + rawInvoicesThisYear.Sum() + rawOrdersThisYear.Sum();
+
+            var rawMaintExpense = await _unitOfWork.MaintenanceLogs.GetQueryable().Where(m => m.Date >= start && m.Date <= end && m.Status == MaintenanceStatus.Completed).Select(m => m.Cost).ToListAsync();
+            var maintExpenseMonth = rawMaintExpense.Sum();
+            
+            var rawDepExpense = await _unitOfWork.Depreciations.GetQueryable().Where(d => d.PeriodMonth == now.Month && d.PeriodYear == now.Year).Select(d => d.Amount).ToListAsync();
+            var depExpenseMonth = rawDepExpense.Sum();
 
             var overview = new RevenueOverviewDto
             {
-                RevenueToday = (decimal)(payments.Where(p => p.PaymentDate.Date == today).Sum(p => (double)p.Amount) + 
-                                       invoices.Where(i => i.CreatedAt.Date == today).Sum(i => (double)(i.TotalAmount - i.DiscountAmount))),
-                RevenueThisMonth = revenueThisMonth,
+                RevenueToday = payments.Where(p => p.PaymentDate.Date == today).Sum(p => p.Amount) + 
+                                       invoices.Where(i => i.CreatedAt.Date == today).Sum(i => i.TotalAmount - i.DiscountAmount) +
+                                       orders.Where(o => o.CreatedDate.Date == today).Sum(o => o.TotalAmount),
+                RevenueThisMonth = periodRevenue, // Trả về doanh thu trong kỳ được chọn để hiển thị lên KPI Cards
                 RevenueThisYear = revenueThisYear,
                 TotalExpenseThisMonth = maintExpenseMonth + depExpenseMonth,
                 NewMembersCount = await _unitOfWork.Members.GetQueryable().CountAsync(m => !m.IsDeleted && m.JoinedDate >= start && m.JoinedDate <= end),
@@ -80,15 +104,15 @@ public class ReportsService : IReportsService
             var chartItems = Enumerable.Range(0, (end.Date - start.Date).Days + 1)
                 .Select(i => {
                     var d = start.Date.AddDays(i);
-                    var pRev = payments.Where(p => p.PaymentDate.Date == d).Sum(p => (decimal)p.Amount);
-                    var iRev = invoices.Where(i => i.CreatedAt.Date == d).Sum(i => (decimal)(i.TotalAmount - i.DiscountAmount));
-                    var oRev = orders.Where(o => o.CreatedDate.Date == d).Sum(o => (decimal)o.TotalAmount);
+                    var pRev = payments.Where(p => p.PaymentDate.Date == d).Sum(p => p.Amount);
+                    var iRev = invoices.Where(i => i.CreatedAt.Date == d).Sum(i => i.TotalAmount - i.DiscountAmount);
+                    var oRev = orders.Where(o => o.CreatedDate.Date == d).Sum(o => o.TotalAmount);
                     return new RevenueChartItemDto { Label = d.ToString("dd/MM"), Revenue = pRev + iRev + oRev };
                 }).ToList();
 
             var revByPackage = payments
                 .GroupBy(p => p.Subscription?.Package?.Name ?? "D\u1ECBch v\u1EE5 Membership")
-                .Select(g => new RevenueByPackageDto { PackageName = g.Key, Quantity = g.Count(), TotalRevenue = (decimal)g.Sum(p => p.Amount) })
+                .Select(g => new RevenueByPackageDto { PackageName = g.Key, Quantity = g.Count(), TotalRevenue = g.Sum(p => p.Amount) })
                 .OrderByDescending(x => x.TotalRevenue).ToList();
 
             var revByProduct = invoices
@@ -98,8 +122,8 @@ public class ReportsService : IReportsService
                 .Select(g => new RevenueByPackageDto { PackageName = g.Key, Quantity = g.Sum(x => x.Quantity), TotalRevenue = g.Sum(x => x.Quantity * x.UnitPrice) })
                 .OrderByDescending(x => x.TotalRevenue).ToList();
 
-            var revByHour = payments.Select(p => new { Date = p.PaymentDate, Amount = (decimal)p.Amount })
-                .Concat(invoices.Select(i => new { Date = i.CreatedAt, Amount = (decimal)(i.TotalAmount - i.DiscountAmount) }))
+            var revByHour = payments.Select(p => new { Date = p.PaymentDate, Amount = p.Amount })
+                .Concat(invoices.Select(i => new { Date = i.CreatedAt, Amount = i.TotalAmount - i.DiscountAmount }))
                 .Concat(orders.Select(o => new { Date = o.CreatedDate, Amount = o.TotalAmount }))
                 .GroupBy(x => x.Date.Hour)
                 .Select(g => new RevenueByHourDto {
@@ -113,14 +137,14 @@ public class ReportsService : IReportsService
             var transactions = payments
                 .Select(p => new TransactionDetailDto {
                     Date = p.PaymentDate,
-                    Amount = (decimal)p.Amount,
+                    Amount = p.Amount,
                     MemberName = p.Subscription?.Member?.FullName ?? "N/A",
                     PackageName = "G\u00F3i: " + (p.Subscription?.Package?.Name ?? "D\u1ECBch v\u1EE5"),
                     Status = "Completed"
                 })
                 .Concat(invoices.Select(i => new TransactionDetailDto {
                     Date = i.CreatedAt,
-                    Amount = (decimal)(i.TotalAmount - i.DiscountAmount),
+                    Amount = i.TotalAmount - i.DiscountAmount,
                     MemberName = i.Member?.FullName ?? "Kh\u00E1ch l\u1EBB/POS",
                     PackageName = "S\u1EA3n ph\u1EA9m/D\u1ECBch v\u1EE5 l\u1EBB",
                     Status = "Completed"
@@ -234,5 +258,20 @@ public class ReportsService : IReportsService
     public Task<ResponseDto<bool>> SeedReportDataAsync()
     {
         return Task.FromResult(ResponseDto<bool>.SuccessResult(true, "Y\u00EAu c\u1EA7u seed \u0111\u00E3 \u0111\u01B0\u1EE3c nh\u1EADn."));
+    }
+
+    public async Task<object> GetDatabaseStatsAsync()
+    {
+        return new 
+        {
+            TotalMembers = await _unitOfWork.Members.GetQueryable().CountAsync(),
+            TotalInvoices = await _unitOfWork.Invoices.GetQueryable().CountAsync(),
+            CompletedInvoices = await _unitOfWork.Invoices.GetQueryable().CountAsync(i => i.Status == PaymentStatus.Completed),
+            TotalPayments = await _unitOfWork.Payments.GetQueryable().CountAsync(),
+            CompletedPayments = await _unitOfWork.Payments.GetQueryable().CountAsync(p => p.Status == PaymentStatus.Completed),
+            TotalOrders = await _unitOfWork.Orders.GetQueryable().CountAsync(),
+            CompletedOrders = await _unitOfWork.Orders.GetQueryable().CountAsync(o => o.Status == "Completed" || o.Status == "completed"),
+            RecentInvoices = await _unitOfWork.Invoices.GetQueryable().OrderByDescending(i => i.CreatedAt).Take(5).Select(i => new { i.InvoiceNumber, i.CreatedAt, i.TotalAmount, Status = i.Status.ToString() }).ToListAsync()
+        };
     }
 }

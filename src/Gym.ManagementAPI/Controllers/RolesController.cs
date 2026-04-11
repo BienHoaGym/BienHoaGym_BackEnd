@@ -4,11 +4,13 @@ using Gym.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
+using Gym.Domain.Constants;
+
 namespace Gym.ManagementAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Admin,Manager")] // Bảo vệ toàn bộ controller
+[Authorize(Policy = PermissionConstants.SettingsManage)] // Bảo vệ toàn bộ controller
 public class RolesController : ControllerBase
 {
     private readonly IRoleService _roleService;

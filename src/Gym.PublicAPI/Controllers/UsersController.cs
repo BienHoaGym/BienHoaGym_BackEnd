@@ -7,7 +7,7 @@ namespace Gym.PublicAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Admin,Manager")]
+[Authorize(Policy = PermissionConstants.UserRead)]
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;

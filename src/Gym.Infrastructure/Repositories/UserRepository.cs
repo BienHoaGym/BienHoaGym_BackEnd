@@ -16,7 +16,7 @@ public class UserRepository : Repository<User>, IUserRepository
         return await _context.Users
                 .Include(u => u.UserRoles)
                     .ThenInclude(ur => ur.Role)
-                .FirstOrDefaultAsync(u => u.Username == username);
+                .FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower());
     }
 
     public async Task<User?> GetByEmailAsync(string email)

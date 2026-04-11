@@ -1,20 +1,20 @@
 using FluentValidation;
 using Gym.Application.DTOs.Packages;
 
-namespace Gym.Application.Validators.Packages;
+namespace Gym.Application.Validators;
 
 public class CreatePackageValidator : AbstractValidator<CreatePackageDto>
 {
     public CreatePackageValidator()
     {
         RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("Tên gói t?p không du?c d? tr?ng")
-            .MaximumLength(100).WithMessage("Tên gói không quá 100 ký t?");
+            .NotEmpty().WithMessage("Ten goi tap khong duoc de trong")
+            .MaximumLength(100).WithMessage("Ten goi khong qua 100 ky tu");
 
         RuleFor(x => x.Price)
-            .GreaterThan(0).WithMessage("Giá gói t?p ph?i l?n hon 0");
+            .GreaterThan(0).WithMessage("Gia goi tap phai lon hon 0");
 
-        RuleFor(x => x.DurationDays)
-            .InclusiveBetween(1, 365).WithMessage("Th?i h?n ph?i t? 1 d?n 365 ngày");
+        RuleFor(x => x.DurationInDays)
+            .InclusiveBetween(1, 4000).WithMessage("Thoi han phai tu 1 den 4000 ngay");
     }
 }

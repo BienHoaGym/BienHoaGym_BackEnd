@@ -1,5 +1,6 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using System.IO;
 using Gym.Application.Interfaces;
 using Gym.Application.Interfaces.Repositories;
 using Gym.Application.Interfaces.Services;
@@ -18,17 +19,18 @@ using Microsoft.AspNetCore.Authorization;
 using Gym.Infrastructure.Auth;
 using System.Security.Claims;
 using System.Text;
+using QuestPDF;
 
 // Fix for inotify limit on Linux/Render - MUST BE AT THE VERY TOP
 Environment.SetEnvironmentVariable("DOTNET_USE_POLLING_FILE_WATCHER", "1");
 Environment.SetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER", "true");
 
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
     Args = args,
     ContentRootPath = Directory.GetCurrentDirectory()
 });
-QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 // Suppress default configuration sources that might use watchers
 builder.Configuration.Sources.Clear();
@@ -51,7 +53,7 @@ builder.Services.AddEndpointsApiExplorer();
 // Configure DbContext
 builder.Services.AddDbContext<GymDbContext>(options =>
 {
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
         ?? Environment.GetEnvironmentVariable("DATABASE_URL");
         
     if (string.IsNullOrEmpty(connectionString))
@@ -59,9 +61,12 @@ builder.Services.AddDbContext<GymDbContext>(options =>
         throw new Exception("Connection string 'DefaultConnection' or 'DATABASE_URL' not found.");
     }
 
+    // CỐ ĐỊNH: Chỉ sử dụng 1 file duy nhất tại thư mục chạy để tránh dữ liệu bị "lan mang"
     if (connectionString.Contains(".sqlite") || connectionString.Contains("Data Source") || connectionString.Contains("Filename"))
     {
-        options.UseSqlite(connectionString);
+        var dbPath = Path.Combine(builder.Environment.ContentRootPath, "GymManagement.sqlite");
+        Console.WriteLine($"📌 PUBLIC API DATABASE FIXED PATH: {dbPath}");
+        options.UseSqlite($"Data Source={dbPath}");
     }
     else
     {
@@ -87,9 +92,9 @@ builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "Gym Public API (Production)",
+        Title = "Gym Public API",
         Version = "v1",
-        Description = "Public faces for Gym Management System with full business logic"
+        Description = "Public and Service API for Gym Management System"
     });
 
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -133,6 +138,8 @@ var expiryMinutes = int.Parse(jwtSettings["ExpiryMinutes"] ?? "60");
 builder.Services.AddScoped<IJwtService>(sp => new JwtService(secretKey, issuer, audience, expiryMinutes));
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+
+// Domain Services
 builder.Services.AddScoped<IMemberService, MemberService>();
 builder.Services.AddScoped<IPackageService, PackageService>();
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
@@ -150,7 +157,10 @@ builder.Services.AddScoped<IEquipmentCategoryService, EquipmentCategoryService>(
 builder.Services.AddScoped<IProviderService, ProviderService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
+builder.Services.AddScoped<IPdfService, Gym.Infrastructure.Services.QuestPdfService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IPermissionService, PermissionService>();
+
 builder.Services.AddHttpContextAccessor();
 
 // ==========================================
@@ -191,12 +201,6 @@ var app = builder.Build();
 // 5. MIDDLEWARE PIPELINE
 // ==========================================
 
-app.UseSwagger();
-app.UseSwaggerUI(options => {
-    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Gym Public API V1");
-    options.RoutePrefix = "swagger";
-});
-
 app.UseCors("AllowAll");
 
 app.Use(async (context, next) => {
@@ -219,6 +223,18 @@ app.Use(async (context, next) => {
     }
 });
 
+app.UseSwagger();
+app.UseSwaggerUI(options => {
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Gym Public API V1");
+    options.RoutePrefix = "swagger";
+});
+
+// Health Check
+app.MapGet("/api/health", async (GymDbContext db) => {
+    var canConnect = await db.Database.CanConnectAsync();
+    return Results.Ok(new { status = "Online", database = canConnect ? "Connected" : "Disconnected", time = DateTime.UtcNow });
+});
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
@@ -231,81 +247,55 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     var db = services.GetRequiredService<GymDbContext>();
     try {
-        Console.WriteLine("🔄 Starting Database Sync & Migration...");
+        Console.WriteLine("🔄 Starting Public API Database Sync...");
         
         if (db.Database.IsNpgsql()) {
             try {
-                Console.WriteLine("🛠️ Running Database self-healing (Postgres)...");
                 db.Database.ExecuteSqlRaw(@"
                     DO $$ 
                     BEGIN 
-                        -- Sửa bảng Users (Thêm các cột nhân sự thiếu)
+                        -- Sửa bảng Users
                         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Users' AND column_name='Address') THEN
                             ALTER TABLE ""Users"" ADD COLUMN ""Address"" text;
                         END IF;
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Users' AND column_name='IdentityNumber') THEN
-                            ALTER TABLE ""Users"" ADD COLUMN ""IdentityNumber"" text;
-                        END IF;
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Users' AND column_name='BirthDate') THEN
-                            ALTER TABLE ""Users"" ADD COLUMN ""BirthDate"" timestamp with time zone;
-                        END IF;
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Users' AND column_name='Gender') THEN
-                            ALTER TABLE ""Users"" ADD COLUMN ""Gender"" text;
-                        END IF;
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Users' AND column_name='HireDate') THEN
-                            ALTER TABLE ""Users"" ADD COLUMN ""HireDate"" timestamp with time zone;
-                        END IF;
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Users' AND column_name='BankCardNumber') THEN
-                            ALTER TABLE ""Users"" ADD COLUMN ""BankCardNumber"" text;
-                        END IF;
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Users' AND column_name='BankName') THEN
-                            ALTER TABLE ""Users"" ADD COLUMN ""BankName"" text;
-                        END IF;
-
-                        -- Sửa bảng MemberSubscriptions
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='MemberSubscriptions' AND column_name='AutoPauseExtensionDays') THEN
-                            ALTER TABLE ""MemberSubscriptions"" ADD COLUMN ""AutoPauseExtensionDays"" integer;
-                        END IF;
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='MemberSubscriptions' AND column_name='LastPausedAt') THEN
-                            ALTER TABLE ""MemberSubscriptions"" ADD COLUMN ""LastPausedAt"" timestamp with time zone;
-                        END IF;
-                        
-                        -- Sửa bảng Invoices (Thêm các cột audit)
+                        -- (Cac cot khac tuong tu nhu trong Management)
                         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Invoices' AND column_name='CreatedByUserId') THEN
                             ALTER TABLE ""Invoices"" ADD COLUMN ""CreatedByUserId"" uuid;
                         END IF;
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Invoices' AND column_name='CreatedByUserName') THEN
-                            ALTER TABLE ""Invoices"" ADD COLUMN ""CreatedByUserName"" text;
-                        END IF;
-
-                        -- Sửa bảng InvoiceDetails
-                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='InvoiceDetails' AND column_name='SubscriptionId') THEN
-                            ALTER TABLE ""InvoiceDetails"" ADD COLUMN ""SubscriptionId"" uuid;
-                        END IF;
                     END $$;");
-                Console.WriteLine("✅ Database self-healing completed!");
-            } catch (Exception ex) {
-                Console.WriteLine($"🔍 Self-healing info: {ex.Message}");
-            }
+            } catch { }
         }
         
         db.Database.Migrate();
-        Console.WriteLine("✅ Database migrated successfully!");
 
-        // LUÔN ĐẢM BẢO CÓ ADMIN VÀ DỮ LIỆU DEMO NẾU DB TRỐNG (KỂ CẢ TRÊN PRODUCTION ĐỂ VẬN HÀNH THỬ)
+        // 🚨 ADMIN & PERMISSION SYNC (ĐỒNG BỘ NỀN TẢNG)
+        var systemAdmin = await db.Users.Include(u => u.UserRoles).FirstOrDefaultAsync(u => u.Username.ToLower() == "admin");
+        if (systemAdmin != null) {
+            var hasher = new PasswordHasher<User>();
+            systemAdmin.PasswordHash = hasher.HashPassword(systemAdmin, "Admin@123");
+            await db.SaveChangesAsync();
+            Console.WriteLine("🚑 Public API: Admin rescue password synced.");
+        }
+
+        var adminRoles = await db.Roles.Where(r => r.RoleName == "Admin").ToListAsync();
+        foreach (var role in adminRoles) {
+            if (string.IsNullOrEmpty(role.Permissions) || role.Permissions == "[]") {
+                role.Permissions = "[\"*\"]";
+                db.Roles.Update(role);
+            }
+        }
+        await db.SaveChangesAsync();
+        Console.WriteLine("🛡️ Public API: RBAC sync completed.");
+
         var userCount = await db.Users.CountAsync();
-        var invoiceCount = await db.Invoices.CountAsync();
-        
-        if (userCount == 0 || invoiceCount == 0) {
-            Console.WriteLine("⚠️ Database is empty or missing invoices. Seeding management data...");
-            if (userCount == 0) await Gym.Infrastructure.Data.DataSeeder.SeedDefaultAdminAsync(services);
-            await Gym.Infrastructure.Data.DataSeeder.SeedDemoDataAsync(services);
-            Console.WriteLine("✅ Seeding completed successfully!");
+        if (userCount == 0) {
+            await DataSeeder.SeedDefaultAdminAsync(services);
+            Console.WriteLine("✅ Default Admin created via Public API");
         }
     } catch (Exception ex) {
         Console.WriteLine($"❌ Initialization error: {ex.Message}");
     }
 }
 
-var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
+var port = Environment.GetEnvironmentVariable("PORT") ?? "10001"; // Default different port if local
 app.Run($"http://0.0.0.0:{port}");

@@ -39,7 +39,7 @@ public class EquipmentController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Policy = PermissionConstants.InventoryRead)]
     public async Task<IActionResult> Create([FromBody] CreateEquipmentDto dto)
     {
         var result = await _equipmentService.CreateEquipmentAsync(dto);
@@ -47,7 +47,7 @@ public class EquipmentController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Policy = PermissionConstants.InventoryRead)]
     public async Task<IActionResult> Update(Guid id, [FromBody] CreateEquipmentDto dto)
     {
         var result = await _equipmentService.UpdateEquipmentAsync(id, dto);
@@ -55,7 +55,7 @@ public class EquipmentController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Policy = PermissionConstants.InventoryUpdate)]
     public async Task<IActionResult> Delete(Guid id)
     {
         var result = await _equipmentService.DeleteEquipmentAsync(id);
@@ -63,7 +63,7 @@ public class EquipmentController : ControllerBase
     }
 
     [HttpPost("{id}/liquidate")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Policy = PermissionConstants.InventoryDelete)]
     public async Task<IActionResult> Liquidate(Guid id)
     {
         var result = await _equipmentService.LiquidateEquipmentAsync(id);
@@ -134,7 +134,7 @@ public class EquipmentController : ControllerBase
     }
 
     [HttpPost("{id}/depreciation")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Policy = PermissionConstants.InventoryUpdate)]
     public async Task<IActionResult> RecordDepreciation(Guid id, [FromQuery] int month, [FromQuery] int year, [FromQuery] string? note)
     {
         var result = await _equipmentService.RecordDepreciationAsync(id, month, year, note);
@@ -142,7 +142,7 @@ public class EquipmentController : ControllerBase
     }
 
     [HttpPost("bulk-depreciation")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Policy = PermissionConstants.InventoryUpdate)]
     public async Task<IActionResult> BulkRecordDepreciation([FromQuery] int month, [FromQuery] int year)
     {
         var result = await _equipmentService.BulkRecordDepreciationAsync(month, year);

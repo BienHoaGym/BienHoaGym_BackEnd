@@ -54,4 +54,8 @@ public class CreateProductDto
     public string? Category { get; set; }
     public string? ImageUrl { get; set; }
     public Guid? ProviderId { get; set; }
+
+    // Initial stock (Optional)
+    public int InitialQuantity { get; set; } = 0;
+    public Guid? WarehouseId { get; set; }
 }

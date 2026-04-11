@@ -42,33 +42,53 @@ public class PackageService : IPackageService
 
     public async Task<ResponseDto<PackageDto>> CreateAsync(CreatePackageDto dto)
     {
-        var package = _mapper.Map<MembershipPackage>(dto);
-        package.IsActive = true;
+        try
+        {
+            var package = _mapper.Map<MembershipPackage>(dto);
+            package.IsActive = true;
+            
+            // Đảm bảo Description không null nếu mapper không xử lý
+            if (package.Description == null) package.Description = "";
 
-        await _unitOfWork.Packages.AddAsync(package);
-        await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.Packages.AddAsync(package);
+            await _unitOfWork.SaveChangesAsync();
 
-        var packageDto = _mapper.Map<PackageDto>(package);
-        return ResponseDto<PackageDto>.SuccessResult(packageDto, "Package created successfully");
+            var packageDto = _mapper.Map<PackageDto>(package);
+            return ResponseDto<PackageDto>.SuccessResult(packageDto, "Tạo gói tập thành công");
+        }
+        catch (Exception ex)
+        {
+            return ResponseDto<PackageDto>.FailureResult($"Lỗi khi tạo gói tập: {ex.Message}");
+        }
     }
 
     public async Task<ResponseDto<PackageDto>> UpdateAsync(Guid id, UpdatePackageDto dto)
     {
-        var package = await _unitOfWork.Packages.GetByIdAsync(id);
-
-        if (package == null || package.IsDeleted)
+        try
         {
-            return ResponseDto<PackageDto>.FailureResult("Package not found");
+            var package = await _unitOfWork.Packages.GetByIdAsync(id);
+
+            if (package == null || package.IsDeleted)
+            {
+                return ResponseDto<PackageDto>.FailureResult("Không tìm thấy gói tập");
+            }
+
+            _mapper.Map(dto, package);
+            package.UpdatedAt = DateTime.UtcNow;
+
+            // Đảm bảo Description không null
+            if (package.Description == null) package.Description = "";
+
+            _unitOfWork.Packages.Update(package);
+            await _unitOfWork.SaveChangesAsync();
+
+            var packageDto = _mapper.Map<PackageDto>(package);
+            return ResponseDto<PackageDto>.SuccessResult(packageDto, "Cập nhật gói tập thành công");
         }
-
-        _mapper.Map(dto, package);
-        package.UpdatedAt = DateTime.UtcNow;
-
-        _unitOfWork.Packages.Update(package);
-        await _unitOfWork.SaveChangesAsync();
-
-        var packageDto = _mapper.Map<PackageDto>(package);
-        return ResponseDto<PackageDto>.SuccessResult(packageDto, "Package updated successfully");
+        catch (Exception ex)
+        {
+            return ResponseDto<PackageDto>.FailureResult($"Lỗi khi cập nhật gói tập: {ex.Message}");
+        }
     }
    
     public async Task<ResponseDto<bool>> DeleteAsync(Guid id)
@@ -77,7 +97,7 @@ public class PackageService : IPackageService
 
         if (package == null || package.IsDeleted)
         {
-            return ResponseDto<bool>.FailureResult("Package not found");
+            return ResponseDto<bool>.FailureResult("Không tìm thấy gói tập");
         }
 
         // Check if package has active subscriptions
@@ -87,7 +107,7 @@ public class PackageService : IPackageService
 
         if (subscriptions.Any())
         {
-            return ResponseDto<bool>.FailureResult("Cannot delete package with active subscriptions. Please deactivate instead.");
+            return ResponseDto<bool>.FailureResult("Không thể xóa gói tập đang có hội viên đăng ký sử dụng. Vui lòng chuyển trạng thái sang 'Ngừng bán'.");
         }
 
         // Soft delete
@@ -97,7 +117,7 @@ public class PackageService : IPackageService
         _unitOfWork.Packages.Update(package);
         await _unitOfWork.SaveChangesAsync();
 
-        return ResponseDto<bool>.SuccessResult(true, "Package deleted successfully");
+        return ResponseDto<bool>.SuccessResult(true, "Xóa gói tập thành công");
     }
 
     public async Task<ResponseDto<List<PackageDto>>> GetActivePackagesAsync()

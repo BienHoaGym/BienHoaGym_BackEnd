@@ -73,6 +73,23 @@ public class EquipmentService : IEquipmentService
 
         await _unitOfWork.Equipments.AddAsync(equipment);
         await _unitOfWork.SaveChangesAsync();
+
+        // NGHIỆP VỤ KÉP: Ghi nhận giao dịch mua mới vào bảng Transactions
+        var transaction = new EquipmentTransaction
+        {
+            EquipmentId = equipment.Id,
+            Type = EquipmentTransactionType.Purchase,
+            Quantity = equipment.Quantity,
+            BeforeQuantity = 0,
+            AfterQuantity = equipment.Quantity,
+            Date = equipment.PurchaseDate,
+            Note = $"Mua mới thiết bị: {equipment.Name}",
+            ToLocation = equipment.Location,
+            CreatedBy = "Hệ thống"
+        };
+        await _unitOfWork.EquipmentTransactions.AddAsync(transaction);
+        await _unitOfWork.SaveChangesAsync();
+
         return ResponseDto<EquipmentDto>.SuccessResult(_mapper.Map<EquipmentDto>(equipment));
     }
 

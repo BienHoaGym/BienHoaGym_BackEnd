@@ -13,4 +13,5 @@ public interface IMemberService
     Task<ResponseDto<MemberDto>> GetByMemberCodeAsync(string memberCode);
     Task<ResponseDto<List<MemberListDto>>> SearchAsync(string keyword);
     Task<ResponseDto<MemberDto>> RegisterOnlineAsync(RegisterLeadDto dto);
+    Task<ResponseDto<bool>> UpdateFaceEncodingAsync(Guid id, string faceEncoding);
 }

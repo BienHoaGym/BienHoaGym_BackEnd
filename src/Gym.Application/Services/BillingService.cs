@@ -178,7 +178,7 @@ public class BillingService : IBillingService
                     
                     var pkg = await _unitOfWork.Packages.GetByIdAsync(d.ReferenceId.Value);
                     if (pkg != null) {
-                        subscription.EndDate = startDate.AddDays(pkg.DurationDays);
+                        subscription.EndDate = startDate.AddDays(pkg.DurationInDays);
                         subscription.OriginalPackageName = pkg.Name;
                     }
                     await _unitOfWork.Subscriptions.AddAsync(subscription);

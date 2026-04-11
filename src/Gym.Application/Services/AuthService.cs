@@ -39,10 +39,28 @@ public class AuthService : IAuthService
             return ResponseDto<LoginResponseDto>.FailureResult("Tên đăng nhập hoặc mật khẩu không chính xác");
         }
 
-        // 2. So khớp mật khẩu (Dùng Hash)
-        var verificationResult = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, dto.Password);
+        // 2. So khớp mật khẩu (Hỗ trợ cả BCrypt và Legacy Identity Hash)
+        bool isPasswordValid = false;
+        
+        // Thử BCrypt trước (Cho các tài khoản mới hoặc vừa Reset)
+        try 
+        {
+            if (BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
+            {
+                isPasswordValid = true;
+            }
+        }
+        catch 
+        {
+            // Nếu không phải định dạng BCrypt, thử dùng PasswordHasher mặc định
+            var verificationResult = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, dto.Password);
+            if (verificationResult != PasswordVerificationResult.Failed)
+            {
+                isPasswordValid = true;
+            }
+        }
 
-        if (verificationResult == PasswordVerificationResult.Failed)
+        if (!isPasswordValid)
         {
             return ResponseDto<LoginResponseDto>.FailureResult("Tên đăng nhập hoặc mật khẩu không chính xác");
         }
@@ -67,20 +85,32 @@ public class AuthService : IAuthService
         // Thay vì dùng _mapper.Map, ta tự gán từng trường một.
         // ====================================================================
         var roles = user.UserRoles.Select(ur => ur.Role.RoleName).ToList();
-        var permissions = new HashSet<string>();
+        var permissionsSet = new HashSet<string>();
         foreach (var ur in user.UserRoles)
         {
-            if (!string.IsNullOrEmpty(ur.Role.Permissions))
+            if (ur.Role == null) continue;
+
+            // 1. Ưu tiên dấu * (Toàn quyền) nếu role là Admin hoặc có dấu * trong DB
+            if (ur.Role.RoleName == "Admin" || 
+                ur.Role.Permissions == "*" || 
+                ur.Role.Permissions == "\"*\"" || 
+                ur.Role.Permissions == "[\"*\"]")
+            {
+                permissionsSet.Add("*");
+            }
+
+            // 2. Nạp thêm các quyền cụ thể khác
+            if (!string.IsNullOrEmpty(ur.Role.Permissions) && ur.Role.Permissions != "*")
             {
                 try
                 {
-                    var perms = System.Text.Json.JsonSerializer.Deserialize<List<string>>(ur.Role.Permissions);
-                    if (perms != null)
+                    var permslist = System.Text.Json.JsonSerializer.Deserialize<List<string>>(ur.Role.Permissions);
+                    if (permslist != null)
                     {
-                        foreach (var p in perms) permissions.Add(p);
+                        foreach (var p in permslist) permissionsSet.Add(p);
                     }
                 }
-                catch { /* Ignore invalid JSON */ }
+                catch { }
             }
         }
 
@@ -93,8 +123,8 @@ public class AuthService : IAuthService
             IsActive = user.IsActive,
             LastLoginAt = user.LastLoginAt,
             Roles = roles,
-            Permissions = permissions.ToList(),
-            Role = roles.FirstOrDefault() ?? string.Empty
+            Permissions = permissionsSet.ToList(),
+            Role = roles.Contains("Admin") ? "Admin" : (roles.FirstOrDefault() ?? string.Empty)
         };
 
         var response = new LoginResponseDto
@@ -111,5 +141,38 @@ public class AuthService : IAuthService
     public Task<ResponseDto<bool>> LogoutAsync(Guid userId)
     {
         return Task.FromResult(ResponseDto<bool>.SuccessResult(true, "Đăng xuất thành công"));
+    }
+
+    public async Task<List<string>> GetPermissionsByRoleIdsAsync(List<int> roleIds)
+    {
+        var permissions = new HashSet<string>();
+        var roles = _unitOfWork.Roles.GetQueryable().Where(r => roleIds.Contains(r.Id)).ToList();
+        
+        foreach (var r in roles)
+        {
+            if (string.IsNullOrEmpty(r.Permissions)) continue;
+
+            // 1. Kiểm tra dấu * (Toàn quyền) nếu role là Admin hoặc có dấu * trong DB
+            if (r.RoleName == "Admin" || r.Permissions == "*" || r.Permissions == "\"*\"" || r.Permissions == "[\"*\"]")
+            {
+                permissions.Add("*");
+            }
+
+            // 2. Nạp thêm các quyền cụ thể
+            if (r.Permissions != "*")
+            {
+                try
+                {
+                    var perms = System.Text.Json.JsonSerializer.Deserialize<List<string>>(r.Permissions);
+                    if (perms != null)
+                    {
+                        foreach (var p in perms) permissions.Add(p);
+                    }
+                }
+                catch { /* Ignore invalid JSON */ }
+            }
+        }
+        
+        return permissions.ToList();
     }
 }

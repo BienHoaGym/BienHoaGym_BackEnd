@@ -248,4 +248,18 @@ public class UserService : IUserService
         await _unitOfWork.SaveChangesAsync();
         return ResponseDto<bool>.SuccessResult(true, "Đã cập nhật vai trò");
     }
+
+    public async Task<ResponseDto<bool>> ResetPasswordAsync(Guid userId, string newPassword)
+    {
+        var user = await _unitOfWork.Users.GetByIdAsync(userId);
+        if (user == null) return ResponseDto<bool>.FailureResult("Không tìm thấy người dùng");
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+        user.UpdatedAt = DateTime.UtcNow;
+
+        _unitOfWork.Users.Update(user);
+        await _unitOfWork.SaveChangesAsync();
+
+        return ResponseDto<bool>.SuccessResult(true, "Đã đặt lại mật khẩu thành công");
+    }
 }

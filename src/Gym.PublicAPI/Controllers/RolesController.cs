@@ -8,7 +8,7 @@ namespace Gym.PublicAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Admin,Manager")] // Bảo vệ toàn bộ controller
+[Authorize(Policy = PermissionConstants.RoleRead)]
 public class RolesController : ControllerBase
 {
     private readonly IRoleService _roleService;

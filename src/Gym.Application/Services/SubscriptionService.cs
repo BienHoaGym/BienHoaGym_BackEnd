@@ -1,4 +1,4 @@
-﻿﻿﻿using AutoMapper;
+﻿﻿using AutoMapper;
 
 using Gym.Application.DTOs.Common;
 
@@ -375,7 +375,7 @@ public class SubscriptionService : ISubscriptionService
 
         subscription.RemainingSessions = package.SessionLimit;
 
-        subscription.EndDate = subscription.StartDate.AddDays(package.DurationDays);
+        subscription.EndDate = subscription.StartDate.AddDays(package.DurationInDays);
 
         // NGHIá»†P Vá»¤ I.3 (SNAPSHOT DATA): LÆ°u giÃ¡ chết táº¡i thá»i Ä‘iá»ƒm mua
 
@@ -701,7 +701,7 @@ public class SubscriptionService : ISubscriptionService
 
             StartDate = startDate,
 
-            EndDate = startDate.AddDays(package.DurationDays),
+            EndDate = startDate.AddDays(package.DurationInDays),
 
             Status = SubscriptionStatus.Pending,
 

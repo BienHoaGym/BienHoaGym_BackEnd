@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Gym.Application.DTOs.Common;
 using Gym.Application.DTOs.Members;
 using Gym.Application.Interfaces;
@@ -167,7 +167,22 @@ public class MemberService : IMemberService
         await _unitOfWork.Members.AddAsync(member);
         await _unitOfWork.SaveChangesAsync();
 
-        return ResponseDto<MemberDto>.SuccessResult(_mapper.Map<MemberDto>(member), "ÄÄƒng kÃ½ thÃ nh cÃ´ng! ChÃºng tÃ´i sáº½ liÃªn há»‡ sá»›m.");
+        return ResponseDto<MemberDto>.SuccessResult(_mapper.Map<MemberDto>(member), "Ä Äƒng kÃ½ thÃ nh cÃ´ng! ChÃºng tÃ´i sáº½ liÃªn há»‡ sá»›m.");
+    }
+
+    public async Task<ResponseDto<bool>> UpdateFaceEncodingAsync(Guid id, string faceEncoding)
+    {
+        var member = await _unitOfWork.Members.GetByIdAsync(id);
+        if (member == null || member.IsDeleted)
+            return ResponseDto<bool>.FailureResult("Không tìm thấy hội viên");
+
+        member.FaceEncoding = faceEncoding;
+        member.UpdatedAt = DateTime.UtcNow;
+
+        _unitOfWork.Members.Update(member);
+        await _unitOfWork.SaveChangesAsync();
+
+        return ResponseDto<bool>.SuccessResult(true, "Đăng ký khuôn mặt thành công");
     }
 
     #endregion

@@ -31,6 +31,7 @@ public class CheckInsController : ControllerBase
         return Ok(result);
     }
 
+
     /// <summary>
     /// Check-in member
     /// </summary>

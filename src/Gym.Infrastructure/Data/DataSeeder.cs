@@ -37,22 +37,24 @@ public static class DataSeeder
             if (!await context.MembershipPackages.AnyAsync())
             {
                 context.MembershipPackages.AddRange(new List<MembershipPackage>{
-                    new MembershipPackage { Name = "G\u00F3i Standard 1 Th\u00E1ng", DurationInMonths = 1, DurationDays = 30, Price = 500000, IsActive = true, CreatedAt = now },
-                    new MembershipPackage { Name = "G\u00F3i Premium 6 Th\u00E1ng", DurationInMonths = 6, DurationDays = 180, Price = 2500000, IsActive = true, CreatedAt = now },
-                    new MembershipPackage { Name = "G\u00F3i VIP 1 N\u0103m", DurationInMonths = 12, DurationDays = 365, Price = 4500000, IsActive = true, CreatedAt = now }
+                    new MembershipPackage { Name = "G\u00F3i Standard 1 Th\u00E1ng", DurationInMonths = 1, DurationInDays = 30, Price = 500000, IsActive = true, CreatedAt = now },
+                    new MembershipPackage { Name = "G\u00F3i Premium 6 Th\u00E1ng", DurationInMonths = 6, DurationInDays = 180, Price = 2500000, IsActive = true, CreatedAt = now },
+                    new MembershipPackage { Name = "G\u00F3i VIP 1 N\u0103m", DurationInMonths = 12, DurationInDays = 365, Price = 4500000, IsActive = true, CreatedAt = now }
                 });
                 await context.SaveChangesAsync();
             }
 
             // 3. Members & Subscriptions & Payments
-            if (await context.Invoices.CountAsync() < 10)
+            var lastMonthInvoices = await context.Invoices.CountAsync(i => i.CreatedAt >= today.AddDays(-30));
+            // Demo data seeding has been disabled due to MemberCode unique constraint conflicts
+            if (false)
             {
                 var packages = await context.MembershipPackages.ToListAsync();
                 var random = new Random();
 
-                for (int i = 1; i <= 20; i++)
+                for (int i = 1; i <= 100; i++)
                 {
-                    var joinedDate = today.AddDays(-random.Next(1, 60));
+                    var joinedDate = today.AddDays(-random.Next(1, 180));
                     var member = new Member
                     {
                         FullName = $"Th\u00E0nh vi\u00EAn Demo {i}",
@@ -71,7 +73,7 @@ public static class DataSeeder
                         MemberId = member.Id,
                         PackageId = pkg.Id,
                         StartDate = joinedDate,
-                        EndDate = joinedDate.AddDays(pkg.DurationDays),
+                        EndDate = joinedDate.AddDays(pkg.DurationInDays),
                         OriginalPrice = pkg.Price, // Dng OriginalPrice/FinalPrice
                         FinalPrice = pkg.Price,
                         Status = SubscriptionStatus.Active,
@@ -112,8 +114,23 @@ public static class DataSeeder
                         Quantity = 1,
                         UnitPrice = pkg.Price,
                         SubscriptionId = sub.Id
-                        // Subtotal t tAnh
                     });
+                }
+
+                // 4. POS Orders (Bán lẻ)
+                for (int i = 1; i <= 30; i++)
+                {
+                    var orderDate = today.AddDays(-random.Next(1, 90));
+                    var order = new Order
+                    {
+                        Id = Guid.NewGuid(),
+                        OrderNumber = $"POS-{orderDate:yyyyMMdd}-{i:D3}",
+                        TotalAmount = random.Next(50000, 500000),
+                        CreatedDate = orderDate,
+                        Status = "Completed",
+                        IsDeleted = false
+                    };
+                    context.Orders.Add(order);
                 }
                 
                 await context.SaveChangesAsync();

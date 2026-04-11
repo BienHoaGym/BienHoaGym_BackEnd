@@ -72,6 +72,42 @@ public class ProductService : IProductService
 
         await _unitOfWork.Products.AddAsync(product);
         await _unitOfWork.SaveChangesAsync();
+
+        // THÊM: Nếu có số lượng nhập ban đầu và kho nhập, tạo giao dịch nhập kho
+        // Điều này giúp ghi nhận vào Lịch sử giao dịch của Nhà cung cấp (Tư duy tương tự Equipment)
+        if (dto.InitialQuantity > 0 && dto.WarehouseId.HasValue)
+        {
+            var inventory = new Inventory
+            {
+                ProductId = product.Id,
+                WarehouseId = dto.WarehouseId.Value,
+                Quantity = dto.InitialQuantity,
+                LastUpdated = DateTime.UtcNow
+            };
+            await _unitOfWork.Inventories.AddAsync(inventory);
+
+            // Cập nhật tổng tồn kho cho Product
+            product.StockQuantity = dto.InitialQuantity;
+
+            var transaction = new StockTransaction
+            {
+                ProductId = product.Id,
+                ToWarehouseId = dto.WarehouseId.Value,
+                Type = StockTransactionType.Import,
+                Quantity = dto.InitialQuantity,
+                UnitPrice = dto.CostPrice,
+                BeforeQuantity = 0,
+                AfterQuantity = dto.InitialQuantity,
+                Date = DateTime.UtcNow,
+                Note = $"Nhập kho ban đầu khi tạo sản phẩm: {product.Name}",
+                ProviderId = dto.ProviderId, // Liên kết quan trọng để hiện trong Tab Nhà cung cấp
+                PerformedBy = "Quản lý sản phẩm"
+            };
+            await _unitOfWork.StockTransactions.AddAsync(transaction);
+            
+            _unitOfWork.Products.Update(product);
+            await _unitOfWork.SaveChangesAsync();
+        }
         
         return ResponseDto<ProductDto>.SuccessResult(_mapper.Map<ProductDto>(product), "Thêm sản phẩm thành công");
     }

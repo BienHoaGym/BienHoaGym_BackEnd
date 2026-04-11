@@ -12,6 +12,7 @@ public interface IUserService
     Task<ResponseDto<bool>> SetUserRolesAsync(Guid userId, List<int> roleIds);
     Task<ResponseDto<bool>> UpdateStaffAsync(Guid userId, UpdateStaffDto dto);
     Task<ResponseDto<Guid>> CreateStaffAsync(CreateStaffDto dto);
+    Task<ResponseDto<bool>> ResetPasswordAsync(Guid userId, string newPassword);
 }
 
 public class UserListDto
