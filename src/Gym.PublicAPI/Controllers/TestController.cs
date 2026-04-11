@@ -1,11 +1,11 @@
-using Gym.Infrastructure.Data;
+Ôªøusing Gym.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Gym.PublicAPI.Controllers;
 
 /// <summary>
-/// Test Controller - Ki?m tra database connection v‡ h? th?ng
+/// Test Controller - Ki?m tra database connection v√† h? th?ng
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
@@ -148,16 +148,16 @@ public class TestController : ControllerBase
     {
         try
         {
-            // S?a l?i ? d‚y: S? d?ng d˙ng tÍn thu?c tÌnh m?i trong Entity MembershipPackage
+            // S?a l?i ? d√¢y: S? d?ng d√∫ng t√™n thu?c t√≠nh m?i trong Entity MembershipPackage
             var packages = await _context.MembershipPackages
                 .Where(p => !p.IsDeleted && p.IsActive)
                 .OrderBy(p => p.Price)
                 .Select(p => new
                 {
                     p.Id,
-                    p.Name,              // –„ s?a t? PackageName -> Name
+                    p.Name,              // √ê√£ s?a t? PackageName -> Name
                     p.Description,
-                    p.DurationDays,    // –„ s?a t? DurationDays -> DurationDays
+                    p.DurationInDays,    // √ê√£ s?a t? DurationDays -> DurationDays
                     p.Price,
                     p.DiscountPrice,
                     p.SessionLimit

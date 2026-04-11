@@ -30,12 +30,13 @@ public class DbFixController : ControllerBase
                 try
                 {
                     // Chạy SQL thô để thêm cột nếu chưa tồn tại
+                    #pragma warning disable EF1002
                     await _context.Database.ExecuteSqlRawAsync($"ALTER TABLE Members ADD COLUMN {col} TEXT;");
+                    #pragma warning restore EF1002
                 }
-                catch (System.Exception ex)
+                catch
                 {
                     // Nếu cột đã tồn tại, SQLite sẽ ném lỗi - chúng ta bỏ qua
-                    // Console.WriteLine($"Cột {col} có thể đã tồn tại: {ex.Message}");
                 }
             }
 
