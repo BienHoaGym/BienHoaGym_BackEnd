@@ -261,6 +261,9 @@ using (var scope = app.Services.CreateScope())
                         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='InvoiceDetails' AND column_name='SubscriptionId') THEN
                             ALTER TABLE ""InvoiceDetails"" ADD COLUMN ""SubscriptionId"" uuid;
                         END IF;
+                        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='MembershipPackages' AND column_name='DurationDays') THEN
+                            ALTER TABLE ""MembershipPackages"" RENAME COLUMN ""DurationDays"" TO ""DurationInDays"";
+                        END IF;
                     END $$;");
             } catch { }
         }
