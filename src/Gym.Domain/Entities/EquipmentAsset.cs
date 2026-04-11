@@ -67,6 +67,10 @@ public class EquipmentTransaction : BaseEntity
     public string? FromLocation { get; set; }
     public string? ToLocation { get; set; }
     public string? CreatedBy { get; set; }
+    public decimal TotalAmount { get; set; }
+    public decimal PaidAmount { get; set; }
+    public Guid? ProviderId { get; set; }
+    public virtual Provider? Provider { get; set; }
 }
 
 /// <summary>

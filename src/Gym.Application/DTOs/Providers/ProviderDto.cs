@@ -53,8 +53,24 @@ public class ProviderTransactionHistoryDto
 {
     public Guid Id { get; set; }
     public string TransactionCode { get; set; } = string.Empty;
-    public string Type { get; set; } = string.Empty; // Purchase, Maintenance, Contract
+    public string Type { get; set; } = string.Empty; 
     public DateTime Date { get; set; }
+    public string? Note { get; set; } // Nội dung
     public decimal TotalAmount { get; set; }
+    public decimal PaidAmount { get; set; } // Đã trả
+    public decimal DebtAmount => TotalAmount - PaidAmount; // Còn nợ
     public string Status { get; set; } = string.Empty;
+}
+
+public class CreateProviderPaymentDto
+{
+    public Guid ProviderId { get; set; }
+    public decimal Amount { get; set; }
+    public string PaymentMethod { get; set; } = "Tiền mặt";
+    public string? Note { get; set; }
+    public string? ReferenceNumber { get; set; }
+    
+    // Đích danh phiếu (nếu có)
+    public Guid? StockTransactionId { get; set; }
+    public Guid? EquipmentTransactionId { get; set; }
 }

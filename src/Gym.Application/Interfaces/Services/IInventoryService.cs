@@ -31,4 +31,13 @@ public interface IInventoryService
 
     // Alerts
     Task<ResponseDto<List<InventoryDto>>> GetStockAlertsAsync();
+
+    // 🕵️ Stock Audit (Kiểm kê)
+    Task<ResponseDto<StockAudit>> CreateStockAuditAsync(Guid warehouseId, string? note);
+    Task<ResponseDto<bool>> UpdateAuditDetailAsync(Guid auditId, Guid productId, int actualQuantity, string? reason);
+    Task<ResponseDto<bool>> ApproveStockAuditAsync(Guid auditId);
+    Task<ResponseDto<List<StockAudit>>> GetStockAuditsAsync();
+
+    // 📈 Advanced Reports
+    Task<ResponseDto<object>> GetStockTurnoverReportAsync();
 }

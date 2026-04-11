@@ -13,4 +13,5 @@ public interface IProviderService
     Task<ResponseDto<List<ProviderTransactionHistoryDto>>> GetTransactionHistoryAsync(Guid providerId);
     Task<ResponseDto<List<Gym.Application.DTOs.Billing.ProductDto>>> GetProductsAsync(Guid providerId);
     Task<ResponseDto<List<Gym.Application.DTOs.Equipment.EquipmentDto>>> GetEquipmentsAsync(Guid providerId);
+    Task<ResponseDto<bool>> PayDebtAsync(CreateProviderPaymentDto dto);
 }

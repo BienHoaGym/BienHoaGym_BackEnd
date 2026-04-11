@@ -23,6 +23,8 @@ public interface IUnitOfWork : IDisposable
     IGenericRepository<Warehouse> Warehouses { get; }
     IGenericRepository<Inventory> Inventories { get; }
     IGenericRepository<StockTransaction> StockTransactions { get; }
+    IGenericRepository<StockAudit> StockAudits { get; }
+    IGenericRepository<StockAuditDetail> StockAuditDetails { get; }
     IGenericRepository<Order> Orders { get; }
     IGenericRepository<OrderDetail> OrderDetails { get; }
 
@@ -35,6 +37,7 @@ public interface IUnitOfWork : IDisposable
     IGenericRepository<Provider> Providers { get; }
     IGenericRepository<IncidentLog> IncidentLogs { get; }
     IGenericRepository<EquipmentProviderHistory> EquipmentProviderHistories { get; }
+    IGenericRepository<ProviderPayment> ProviderPayments { get; }
 
     IGenericRepository<AuditLog> AuditLogs { get; }
 

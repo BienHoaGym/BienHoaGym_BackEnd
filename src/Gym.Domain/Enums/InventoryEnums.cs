@@ -48,6 +48,7 @@ public enum EquipmentPriority
 public enum ProductType
 {
     Service = 1,      // Gói tập / Dịch vụ PT (Không tồn kho)
-    Supply = 2,       // Vật tư vận hành (Khăn, xà bông...) - Quản lý tồn kho
-    Retail = 3        // Hàng bán lẻ (Nước, Whey...) - Quản lý tồn kho đơn giản
+    Supply = 2,       // Vật tư vận hành (Dung dịch vệ sinh, vật tư bảo trì)
+    Retail = 3,       // Hàng bán lẻ POS (Bình nước, găng tay, thực phẩm bổ sung)
+    Consumable = 4    // Hàng tiêu hao nội bộ (Nước suối, khăn giấy cho hội viên)
 }

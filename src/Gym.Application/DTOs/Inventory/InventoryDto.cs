@@ -62,8 +62,20 @@ public class CreateStockTransactionDto
     public StockTransactionType Type { get; set; }
     public int Quantity { get; set; }
     public decimal UnitPrice { get; set; }
+    public decimal VatPercentage { get; set; } // Thuế VAT (%)
+    public decimal PaidAmount { get; set; } // Số tiền thanh toán ngay
+    public string? PaymentMethod { get; set; } // Tiền mặt/Chuyển khoản
+    public DateTime? PaymentDueDate { get; set; } // Hạn thanh toán nợ
     public string? Note { get; set; }
     public string? ReferenceNumber { get; set; }
     public Guid? ProviderId { get; set; }
     public bool IsAsset { get; set; } // Phân biệt Hàng hóa vs Thiết bị
+    public DateTime? ExpiryDate { get; set; } // Hạn sử dụng (Hàng hóa)
+    public DateTime? TransactionDate { get; set; } // Ngày nhập thực tế
+    public string? AttachmentUrl { get; set; } // Ảnh chụp chứng từ
+    
+    // Trường cho thiết bị
+    public string? SerialNumber { get; set; }
+    public DateTime? WarrantyExpiryDate { get; set; }
+    public int? MaintenanceIntervalDays { get; set; }
 }

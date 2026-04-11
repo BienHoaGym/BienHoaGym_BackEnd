@@ -246,6 +246,15 @@ public class InventoryService : IInventoryService
                 int before = equipment.Quantity;
                 equipment.Quantity += (int)dto.Quantity;
                 equipment.Status = EquipmentStatus.Active;
+                
+                // Update equipment details from import
+                if (!string.IsNullOrEmpty(dto.SerialNumber)) equipment.SerialNumber = dto.SerialNumber;
+                if (dto.WarrantyExpiryDate.HasValue) equipment.WarrantyExpiryDate = dto.WarrantyExpiryDate;
+                if (dto.MaintenanceIntervalDays.HasValue) equipment.MaintenanceIntervalDays = dto.MaintenanceIntervalDays.Value;
+
+                decimal baseValueEquip = (decimal)dto.Quantity * dto.UnitPrice;
+                decimal vatAmountEquip = baseValueEquip * (dto.VatPercentage / 100);
+                decimal totalValueEquip = baseValueEquip + vatAmountEquip;
 
                 var equipTrans = new EquipmentTransaction
                 {
@@ -254,22 +263,44 @@ public class InventoryService : IInventoryService
                     Quantity = (int)dto.Quantity,
                     BeforeQuantity = before,
                     AfterQuantity = equipment.Quantity,
-                    Date = DateTime.UtcNow,
+                    Date = dto.TransactionDate ?? DateTime.UtcNow,
                     Note = dto.Note ?? $"Nhập kho máy móc/thiết bị qua Quản lý Kho (Số lượng: {dto.Quantity})",
                     ToLocation = equipment.Location,
-                    CreatedBy = userName
+                    CreatedBy = userName,
+                    ProviderId = dto.ProviderId,
+                    TotalAmount = totalValueEquip,
+                    PaidAmount = dto.PaidAmount
                 };
+
+                if (dto.ProviderId.HasValue)
+                {
+                    var provider = await _unitOfWork.Providers.GetByIdAsync(dto.ProviderId.Value);
+                    if (provider != null)
+                    {
+                        decimal newDebt = totalValueEquip - dto.PaidAmount;
+                        provider.TotalDebt += newDebt;
+                        _unitOfWork.Providers.Update(provider);
+                    }
+                }
+
                 await _unitOfWork.EquipmentTransactions.AddAsync(equipTrans);
                 _unitOfWork.Equipments.Update(equipment);
                 await _unitOfWork.SaveChangesAsync();
                 
-                return ResponseDto<bool>.SuccessResult(true, $"Đã nhập kho thêm {dto.Quantity} {equipment.Name}.");
+                string debtMsgEq = (totalValueEquip - dto.PaidAmount) > 0 
+                    ? $". Ghi nợ NCC: {(totalValueEquip - dto.PaidAmount):N0}đ" 
+                    : ". Đã thanh toán đủ.";
+
+                return ResponseDto<bool>.SuccessResult(true, $"Đã nhập kho thêm {dto.Quantity} {equipment.Name}. Tổng: {totalValueEquip:N0}đ{debtMsgEq}");
             }
 
             if (!dto.ToWarehouseId.HasValue) return ResponseDto<bool>.FailureResult("Bắt buộc chọn kho nhập đến");
 
             var product = await _unitOfWork.Products.GetByIdAsync(dto.ProductId);
             if (product == null) return ResponseDto<bool>.FailureResult("Không tìm thấy sản phẩm");
+
+            // Update product generic info
+            if (dto.ExpiryDate.HasValue) product.ExpirationDate = dto.ExpiryDate;
 
             decimal oldTotalStock = product.StockQuantity;
             decimal oldCostPrice = product.CostPrice;
@@ -285,6 +316,7 @@ public class InventoryService : IInventoryService
             decimal totalNewStock = oldTotalStock + incomingQuantity;
             if (totalNewStock > 0)
             {
+                // Note: Average cost is usually calculated on base price (excluding VAT)
                 decimal totalValueBefore = oldTotalStock * oldCostPrice;
                 decimal incomingValue = incomingQuantity * incomingPrice;
                 product.CostPrice = (totalValueBefore + incomingValue) / totalNewStock;
@@ -302,11 +334,36 @@ public class InventoryService : IInventoryService
             var transaction = _mapper.Map<StockTransaction>(dto);
             transaction.CheckId(); 
             transaction.Type = StockTransactionType.Import;
-            transaction.Date = DateTime.UtcNow;
+            transaction.Date = dto.TransactionDate ?? DateTime.UtcNow; // Actual entry date
             transaction.BeforeQuantity = beforeProd;
             transaction.AfterQuantity = inventory.Quantity;
             transaction.PerformedBy = userName;
             transaction.UnitPrice = incomingPrice;
+            transaction.VatPercentage = dto.VatPercentage;
+            transaction.AttachmentUrl = dto.AttachmentUrl;
+            transaction.ExpiryDate = dto.ExpiryDate;
+            transaction.ProviderId = dto.ProviderId;
+
+            // Calculate Total and Update Debt
+            decimal baseValue = incomingQuantity * incomingPrice;
+            decimal vatAmount = baseValue * (dto.VatPercentage / 100);
+            decimal totalValue = baseValue + vatAmount;
+            
+            transaction.TotalAmount = totalValue;
+            transaction.PaidAmount = dto.PaidAmount;
+            transaction.PaymentMethod = dto.PaymentMethod;
+            transaction.PaymentDueDate = dto.PaymentDueDate;
+
+            if (dto.ProviderId.HasValue)
+            {
+                var provider = await _unitOfWork.Providers.GetByIdAsync(dto.ProviderId.Value);
+                if (provider != null)
+                {
+                    decimal newDebt = totalValue - dto.PaidAmount;
+                    provider.TotalDebt += newDebt;
+                    _unitOfWork.Providers.Update(provider);
+                }
+            }
             
             await _unitOfWork.StockTransactions.AddAsync(transaction);
             _unitOfWork.Products.Update(product);
@@ -315,7 +372,11 @@ public class InventoryService : IInventoryService
             await UpdateProductGlobalStock(dto.ProductId);
             await _unitOfWork.SaveChangesAsync();
 
-            return ResponseDto<bool>.SuccessResult(true, $"Đã nhập kho {dto.Quantity} sản phẩm. Giá nhập: {incomingPrice:N0}đ. Giá bình quân mới: {product.CostPrice:N0}đ");
+            string debtMsg = (totalValue - dto.PaidAmount) > 0 
+                ? $". Ghi nợ NCC: {(totalValue - dto.PaidAmount):N0}đ" 
+                : ". Đã thanh toán đủ.";
+
+            return ResponseDto<bool>.SuccessResult(true, $"Đã nhập kho {dto.Quantity} sản phẩm. Tổng: {totalValue:N0}đ{debtMsg}");
         }
         catch (Exception ex)
         {
@@ -648,6 +709,134 @@ public class InventoryService : IInventoryService
         }
             
         return ResponseDto<List<InventoryDto>>.SuccessResult(result);
+    }
+
+    // 🕵️ Stock Audit (Kiểm kê)
+    public async Task<ResponseDto<StockAudit>> CreateStockAuditAsync(Guid warehouseId, string? note)
+    {
+        var userName = _httpContextAccessor.HttpContext?.User?.Identity?.Name ?? "Hệ thống";
+        var audit = new StockAudit
+        {
+            WarehouseId = warehouseId,
+            AuditDate = DateTime.UtcNow,
+            PerformedBy = userName,
+            Status = StockAuditStatus.Draft,
+            Note = note
+        };
+
+        var currentStocks = await _unitOfWork.Inventories.GetQueryable()
+            .Where(i => i.WarehouseId == warehouseId && !i.IsDeleted)
+            .ToListAsync();
+
+        foreach (var stock in currentStocks)
+        {
+            audit.Details.Add(new StockAuditDetail
+            {
+                ProductId = stock.ProductId,
+                SystemQuantity = stock.Quantity,
+                ActualQuantity = stock.Quantity, // Mặc định bằng hệ thống để user sửa sau
+            });
+        }
+
+        await _unitOfWork.StockAudits.AddAsync(audit);
+        await _unitOfWork.SaveChangesAsync();
+
+        return ResponseDto<StockAudit>.SuccessResult(audit, "Đã khởi tạo phiếu kiểm kê.");
+    }
+
+    public async Task<ResponseDto<bool>> UpdateAuditDetailAsync(Guid auditId, Guid productId, int actualQuantity, string? reason)
+    {
+        var detail = await _unitOfWork.StockAuditDetails.GetQueryable()
+            .FirstOrDefaultAsync(d => d.StockAuditId == auditId && d.ProductId == productId);
+
+        if (detail == null) return ResponseDto<bool>.FailureResult("Không tìm thấy chi tiết kiểm kê.");
+
+        detail.ActualQuantity = actualQuantity;
+        detail.Reason = reason;
+
+        await _unitOfWork.SaveChangesAsync();
+        return ResponseDto<bool>.SuccessResult(true, "Đã cập nhật số lượng kiểm kê thực tế.");
+    }
+
+    public async Task<ResponseDto<bool>> ApproveStockAuditAsync(Guid auditId)
+    {
+        var audit = await _unitOfWork.StockAudits.GetQueryable()
+            .Include(a => a.Details)
+            .FirstOrDefaultAsync(a => a.Id == auditId);
+
+        if (audit == null) return ResponseDto<bool>.FailureResult("Không tìm thấy phiếu kiểm kê.");
+        if (audit.Status != StockAuditStatus.Draft) return ResponseDto<bool>.FailureResult("Phiếu này đã được duyệt hoặc hủy.");
+
+        var warehouse = await _unitOfWork.Warehouses.GetByIdAsync(audit.WarehouseId);
+        var userName = _httpContextAccessor.HttpContext?.User?.Identity?.Name ?? "Hệ thống";
+
+        foreach (var detail in audit.Details)
+        {
+            if (detail.Difference != 0)
+            {
+                var inventory = await GetOrCreateInventory(detail.ProductId, audit.WarehouseId);
+                int before = inventory.Quantity;
+                inventory.Quantity = detail.ActualQuantity;
+                inventory.LastUpdated = DateTime.UtcNow;
+
+                var transaction = new StockTransaction
+                {
+                    ProductId = detail.ProductId,
+                    ToWarehouseId = audit.WarehouseId,
+                    Type = StockTransactionType.Adjustment,
+                    Quantity = Math.Abs(detail.Difference),
+                    BeforeQuantity = before,
+                    AfterQuantity = inventory.Quantity,
+                    Note = $"Kết quả kiểm kê ngày {audit.AuditDate:dd/MM} - Lý do: {detail.Reason}",
+                    PerformedBy = userName,
+                    Date = DateTime.UtcNow
+                };
+                await _unitOfWork.StockTransactions.AddAsync(transaction);
+                await UpdateProductGlobalStock(detail.ProductId);
+            }
+        }
+
+        audit.Status = StockAuditStatus.Approved;
+        audit.ApprovedBy = userName;
+        await _unitOfWork.SaveChangesAsync();
+
+        return ResponseDto<bool>.SuccessResult(true, "Đã duyệt phiếu và cập nhật tồn kho thực tế.");
+    }
+
+    public async Task<ResponseDto<List<StockAudit>>> GetStockAuditsAsync()
+    {
+        var audits = await _unitOfWork.StockAudits.GetQueryable()
+            .Include(a => a.Warehouse)
+            .Include(a => a.Details).ThenInclude(d => d.Product)
+            .OrderByDescending(a => a.AuditDate)
+            .ToListAsync();
+        return ResponseDto<List<StockAudit>>.SuccessResult(audits);
+    }
+
+    public async Task<ResponseDto<object>> GetStockTurnoverReportAsync()
+    {
+        // Phân tích quay vòng kho và Dead stock (30/60/90 ngày)
+        var products = await _unitOfWork.Products.GetQueryable()
+            .Where(p => p.TrackInventory && !p.IsDeleted)
+            .ToListAsync();
+
+        var ninetyDaysAgo = DateTime.UtcNow.AddDays(-90);
+        
+        var report = products.Select(p => new {
+            p.Name,
+            p.SKU,
+            CurrentStock = p.StockQuantity,
+            p.CostPrice,
+            StockValue = p.StockQuantity * p.CostPrice,
+            LastTransactionDate = _unitOfWork.StockTransactions.GetQueryable()
+                .Where(t => t.ProductId == p.Id)
+                .OrderByDescending(t => t.Date)
+                .Select(t => t.Date)
+                .FirstOrDefault(),
+            IsDeadStock = p.UpdatedAt < ninetyDaysAgo
+        }).OrderByDescending(x => x.StockValue).ToList();
+
+        return ResponseDto<object>.SuccessResult(report);
     }
 
     // Helpers

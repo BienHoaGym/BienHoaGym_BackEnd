@@ -46,6 +46,8 @@ public class GymDbContext : DbContext
     public DbSet<Warehouse> Warehouses => Set<Warehouse>();
     public DbSet<Inventory> Inventories => Set<Inventory>();
     public DbSet<StockTransaction> StockTransactions => Set<StockTransaction>();
+    public DbSet<StockAudit> StockAudits => Set<StockAudit>();
+    public DbSet<StockAuditDetail> StockAuditDetails => Set<StockAuditDetail>();
     
     // Orders (Sản phẩm)
     public DbSet<Order> Orders => Set<Order>();
@@ -64,6 +66,7 @@ public class GymDbContext : DbContext
     public DbSet<IncidentLog> IncidentLogs => Set<IncidentLog>();
     public DbSet<EquipmentProviderHistory> EquipmentProviderHistories => Set<EquipmentProviderHistory>();
     public DbSet<MaintenanceMaterial> MaintenanceMaterials => Set<MaintenanceMaterial>();
+    public DbSet<ProviderPayment> ProviderPayments => Set<ProviderPayment>();
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -95,6 +98,8 @@ public class GymDbContext : DbContext
         modelBuilder.Entity<Warehouse>().ToTable("Warehouses");
         modelBuilder.Entity<Inventory>().ToTable("Inventories");
         modelBuilder.Entity<StockTransaction>().ToTable("StockTransactions");
+        modelBuilder.Entity<StockAudit>().ToTable("StockAudits");
+        modelBuilder.Entity<StockAuditDetail>().ToTable("StockAuditDetails");
         
         modelBuilder.Entity<Order>().ToTable("Orders");
         modelBuilder.Entity<OrderDetail>().ToTable("OrderDetails");
@@ -108,6 +113,7 @@ public class GymDbContext : DbContext
         modelBuilder.Entity<IncidentLog>().ToTable("IncidentLogs");
         modelBuilder.Entity<EquipmentProviderHistory>().ToTable("EquipmentProviderHistories");
         modelBuilder.Entity<AuditLog>().ToTable("AuditLogs");
+        modelBuilder.Entity<ProviderPayment>().ToTable("ProviderPayments");
 
         modelBuilder.Entity<UserRole>().HasKey(ur => new { ur.UserId, ur.RoleId });
         modelBuilder.Entity<UserRole>()
@@ -199,6 +205,7 @@ public class GymDbContext : DbContext
         ConfigureClassRelationships(modelBuilder);
         ConfigureAssignmentRelationships(modelBuilder);
         ConfigureEquipmentRelationships(modelBuilder); // Tách riêng equipment
+        ConfigureInventoryRelationships(modelBuilder); 
         ConfigureIndexes(modelBuilder);
         ConfigureEnums(modelBuilder);
         ConfigureDecimalPrecision(modelBuilder);
@@ -251,6 +258,47 @@ public class GymDbContext : DbContext
                 .HasForeignKey(m => m.ProductId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
+
+        modelBuilder.Entity<ProviderPayment>(entity =>
+        {
+            entity.Property(p => p.Amount).HasPrecision(18, 2);
+            
+            entity.HasOne(p => p.Provider)
+                .WithMany()
+                .HasForeignKey(p => p.ProviderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(p => p.StockTransaction)
+                .WithMany()
+                .HasForeignKey(p => p.StockTransactionId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(p => p.EquipmentTransaction)
+                .WithMany()
+                .HasForeignKey(p => p.EquipmentTransactionId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+    }
+
+    private static void ConfigureInventoryRelationships(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<StockAudit>()
+            .HasOne(a => a.Warehouse)
+            .WithMany()
+            .HasForeignKey(a => a.WarehouseId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<StockAuditDetail>()
+            .HasOne(d => d.StockAudit)
+            .WithMany(a => a.Details)
+            .HasForeignKey(d => d.StockAuditId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<StockAuditDetail>()
+            .HasOne(d => d.Product)
+            .WithMany()
+            .HasForeignKey(d => d.ProductId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 
     // Đã chuyển các hàm cấu hình thành static theo khuyến nghị của IDE để tối ưu bộ nhớ

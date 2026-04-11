@@ -3,6 +3,7 @@ using System;
 using Gym.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Gym.Infrastructure.Migrations
 {
     [DbContext(typeof(GymDbContext))]
-    partial class GymDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260411124913_AddInventoryAudit")]
+    partial class AddInventoryAudit
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.0");
@@ -614,19 +617,10 @@ namespace Gym.Infrastructure.Migrations
                     b.Property<string>("Note")
                         .HasColumnType("TEXT");
 
-                    b.Property<decimal>("PaidAmount")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid?>("ProviderId")
-                        .HasColumnType("TEXT");
-
                     b.Property<int>("Quantity")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("ToLocation")
-                        .HasColumnType("TEXT");
-
-                    b.Property<decimal>("TotalAmount")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Type")
@@ -638,8 +632,6 @@ namespace Gym.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("EquipmentId");
-
-                    b.HasIndex("ProviderId");
 
                     b.ToTable("EquipmentTransactions", (string)null);
                 });
@@ -1595,9 +1587,6 @@ namespace Gym.Infrastructure.Migrations
                     b.Property<string>("TaxCode")
                         .HasColumnType("TEXT");
 
-                    b.Property<decimal>("TotalDebt")
-                        .HasColumnType("TEXT");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("TEXT");
 
@@ -1617,64 +1606,8 @@ namespace Gym.Infrastructure.Migrations
                             IsDeleted = false,
                             Name = "Công ty Thiết bị Gym Toàn Cầu",
                             PhoneNumber = "02838445566",
-                            TaxCode = "0314567890",
-                            TotalDebt = 0m
+                            TaxCode = "0314567890"
                         });
-                });
-
-            modelBuilder.Entity("Gym.Domain.Entities.ProviderPayment", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<decimal>("Amount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid?>("EquipmentTransactionId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Note")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("PaymentMethod")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("PerformedBy")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("ProviderId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ReferenceNumber")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid?>("StockTransactionId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EquipmentTransactionId");
-
-                    b.HasIndex("ProviderId");
-
-                    b.HasIndex("StockTransactionId");
-
-                    b.ToTable("ProviderPayments", (string)null);
                 });
 
             modelBuilder.Entity("Gym.Domain.Entities.Role", b =>
@@ -1839,9 +1772,6 @@ namespace Gym.Infrastructure.Migrations
                     b.Property<int>("AfterQuantity")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("AttachmentUrl")
-                        .HasColumnType("TEXT");
-
                     b.Property<int>("BeforeQuantity")
                         .HasColumnType("INTEGER");
 
@@ -1851,9 +1781,6 @@ namespace Gym.Infrastructure.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime?>("ExpiryDate")
-                        .HasColumnType("TEXT");
-
                     b.Property<Guid?>("FromWarehouseId")
                         .HasColumnType("TEXT");
 
@@ -1861,15 +1788,6 @@ namespace Gym.Infrastructure.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Note")
-                        .HasColumnType("TEXT");
-
-                    b.Property<decimal>("PaidAmount")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("PaymentDueDate")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("PaymentMethod")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("PerformedBy")
@@ -1890,9 +1808,6 @@ namespace Gym.Infrastructure.Migrations
                     b.Property<Guid?>("ToWarehouseId")
                         .HasColumnType("TEXT");
 
-                    b.Property<decimal>("TotalAmount")
-                        .HasColumnType("TEXT");
-
                     b.Property<int>("Type")
                         .HasColumnType("INTEGER");
 
@@ -1901,9 +1816,6 @@ namespace Gym.Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<decimal>("VatPercentage")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -2145,7 +2057,7 @@ namespace Gym.Infrastructure.Migrations
                             Email = "admin@gym.com",
                             FullName = "System Administrator",
                             IsActive = true,
-                            PasswordHash = "AQAAAAIAAYagAAAAEGSwZJgw10drI4sODnH89nmsxn2woMXj7HHOGIvUqZh6SBzUJVjQwRnc+XyxJMVUAw==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEGibpqmv8S+qNSq5G1xPEdgTb3A0nstYGTSqWpj3hWMsk04mDFitpAsuryCktaF4Hw==",
                             PhoneNumber = "0901234567",
                             Username = "admin"
                         },
@@ -2156,7 +2068,7 @@ namespace Gym.Infrastructure.Migrations
                             Email = "manager@gym.com",
                             FullName = "Nguyễn Văn Manager",
                             IsActive = true,
-                            PasswordHash = "AQAAAAIAAYagAAAAEHYhyY3Kp9WeFkQ5uJaopu4fumeQOSGmEW9QcWRYarDIOWAwYFsTchI4f3YxflM2Sw==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEOgfBTl1cd8eyASKN/muJ1hsa0Vik+EoXA8HvXwKe3EbOdsG73kil0xU3wEu/4BUrA==",
                             PhoneNumber = "0902345678",
                             Username = "manager"
                         },
@@ -2167,7 +2079,7 @@ namespace Gym.Infrastructure.Migrations
                             Email = "trainer1@gym.com",
                             FullName = "Trần Thị Hương",
                             IsActive = true,
-                            PasswordHash = "AQAAAAIAAYagAAAAEFLt8f5LevhnGZ3e6Lo2/FEj4f4oDNGvXW+2aSgBNx0PEoC8PQ9oOiD5MAu90WSIaQ==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEGTiUOWBf+GG37GP+DS+hIjA6Vs5N+joJXo3aniXwtiE9+i1CPy1pU6oRleokWQwVw==",
                             PhoneNumber = "0903456789",
                             Username = "trainer1"
                         },
@@ -2178,7 +2090,7 @@ namespace Gym.Infrastructure.Migrations
                             Email = "trainer2@gym.com",
                             FullName = "Lê Văn Nam",
                             IsActive = true,
-                            PasswordHash = "AQAAAAIAAYagAAAAEIvPSX46TX6ziPN8r3aVGJY0S9uTFNNE2Le5g/Vw+dnBCp2Ce8L2YJc+/lR5Wj3rWQ==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEP4SMdMaetH8Js9G+Gpj3qBsK4dIxZsWYVUOeuFd8u9RlOhtdkahfF5haHNdd45Kcg==",
                             PhoneNumber = "0904567890",
                             Username = "trainer2"
                         },
@@ -2189,7 +2101,7 @@ namespace Gym.Infrastructure.Migrations
                             Email = "receptionist@gym.com",
                             FullName = "Phạm Thị Lan",
                             IsActive = true,
-                            PasswordHash = "AQAAAAIAAYagAAAAEAevRG1Jv5MhY4QknDAsyIScaI70/PmBKcC4USISjjCfIxdmSHgpOZ0G4+2olsB4xQ==",
+                            PasswordHash = "AQAAAAIAAYagAAAAENzBZOQ1K3IMxJmwYC033s2I+hKFi6SQbEo4IkBozxJKnyHsVRno3MgFd8RUuxIRww==",
                             PhoneNumber = "0905678901",
                             Username = "receptionist"
                         },
@@ -2200,7 +2112,7 @@ namespace Gym.Infrastructure.Migrations
                             Email = "levanc@gym.com",
                             FullName = "Lê Văn C",
                             IsActive = true,
-                            PasswordHash = "AQAAAAIAAYagAAAAEL/N1T3/kHRhtfal7BfZC/de1Io3W236v12AKc7SspUb7YUXjiaAES66tICqXN9tfg==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEJYQ9i3Ock0UxwllwOKz5EoY+es5C/Zqj/m7kyzRpB+FjYxaiCqtOxSRrkLHYvkcLQ==",
                             PhoneNumber = "0909999999",
                             Username = "levanc"
                         },
@@ -2211,7 +2123,7 @@ namespace Gym.Infrastructure.Migrations
                             Email = "nguyenvana@gmail.com",
                             FullName = "Nguyễn Văn A",
                             IsActive = true,
-                            PasswordHash = "AQAAAAIAAYagAAAAEERT5UKGfPgeoWF8ULPkTjKFWKUvJB1z1uGmNtTXgWHOj4toT/J81t3eG1HOy3Wm4A==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEJaK2/QqrCeU0MPacGML3GCEN47kbykItZFPaBju1nsY/B3MFUMkCh71P5DAF9og5Q==",
                             PhoneNumber = "0906789012",
                             Username = "member001"
                         },
@@ -2222,7 +2134,7 @@ namespace Gym.Infrastructure.Migrations
                             Email = "tranthib@gmail.com",
                             FullName = "Trần Thị B",
                             IsActive = true,
-                            PasswordHash = "AQAAAAIAAYagAAAAEJ/xGu7DBptNjb9S7PL9Gc8FU0Lp/9UkREHgLuZRPXtfcnybl50c55iwefpZMXzQlg==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEEV5k2RinkhPaF38r6rduTtj7hNl7awOPmbIavZAUfwC4iwwKdEr0fXBOx7as5LlLw==",
                             PhoneNumber = "0907890123",
                             Username = "member002"
                         },
@@ -2233,7 +2145,7 @@ namespace Gym.Infrastructure.Migrations
                             Email = "levanc_member@gmail.com",
                             FullName = "Lê Văn C (Member)",
                             IsActive = true,
-                            PasswordHash = "AQAAAAIAAYagAAAAEH2Txmu6UkFBfIS5gOJSdRlJEBTdGtOGWdOpJjR1tu+dfUgEBfGqSQ3HykKlYLkmhQ==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEIdTzgTIbM9YZwp9M1IVs0XmYsoAXXJA06VimsyA+4RoH3TDjTey+pqSVUHHUJN6DA==",
                             PhoneNumber = "0908901234",
                             Username = "member003"
                         });
@@ -2261,61 +2173,61 @@ namespace Gym.Infrastructure.Migrations
                         {
                             UserId = new Guid("11111111-1111-1111-1111-111111111111"),
                             RoleId = 1,
-                            AssignedAt = new DateTime(2026, 4, 11, 14, 14, 30, 817, DateTimeKind.Utc).AddTicks(5076)
+                            AssignedAt = new DateTime(2026, 4, 11, 12, 49, 9, 497, DateTimeKind.Utc).AddTicks(7745)
                         },
                         new
                         {
                             UserId = new Guid("22222222-2222-2222-2222-222222222222"),
                             RoleId = 2,
-                            AssignedAt = new DateTime(2026, 4, 11, 14, 14, 30, 817, DateTimeKind.Utc).AddTicks(5082)
+                            AssignedAt = new DateTime(2026, 4, 11, 12, 49, 9, 497, DateTimeKind.Utc).AddTicks(7752)
                         },
                         new
                         {
                             UserId = new Guid("33333333-3333-3333-3333-333333333333"),
                             RoleId = 3,
-                            AssignedAt = new DateTime(2026, 4, 11, 14, 14, 30, 817, DateTimeKind.Utc).AddTicks(5083)
+                            AssignedAt = new DateTime(2026, 4, 11, 12, 49, 9, 497, DateTimeKind.Utc).AddTicks(7754)
                         },
                         new
                         {
                             UserId = new Guid("44444444-4444-4444-4444-444444444444"),
                             RoleId = 3,
-                            AssignedAt = new DateTime(2026, 4, 11, 14, 14, 30, 817, DateTimeKind.Utc).AddTicks(5085)
+                            AssignedAt = new DateTime(2026, 4, 11, 12, 49, 9, 497, DateTimeKind.Utc).AddTicks(7755)
                         },
                         new
                         {
                             UserId = new Guid("55555555-5555-5555-5555-555555555555"),
                             RoleId = 4,
-                            AssignedAt = new DateTime(2026, 4, 11, 14, 14, 30, 817, DateTimeKind.Utc).AddTicks(5087)
+                            AssignedAt = new DateTime(2026, 4, 11, 12, 49, 9, 497, DateTimeKind.Utc).AddTicks(7756)
                         },
                         new
                         {
                             UserId = new Guid("99999999-9999-9999-9999-999999999999"),
                             RoleId = 4,
-                            AssignedAt = new DateTime(2026, 4, 11, 14, 14, 30, 817, DateTimeKind.Utc).AddTicks(5088)
+                            AssignedAt = new DateTime(2026, 4, 11, 12, 49, 9, 497, DateTimeKind.Utc).AddTicks(7757)
                         },
                         new
                         {
                             UserId = new Guid("99999999-9999-9999-9999-999999999999"),
                             RoleId = 3,
-                            AssignedAt = new DateTime(2026, 4, 11, 14, 14, 30, 817, DateTimeKind.Utc).AddTicks(5090)
+                            AssignedAt = new DateTime(2026, 4, 11, 12, 49, 9, 497, DateTimeKind.Utc).AddTicks(7758)
                         },
                         new
                         {
                             UserId = new Guid("66666666-6666-6666-6666-666666666666"),
                             RoleId = 5,
-                            AssignedAt = new DateTime(2026, 4, 11, 14, 14, 30, 817, DateTimeKind.Utc).AddTicks(5091)
+                            AssignedAt = new DateTime(2026, 4, 11, 12, 49, 9, 497, DateTimeKind.Utc).AddTicks(7759)
                         },
                         new
                         {
                             UserId = new Guid("77777777-7777-7777-7777-777777777777"),
                             RoleId = 5,
-                            AssignedAt = new DateTime(2026, 4, 11, 14, 14, 30, 817, DateTimeKind.Utc).AddTicks(5093)
+                            AssignedAt = new DateTime(2026, 4, 11, 12, 49, 9, 497, DateTimeKind.Utc).AddTicks(7760)
                         },
                         new
                         {
                             UserId = new Guid("88888888-8888-8888-8888-888888888888"),
                             RoleId = 5,
-                            AssignedAt = new DateTime(2026, 4, 11, 14, 14, 30, 817, DateTimeKind.Utc).AddTicks(5109)
+                            AssignedAt = new DateTime(2026, 4, 11, 12, 49, 9, 497, DateTimeKind.Utc).AddTicks(7761)
                         });
                 });
 
@@ -2481,13 +2393,7 @@ namespace Gym.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Gym.Domain.Entities.Provider", "Provider")
-                        .WithMany()
-                        .HasForeignKey("ProviderId");
-
                     b.Navigation("Equipment");
-
-                    b.Navigation("Provider");
                 });
 
             modelBuilder.Entity("Gym.Domain.Entities.IncidentLog", b =>
@@ -2653,31 +2559,6 @@ namespace Gym.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Provider");
-                });
-
-            modelBuilder.Entity("Gym.Domain.Entities.ProviderPayment", b =>
-                {
-                    b.HasOne("Gym.Domain.Entities.EquipmentTransaction", "EquipmentTransaction")
-                        .WithMany()
-                        .HasForeignKey("EquipmentTransactionId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("Gym.Domain.Entities.Provider", "Provider")
-                        .WithMany()
-                        .HasForeignKey("ProviderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Gym.Domain.Entities.StockTransaction", "StockTransaction")
-                        .WithMany()
-                        .HasForeignKey("StockTransactionId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("EquipmentTransaction");
-
-                    b.Navigation("Provider");
-
-                    b.Navigation("StockTransaction");
                 });
 
             modelBuilder.Entity("Gym.Domain.Entities.StockAudit", b =>

@@ -65,6 +65,8 @@ public class UnitOfWork : IUnitOfWork
     public IGenericRepository<Warehouse> Warehouses => new GenericRepository<Warehouse>(_context);
     public IGenericRepository<Inventory> Inventories => new GenericRepository<Inventory>(_context);
     public IGenericRepository<StockTransaction> StockTransactions => new GenericRepository<StockTransaction>(_context);
+    public IGenericRepository<StockAudit> StockAudits => new GenericRepository<StockAudit>(_context);
+    public IGenericRepository<StockAuditDetail> StockAuditDetails => new GenericRepository<StockAuditDetail>(_context);
     public IGenericRepository<Order> Orders => new GenericRepository<Order>(_context);
     public IGenericRepository<OrderDetail> OrderDetails => new GenericRepository<OrderDetail>(_context);
 
@@ -77,6 +79,7 @@ public class UnitOfWork : IUnitOfWork
     public IGenericRepository<Provider> Providers => new GenericRepository<Provider>(_context);
     public IGenericRepository<IncidentLog> IncidentLogs => new GenericRepository<IncidentLog>(_context);
     public IGenericRepository<EquipmentProviderHistory> EquipmentProviderHistories => new GenericRepository<EquipmentProviderHistory>(_context);
+    public IGenericRepository<ProviderPayment> ProviderPayments => new GenericRepository<ProviderPayment>(_context);
 
     public IGenericRepository<AuditLog> AuditLogs => new GenericRepository<AuditLog>(_context);
 

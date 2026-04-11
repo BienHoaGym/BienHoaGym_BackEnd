@@ -167,7 +167,9 @@ public class ProviderService : IProviderService
                 TransactionCode = $"MTN-{l.Id.ToString().Substring(0, 8).ToUpper()}",
                 Type = "Bảo trì thiết bị",
                 Date = l.Date,
+                Note = l.Description,
                 TotalAmount = l.Cost,
+                PaidAmount = l.Cost, // Giả định bảo trì đã trả đủ
                 Status = l.Status == Domain.Enums.MaintenanceStatus.Completed ? "Hoàn tất" : "Đang xử lý"
             }).ToListAsync();
         
@@ -186,8 +188,10 @@ public class ProviderService : IProviderService
                 TransactionCode = string.IsNullOrEmpty(st.ReferenceNumber) ? $"STK-{st.Id.ToString().Substring(0, 8).ToUpper()}" : st.ReferenceNumber,
                 Type = st.Type == Domain.Enums.StockTransactionType.Import ? "Nhập hàng" : "Xuất hàng/Trả hàng",
                 Date = st.Date,
-                TotalAmount = (st.UnitPrice > 0 ? st.UnitPrice : (st.Product?.Price ?? 0)) * st.Quantity,
-                Status = "Đã xác nhận"
+                Note = st.Note ?? (st.Product != null ? $"Nhập {st.Quantity} {st.Product.Name}" : ""),
+                TotalAmount = st.TotalAmount > 0 ? st.TotalAmount : (st.UnitPrice * st.Quantity),
+                PaidAmount = st.PaidAmount > 0 ? st.PaidAmount : (st.TotalAmount > 0 ? 0 : (st.UnitPrice * st.Quantity)),
+                Status = "Hoàn tất"
             });
         }
 
@@ -204,7 +208,9 @@ public class ProviderService : IProviderService
                 TransactionCode = $"EQP-{et.Id.ToString().Substring(0, 8).ToUpper()}",
                 Type = "Mua thiết bị",
                 Date = et.Date,
-                TotalAmount = et.Quantity * (et.Equipment?.PurchasePrice ?? 0),
+                Note = et.Note ?? $"Mua mới {et.Equipment?.Name}",
+                TotalAmount = et.TotalAmount > 0 ? et.TotalAmount : (et.Quantity * (et.Equipment?.PurchasePrice ?? 0)),
+                PaidAmount = et.PaidAmount > 0 ? et.PaidAmount : (et.TotalAmount > 0 ? 0 : (et.Quantity * (et.Equipment?.PurchasePrice ?? 0))),
                 Status = "Hoàn tất"
             });
         }
@@ -229,5 +235,62 @@ public class ProviderService : IProviderService
             .ToListAsync();
         
         return ResponseDto<List<Gym.Application.DTOs.Equipment.EquipmentDto>>.SuccessResult(_mapper.Map<List<Gym.Application.DTOs.Equipment.EquipmentDto>>(equipments));
+    }
+
+    public async Task<ResponseDto<bool>> PayDebtAsync(CreateProviderPaymentDto dto)
+    {
+        try
+        {
+            var provider = await _unitOfWork.Providers.GetByIdAsync(dto.ProviderId);
+            if (provider == null) return ResponseDto<bool>.FailureResult("Không tìm thấy nhà cung cấp");
+
+            // 1. Tạo bản ghi thanh toán (Phiếu chi)
+            var payment = new ProviderPayment
+            {
+                ProviderId = dto.ProviderId,
+                Amount = dto.Amount,
+                PaymentMethod = dto.PaymentMethod,
+                Note = dto.Note,
+                Date = DateTime.UtcNow,
+                ReferenceNumber = dto.ReferenceNumber,
+                StockTransactionId = dto.StockTransactionId,
+                EquipmentTransactionId = dto.EquipmentTransactionId
+            };
+
+            await _unitOfWork.ProviderPayments.AddAsync(payment);
+
+            // 2. Cập nhật số tiền đã thanh toán trong giao dịch gốc (nếu có)
+            if (dto.StockTransactionId.HasValue)
+            {
+                var stockTx = await _unitOfWork.StockTransactions.GetByIdAsync(dto.StockTransactionId.Value);
+                if (stockTx != null)
+                {
+                    stockTx.PaidAmount += dto.Amount;
+                    _unitOfWork.StockTransactions.Update(stockTx);
+                }
+            }
+            else if (dto.EquipmentTransactionId.HasValue)
+            {
+                var equipTx = await _unitOfWork.EquipmentTransactions.GetByIdAsync(dto.EquipmentTransactionId.Value);
+                if (equipTx != null)
+                {
+                    equipTx.PaidAmount += dto.Amount;
+                    _unitOfWork.EquipmentTransactions.Update(equipTx);
+                }
+            }
+
+            // 3. Giảm tổng nợ của nhà cung cấp
+            provider.TotalDebt -= dto.Amount;
+            if (provider.TotalDebt < 0) provider.TotalDebt = 0;
+
+            _unitOfWork.Providers.Update(provider);
+            await _unitOfWork.SaveChangesAsync();
+
+            return ResponseDto<bool>.SuccessResult(true, "Thanh toán nợ thành công");
+        }
+        catch (Exception ex)
+        {
+            return ResponseDto<bool>.FailureResult($"Lỗi khi thanh toán: {ex.Message}");
+        }
     }
 }

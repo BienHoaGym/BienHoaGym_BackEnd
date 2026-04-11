@@ -1,3 +1,4 @@
+using Gym.Domain.Constants;
 using Gym.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,7 +10,7 @@ namespace Gym.PublicAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Admin")]
+[Authorize(Policy = PermissionConstants.SettingsManage)]
 public class DataResetController : ControllerBase
 {
     private readonly GymDbContext _context;

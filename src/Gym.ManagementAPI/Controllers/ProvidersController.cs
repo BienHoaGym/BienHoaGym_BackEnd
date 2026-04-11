@@ -78,4 +78,12 @@ public class ProvidersController : ControllerBase
         var result = await _providerService.GetEquipmentsAsync(id);
         return Ok(result);
     }
+
+    [HttpPost("pay-debt")]
+    [Authorize(Policy = PermissionConstants.BillingCreate)]
+    public async Task<IActionResult> PayDebt(CreateProviderPaymentDto dto)
+    {
+        var result = await _providerService.PayDebtAsync(dto);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
 }

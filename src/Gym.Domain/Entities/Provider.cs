@@ -19,6 +19,7 @@ public class Provider : BaseEntity
     public string? BankAccountNumber { get; set; }
     public string? BankName { get; set; }
     public string? Note { get; set; }
+    public decimal TotalDebt { get; set; } // Tổng nợ hiện tại (Accounts Payable)
     public bool IsActive { get; set; } = true;
 
     // Relationships

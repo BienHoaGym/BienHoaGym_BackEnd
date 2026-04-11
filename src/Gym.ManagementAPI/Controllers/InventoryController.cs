@@ -120,4 +120,46 @@ public class InventoryController : ControllerBase
         var result = await _inventoryService.CreateOrderAsync(order, warehouseId);
         return Ok(result);
     }
+
+    // 🕵️ Stock Audit (Kiểm kê)
+    [HttpGet("audits")]
+    [Authorize(Policy = PermissionConstants.InventoryRead)]
+    public async Task<IActionResult> GetStockAudits()
+    {
+        var result = await _inventoryService.GetStockAuditsAsync();
+        return Ok(result);
+    }
+
+    [HttpPost("audits")]
+    [Authorize(Policy = PermissionConstants.InventoryUpdate)]
+    public async Task<IActionResult> CreateStockAudit([FromQuery] Guid warehouseId, [FromQuery] string? note)
+    {
+        var result = await _inventoryService.CreateStockAuditAsync(warehouseId, note);
+        return Ok(result);
+    }
+
+    [HttpPut("audits/{auditId}/detail")]
+    [Authorize(Policy = PermissionConstants.InventoryUpdate)]
+    public async Task<IActionResult> UpdateAuditDetail(Guid auditId, [FromQuery] Guid productId, [FromQuery] int actualQuantity, [FromQuery] string? reason)
+    {
+        var result = await _inventoryService.UpdateAuditDetailAsync(auditId, productId, actualQuantity, reason);
+        return Ok(result);
+    }
+
+    [HttpPost("audits/{auditId}/approve")]
+    [Authorize(Policy = PermissionConstants.InventoryUpdate)]
+    public async Task<IActionResult> ApproveStockAudit(Guid auditId)
+    {
+        var result = await _inventoryService.ApproveStockAuditAsync(auditId);
+        return Ok(result);
+    }
+
+    // 📈 Reports
+    [HttpGet("turnover")]
+    [Authorize(Policy = PermissionConstants.InventoryRead)]
+    public async Task<IActionResult> GetStockTurnover()
+    {
+        var result = await _inventoryService.GetStockTurnoverReportAsync();
+        return Ok(result);
+    }
 }

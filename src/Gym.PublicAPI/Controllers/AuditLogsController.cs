@@ -1,4 +1,5 @@
 using Gym.Application.Interfaces.Services;
+using Gym.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
@@ -22,7 +23,7 @@ public class AuditLogsController : ControllerBase
     /// Lấy danh sách lịch sử thao tác hệ thống (Chỉ Admin và Manager)
     /// </summary>
     [HttpGet]
-    [Authorize(Roles = "Admin,Manager")] 
+    [Authorize(Policy = PermissionConstants.AuditLogRead)] 
     public async Task<IActionResult> GetLogs([FromQuery] string? userId = null, [FromQuery] int? severity = null, [FromQuery] string? action = null, [FromQuery] DateTime? fromDate = null, [FromQuery] DateTime? toDate = null)
     {
         _logger.LogInformation("Lấy danh sách nhật ký hệ thống: UserId={userId}, Action={action}", userId, action);

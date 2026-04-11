@@ -52,10 +52,17 @@ public class StockTransaction : BaseEntity
     public string? PerformedBy { get; set; } // Người thực hiện
     
     public decimal UnitPrice { get; set; } // Giá nhập/xuất tại thời điểm giao dịch
+    public decimal VatPercentage { get; set; } // % VAT
+    public decimal TotalAmount { get; set; } // Tổng tiền (Số lượng * Đơn giá * VAT)
+    public decimal PaidAmount { get; set; } // Số tiền đã trả ngay
+    public string? PaymentMethod { get; set; } // Tiền mặt, Chuyển khoản...
+    public DateTime? PaymentDueDate { get; set; } // Hạn thanh toán nợ
     public DateTime Date { get; set; } = DateTime.UtcNow;
     
+    public DateTime? ExpiryDate { get; set; } // Hạn sử dụng (nếu có)
     public string? Note { get; set; }
     public string? ReferenceNumber { get; set; } // PO-X, SO-X
+    public string? AttachmentUrl { get; set; } // Ảnh hóa đơn/biên bản
     
     public Guid? ProviderId { get; set; }
     public virtual Provider? Provider { get; set; }

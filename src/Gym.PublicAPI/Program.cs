@@ -46,8 +46,14 @@ AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 // 1. CONFIGURATION & DATABASE
 // ==========================================
 
-// Add controllers
-builder.Services.AddControllers();
+// Add controllers with JSON options for camelCase
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.DictionaryKeyPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    });
 builder.Services.AddEndpointsApiExplorer();
 
 // Configure DbContext
@@ -201,17 +207,22 @@ var app = builder.Build();
 // 5. MIDDLEWARE PIPELINE
 // ==========================================
 
+// ĐƯA CORS LÊN ĐẦU TIÊN ĐỂ KHÔNG BỊ CHẶN BỞI TRÌNH DUYỆT
 app.UseCors("AllowAll");
 
+// Cấu hình bắt lỗi chi tiết để debug trên Render
 app.Use(async (context, next) => {
     try {
         await next();
     } catch (Exception ex) {
         context.Response.StatusCode = 500;
         context.Response.ContentType = "application/json";
+        
+        // Đảm bảo CORS luôn được phép ngay cả khi lỗi 500
         context.Response.Headers["Access-Control-Allow-Origin"] = "*";
         context.Response.Headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";
         context.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization";
+        
         var errorDetails = new { 
             error = "CORTEX_CRITICAL_DEBUG", 
             message = ex.Message,
@@ -219,6 +230,7 @@ app.Use(async (context, next) => {
             stack = ex.StackTrace,
             type = ex.GetType().Name
         };
+        
         await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(errorDetails));
     }
 });
@@ -229,15 +241,32 @@ app.UseSwaggerUI(options => {
     options.RoutePrefix = "swagger";
 });
 
-// Health Check
+// Thêm Endpoint Health Check công khai (Không cần Auth) để kiểm tra CORS/DB
 app.MapGet("/api/health", async (GymDbContext db) => {
     var canConnect = await db.Database.CanConnectAsync();
-    return Results.Ok(new { status = "Online", database = canConnect ? "Connected" : "Disconnected", time = DateTime.UtcNow });
+    return Results.Ok(new { 
+        status = "Online", 
+        database = canConnect ? "Connected" : "Disconnected", 
+        time = DateTime.UtcNow 
+    });
 });
 
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+// Test Endpoint (Giúp kiểm tra nhanh)
+app.MapGet("/api/debug/auth", (ClaimsPrincipal user) =>
+{
+    if (!user.Identity?.IsAuthenticated ?? true) return Results.Unauthorized();
+
+    return Results.Ok(new
+    {
+        Name = user.Identity!.Name,
+        Roles = user.FindAll(ClaimTypes.Role).Select(c => c.Value),
+        AllClaims = user.Claims.Select(c => new { c.Type, c.Value })
+    });
+});
 
 app.MapGet("/", () => new { service = "Gym Public API", status = "Running", swagger = "/swagger", timestamp = DateTime.UtcNow });
 
@@ -246,12 +275,16 @@ using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var db = services.GetRequiredService<GymDbContext>();
-    try {
-        Console.WriteLine("🔄 Starting Public API Database Sync & Self-Healing...");
+    try
+    {
+        Console.WriteLine("🔄 Starting Public API Database Sync & Migration...");
         
-        if (db.Database.IsNpgsql()) {
+        // 1. Tự cứu database nếu đang ở bản Postgres cũ (Render)
+        if (db.Database.IsNpgsql())
+        {
+            Console.WriteLine("ℹ️ Running Postgres self-healing (Provider: Npgsql)");
             try {
-                // Postgres Self-healing
+                // Thêm các cột bị thiếu do migration cũ không add kịp
                 db.Database.ExecuteSqlRaw(@"
                     DO $$ 
                     BEGIN 
@@ -261,17 +294,27 @@ using (var scope = app.Services.CreateScope())
                         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='InvoiceDetails' AND column_name='SubscriptionId') THEN
                             ALTER TABLE ""InvoiceDetails"" ADD COLUMN ""SubscriptionId"" uuid;
                         END IF;
+                        
+                        -- Đồng bộ tên cột cho Gói tập
                         IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='MembershipPackages' AND column_name='DurationDays') THEN
                             ALTER TABLE ""MembershipPackages"" RENAME COLUMN ""DurationDays"" TO ""DurationInDays"";
                         END IF;
-                    END $$;");
-            } catch { }
+                    END $$;
+                ");
+            } catch (Exception ex) {
+                Console.WriteLine($"⚠️ Postgres Self-Heal Warning: {ex.Message}");
+            }
         }
-        
+        else
+        {
+            Console.WriteLine($"ℹ️ Skipping Postgres self-healing (Provider: {db.Database.ProviderName})");
+        }
+
+        // 2. Apply Migrations
         db.Database.Migrate();
         Console.WriteLine("✅ Public API: Database migrated successfully!");
 
-        // 🟢 LOGIC TỰ ĐỘNG DỌN DẸP DỮ LIỆU LỖI PHÔNG CHỮ (ĐỒNG BỘ NỀN TẢNG)
+        // 3. 🟢 LOGIC TỰ ĐỘNG DỌN DẸP DỮ LIỆU LỖI PHÔNG CHỮ (ĐỒNG BỘ NỀN TẢNG)
         try {
             var connection = db.Database.GetDbConnection();
             await connection.OpenAsync();
@@ -280,35 +323,52 @@ using (var scope = app.Services.CreateScope())
                 UPDATE MembershipPackages SET Name = REPLACE(Name, 'GA3i', 'Gói');
                 UPDATE MembershipPackages SET Name = REPLACE(Name, 'ThAng', 'Tháng');
                 UPDATE MembershipPackages SET Name = REPLACE(Name, 'Nm', 'Năm');
+                UPDATE MembershipPackages SET Name = REPLACE(Name, 'NgAy', 'Ngày');
                 UPDATE MemberSubscriptions SET OriginalPackageName = REPLACE(OriginalPackageName, 'GA3i', 'Gói');
                 UPDATE MemberSubscriptions SET OriginalPackageName = REPLACE(OriginalPackageName, 'ThAng', 'Tháng');
+                
+                -- Sửa tên sản phẩm và dịch vụ
                 UPDATE Products SET Name = 'Nước suối Aquafina' WHERE Name LIKE '%Aquafina%';
+                UPDATE Products SET Name = 'Whey Protein Gold' WHERE Name LIKE '%Whey%';
                 UPDATE Products SET Category = 'Thực phẩm bổ sung' WHERE Category LIKE '%Th%c ph%cm%';
+                UPDATE Products SET Category = 'Đồ uống' WHERE Category LIKE '%u%ng%';
+                UPDATE Products SET Unit = 'Cái' WHERE Unit = 'CAi';
+
+                -- Sửa lỗi 'Bán lẻ' bị lỗi thành 'BÃ¡n lÃ°'
+                -- UPDATE Invoices SET MemberName = 'Khách lẻ' WHERE MemberName LIKE '%Kh%ch l%';
                 UPDATE Invoices SET Note = 'Bán lẻ' WHERE Note LIKE '%B%n l%';
+
+                -- Cập nhật lại các hóa đơn Demo trong báo cáo (Dựa vào hình ảnh)
                 UPDATE InvoiceDetails SET ItemName = REPLACE(ItemName, 'GA3i', 'Gói');
                 UPDATE InvoiceDetails SET ItemName = REPLACE(ItemName, 'ThAng', 'Tháng');
             ";
             await command.ExecuteNonQueryAsync();
             Console.WriteLine("✨ Public API: Database Cleanup completed.");
-        } catch { }
+        } catch (Exception ex) {
+            Console.WriteLine($"⚠️ Public API Cleanup Warning: {ex.Message}");
+        }
 
         // 🚨 FORCED ADMIN SYNC (Cấp cứu đăng nhập cho bản Deployed)
         var systemAdmin = await db.Users.Include(u => u.UserRoles).FirstOrDefaultAsync(u => u.Username.ToLower() == "admin");
-        if (systemAdmin != null) {
+        if (systemAdmin != null)
+        {
             var hasher = new PasswordHasher<User>();
             systemAdmin.PasswordHash = hasher.HashPassword(systemAdmin, "Admin@123");
             
-            if (!systemAdmin.UserRoles.Any(ur => ur.RoleId == 1)) {
+            if (!systemAdmin.UserRoles.Any(ur => ur.RoleId == 1))
+            {
                 systemAdmin.UserRoles.Add(new UserRole { RoleId = 1, UserId = systemAdmin.Id });
             }
             await db.SaveChangesAsync();
             Console.WriteLine("🚑 Public API: Admin rescue password and role synced.");
         }
-
+        
         // 🛡️ ĐỒNG BỘ QUYỀN TRUY CẬP (Fix lỗi mất Sidebar)
         var adminRoles = await db.Roles.Where(r => r.RoleName == "Admin").ToListAsync();
-        foreach (var role in adminRoles) {
-            if (string.IsNullOrEmpty(role.Permissions) || role.Permissions == "[]") {
+        foreach (var role in adminRoles)
+        {
+            if (string.IsNullOrEmpty(role.Permissions) || role.Permissions == "[]")
+            {
                 role.Permissions = "[\"*\"]";
                 db.Roles.Update(role);
             }
@@ -316,11 +376,22 @@ using (var scope = app.Services.CreateScope())
         await db.SaveChangesAsync();
         Console.WriteLine("🛡️ Public API: RBAC permission sync completed.");
 
-        if (systemAdmin == null) {
+        if (systemAdmin == null)
+        {
+            Console.WriteLine("⚠️ No users found in database. Creating default Admin for first-time setup...");
             await DataSeeder.SeedDefaultAdminAsync(services);
             Console.WriteLine("✅ Default Admin created via Public API.");
         }
-    } catch (Exception ex) {
+
+        if (app.Environment.IsDevelopment())
+        {
+            Console.WriteLine("🌱 Seeding demo data in Development...");
+            await DataSeeder.SeedDemoDataAsync(services);
+            Console.WriteLine("✅ Seeding completed!");
+        }
+    }
+    catch (Exception ex)
+    {
         Console.WriteLine($"🔍 Public API Initialization info: {ex.Message}");
     }
 }
