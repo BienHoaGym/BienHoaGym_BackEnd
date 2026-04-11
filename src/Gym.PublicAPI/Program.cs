@@ -288,16 +288,61 @@ using (var scope = app.Services.CreateScope())
                 db.Database.ExecuteSqlRaw(@"
                     DO $$ 
                     BEGIN 
+                        -- Sửa bảng Users (Thêm các cột nhân sự thiếu)
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Users' AND column_name='Address') THEN
+                            ALTER TABLE ""Users"" ADD COLUMN ""Address"" text;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Users' AND column_name='IdentityNumber') THEN
+                            ALTER TABLE ""Users"" ADD COLUMN ""IdentityNumber"" text;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Users' AND column_name='BirthDate') THEN
+                            ALTER TABLE ""Users"" ADD COLUMN ""BirthDate"" timestamp with time zone;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Users' AND column_name='Gender') THEN
+                            ALTER TABLE ""Users"" ADD COLUMN ""Gender"" text;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Users' AND column_name='HireDate') THEN
+                            ALTER TABLE ""Users"" ADD COLUMN ""HireDate"" timestamp with time zone;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Users' AND column_name='BankCardNumber') THEN
+                            ALTER TABLE ""Users"" ADD COLUMN ""BankCardNumber"" text;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Users' AND column_name='BankName') THEN
+                            ALTER TABLE ""Users"" ADD COLUMN ""BankName"" text;
+                        END IF;
+
+                        -- Sửa bảng MemberSubscriptions
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='MemberSubscriptions' AND column_name='AutoPauseExtensionDays') THEN
+                            ALTER TABLE ""MemberSubscriptions"" ADD COLUMN ""AutoPauseExtensionDays"" integer;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='MemberSubscriptions' AND column_name='LastPausedAt') THEN
+                            ALTER TABLE ""MemberSubscriptions"" ADD COLUMN ""LastPausedAt"" timestamp with time zone;
+                        END IF;
+                        
+                        -- Sửa bảng Invoices (Thêm các cột audit)
                         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Invoices' AND column_name='CreatedByUserId') THEN
                             ALTER TABLE ""Invoices"" ADD COLUMN ""CreatedByUserId"" uuid;
                         END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Invoices' AND column_name='CreatedByUserName') THEN
+                            ALTER TABLE ""Invoices"" ADD COLUMN ""CreatedByUserName"" text;
+                        END IF;
+
+                        -- Sửa bảng InvoiceDetails
                         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='InvoiceDetails' AND column_name='SubscriptionId') THEN
                             ALTER TABLE ""InvoiceDetails"" ADD COLUMN ""SubscriptionId"" uuid;
                         END IF;
-                        
-                        -- Đồng bộ tên cột cho Gói tập
+
+                        -- Sửa bảng MembershipPackages (Duration rename)
                         IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='MembershipPackages' AND column_name='DurationDays') THEN
                             ALTER TABLE ""MembershipPackages"" RENAME COLUMN ""DurationDays"" TO ""DurationInDays"";
+                        END IF;
+
+                        -- Sửa bảng Providers (Công nợ)
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Providers' AND column_name='TotalDebt') THEN
+                            ALTER TABLE ""Providers"" ADD COLUMN ""TotalDebt"" decimal DEFAULT 0;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Providers' AND column_name='SupplyType') THEN
+                            ALTER TABLE ""Providers"" ADD COLUMN ""SupplyType"" text;
                         END IF;
                     END $$;
                 ");

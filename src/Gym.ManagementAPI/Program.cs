@@ -365,6 +365,19 @@ using (var scope = app.Services.CreateScope())
                         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='InvoiceDetails' AND column_name='SubscriptionId') THEN
                             ALTER TABLE ""InvoiceDetails"" ADD COLUMN ""SubscriptionId"" uuid;
                         END IF;
+
+                        -- Sửa bảng MembershipPackages (Duration rename)
+                        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='MembershipPackages' AND column_name='DurationDays') THEN
+                            ALTER TABLE ""MembershipPackages"" RENAME COLUMN ""DurationDays"" TO ""DurationInDays"";
+                        END IF;
+
+                        -- Sửa bảng Providers (Công nợ)
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Providers' AND column_name='TotalDebt') THEN
+                            ALTER TABLE ""Providers"" ADD COLUMN ""TotalDebt"" decimal DEFAULT 0;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Providers' AND column_name='SupplyType') THEN
+                            ALTER TABLE ""Providers"" ADD COLUMN ""SupplyType"" text;
+                        END IF;
                     END $$;");
                 Console.WriteLine("✅ Database self-healing completed!");
             } catch (Exception ex) {
