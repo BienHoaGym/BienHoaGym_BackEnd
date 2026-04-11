@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Moq;
 using AutoMapper;
 using Gym.Application.Services;
@@ -91,7 +91,7 @@ public class BillingServiceTests
         var memberId = Guid.NewGuid();
         var packageId = Guid.NewGuid();
         var member = new Member { Id = memberId, FullName = "John Gym", MemberCode = "G001" };
-        var package = new MembershipPackage { Id = packageId, Name = "VIP 1 Month", DurationDays = 30, IsActive = true };
+        var package = new MembershipPackage { Id = packageId, Name = "VIP 1 Month", DurationInDays = 30, IsActive = true };
         
         _context.Members.Add(member);
         _context.MembershipPackages.Add(package);
@@ -158,7 +158,7 @@ public class BillingServiceTests
 
         // 3. Assert
         Assert.False(result.Success);
-        // Kiểm tra thông điệp lỗi bằng mã Unicode chuẩn để vượt qua lỗi Encoding trên CI/CD
+        // Kiá»ƒm tra thÃ´ng Ä‘iá»‡p lá»—i báº±ng mÃ£ Unicode chuáº©n Ä‘á»ƒ vÆ°á»£t qua lá»—i Encoding trÃªn CI/CD
         Assert.Contains("v\u1EABn c\u00F2n h\u1EA1n", result.Message);
     }
 }

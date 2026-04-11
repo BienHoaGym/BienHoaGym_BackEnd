@@ -1,4 +1,4 @@
-using FluentValidation.TestHelper;
+﻿using FluentValidation.TestHelper;
 using Gym.Application.Validators;
 using Gym.Application.Validators.Subscriptions;
 using Gym.Application.DTOs.Members;

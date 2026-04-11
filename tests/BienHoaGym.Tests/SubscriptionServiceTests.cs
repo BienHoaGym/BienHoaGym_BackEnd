@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Moq;
 using AutoMapper;
 using Gym.Application.Services;
@@ -45,7 +45,7 @@ public class SubscriptionServiceTests
         var memberId = Guid.NewGuid();
         var packageId = Guid.NewGuid();
         var member = new Member { Id = memberId, FullName = "Test Member", MemberCode = "M001" };
-        var package = new MembershipPackage { Id = packageId, Name = "Basic Month", Price = 500000, DurationDays = 30, IsActive = true };
+        var package = new MembershipPackage { Id = packageId, Name = "Basic Month", Price = 500000, DurationInDays = 30, IsActive = true };
 
         _context.Members.Add(member);
         _context.MembershipPackages.Add(package);
@@ -82,7 +82,7 @@ public class SubscriptionServiceTests
         var memberId = Guid.NewGuid();
         var packageId = Guid.NewGuid();
         var member = new Member { Id = memberId, FullName = "Test Member", MemberCode = "M001" };
-        var package = new MembershipPackage { Id = packageId, Name = "Basic Month", Price = 500000, DurationDays = 30, IsActive = true };
+        var package = new MembershipPackage { Id = packageId, Name = "Basic Month", Price = 500000, DurationInDays = 30, IsActive = true };
 
         _context.Members.Add(member);
         _context.MembershipPackages.Add(package);
@@ -103,7 +103,7 @@ public class SubscriptionServiceTests
             FinalPrice = 400000 // 20% discount (allowed is 10%)
         };
 
-        // Mock Mapper (Quan trọng: Phải setup cho mỗi test hoặc dùng constructor chung)
+        // Mock Mapper (Quan trá»ng: Pháº£i setup cho má»—i test hoáº·c dÃ¹ng constructor chung)
         _mapperMock.Setup(m => m.Map<MemberSubscription>(It.IsAny<CreateSubscriptionDto>()))
             .Returns((CreateSubscriptionDto d) => new MemberSubscription { MemberId = d.MemberId, PackageId = d.PackageId, StartDate = d.StartDate });
 
@@ -148,12 +148,12 @@ public class SubscriptionServiceTests
     {
         // 1. Arrange
         var subId = Guid.NewGuid();
-        // Giả sử: Ngày hết hạn ban đầu là 2024-01-20.
-        // Tạm dừng 7 ngày dự kiến => EndDate thành 2024-01-27.
-        // Nhưng thực tế nghỉ 10 ngày. 
-        // Sử dụng 9.5 ngày để khi Ceiling lên sẽ là đúng 10 ngày, tránh sai số miligiây.
+        // Giáº£ sá»­: NgÃ y háº¿t háº¡n ban Ä‘áº§u lÃ  2024-01-20.
+        // Táº¡m dá»«ng 7 ngÃ y dá»± kiáº¿n => EndDate thÃ nh 2024-01-27.
+        // NhÆ°ng thá»±c táº¿ nghá»‰ 10 ngÃ y. 
+        // Sá»­ dá»¥ng 9.5 ngÃ y Ä‘á»ƒ khi Ceiling lÃªn sáº½ lÃ  Ä‘Ãºng 10 ngÃ y, trÃ¡nh sai sá»‘ miligiÃ¢y.
         var originalEndDatePlusExpected = new DateTime(2024, 1, 27);
-        var lastPausedAt = DateTime.UtcNow.AddHours(-230); // ~9.5 ngày
+        var lastPausedAt = DateTime.UtcNow.AddHours(-230); // ~9.5 ngÃ y
 
         var sub = new MemberSubscription
         {
@@ -177,7 +177,7 @@ public class SubscriptionServiceTests
         var updatedSub = await _context.MemberSubscriptions.FindAsync(subId);
         Assert.Equal(SubscriptionStatus.Active, updatedSub.Status);
         
-        // Công thức: 
+        // CÃ´ng thá»©c: 
         // ActualDays = 10
         // Adjustment = 10 - 7 = 3
         // EndDate = 2024-01-27 + 3 days = 2024-01-30
@@ -201,7 +201,7 @@ public class SubscriptionServiceTests
         };
         _context.MemberSubscriptions.Add(sub);
         
-        var newPackage = new MembershipPackage { Id = packageId, Name = "Gold Year", Price = 5000000, DurationDays = 365, IsActive = true };
+        var newPackage = new MembershipPackage { Id = packageId, Name = "Gold Year", Price = 5000000, DurationInDays = 365, IsActive = true };
         _context.MembershipPackages.Add(newPackage);
         await _context.SaveChangesAsync();
 
@@ -210,6 +210,6 @@ public class SubscriptionServiceTests
 
         // 3. Assert
         Assert.False(result.Success);
-        Assert.Contains("vẫn còn hạn 5 ngày", result.Message);
+        Assert.Contains("váº«n cÃ²n háº¡n 5 ngÃ y", result.Message);
     }
 }
