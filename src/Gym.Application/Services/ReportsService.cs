@@ -116,7 +116,6 @@ public class ReportsService : IReportsService
                 RevenueThisMonth = periodRevenue, // Doanh thu trong kỳ được chọn
                 RevenueThisYear = revenueThisYear,
                 TotalExpenseThisMonth = totalExpense,
-                NetProfitThisMonth = periodRevenue - totalExpense,
                 NewMembersCount = await _unitOfWork.Members.GetQueryable().CountAsync(m => !m.IsDeleted && m.JoinedDate >= start && m.JoinedDate <= end),
                 TotalPackagesSold = await _unitOfWork.Subscriptions.GetQueryable().CountAsync(s => !s.IsDeleted && s.CreatedAt >= start && s.CreatedAt <= end)
             };
