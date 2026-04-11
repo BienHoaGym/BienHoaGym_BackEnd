@@ -91,31 +91,33 @@ public class DashboardController : ControllerBase
             var paymentsQuery = _unitOfWork.Payments.GetQueryable()
                 .Where(p => p.Status == PaymentStatus.Completed && !p.IsDeleted);
 
-            var paymentsToday = await paymentsQuery
-                .Where(p => p.PaymentDate >= today && p.PaymentDate < tomorrow)
-                .ToListAsync();
-            var revenueToday = (double)paymentsToday.Sum(p => p.Amount);
+            var invoicesQuery = _unitOfWork.Invoices.GetQueryable()
+                .Where(i => i.Status == PaymentStatus.Completed && !i.IsDeleted);
 
-            var paymentsYesterday = await paymentsQuery
-                .Where(p => p.PaymentDate >= yesterday && p.PaymentDate < today)
-                .ToListAsync();
-            var revenueYesterday = (double)paymentsYesterday.Sum(p => p.Amount);
+            var ordersQuery = _unitOfWork.Orders.GetQueryable()
+                .Where(o => (string.IsNullOrEmpty(o.Status) || o.Status == "Completed" || o.Status == "completed") && !o.IsDeleted);
+
+            var revenueToday = (double)await paymentsQuery.Where(p => p.PaymentDate >= today && p.PaymentDate < tomorrow).Select(p => (double)p.Amount).SumAsync()
+                             + (double)await invoicesQuery.Where(i => i.CreatedAt >= today && i.CreatedAt < tomorrow).Select(i => (double)(i.TotalAmount - i.DiscountAmount)).SumAsync()
+                             + (double)await ordersQuery.Where(o => o.CreatedDate >= today && o.CreatedDate < tomorrow).Select(o => (double)o.TotalAmount).SumAsync();
+
+            var revenueYesterday = (double)await paymentsQuery.Where(p => p.PaymentDate >= yesterday && p.PaymentDate < today).Select(p => (double)p.Amount).SumAsync()
+                                 + (double)await invoicesQuery.Where(i => i.CreatedAt >= yesterday && i.CreatedAt < today).Select(i => (double)(i.TotalAmount - i.DiscountAmount)).SumAsync()
+                                 + (double)await ordersQuery.Where(o => o.CreatedDate >= yesterday && o.CreatedDate < today).Select(o => (double)o.TotalAmount).SumAsync();
 
             var revenueTrend = revenueYesterday == 0 ? (revenueToday > 0 ? 100 : 0) : Math.Round(((double)(revenueToday - revenueYesterday) / revenueYesterday) * 100, 1);
 
-            var paymentsMonth = await paymentsQuery
-                .Where(p => p.PaymentDate >= monthStart)
-                .ToListAsync();
-            var revenueMonthDirect = (double)paymentsMonth.Sum(p => p.Amount);
+            var revenueMonthDirect = (double)await paymentsQuery.Where(p => p.PaymentDate >= monthStart).Select(p => (double)p.Amount).SumAsync()
+                                   + (double)await invoicesQuery.Where(i => i.CreatedAt >= monthStart).Select(i => (double)(i.TotalAmount - i.DiscountAmount)).SumAsync()
+                                   + (double)await ordersQuery.Where(o => o.CreatedDate >= monthStart).Select(o => (double)o.TotalAmount).SumAsync();
 
-            var paymentsLastMonth = await paymentsQuery
-                .Where(p => p.PaymentDate >= lastMonthStart && p.PaymentDate <= lastMonthEnd)
-                .ToListAsync();
-            var revenueMonthLast = (double)paymentsLastMonth.Sum(p => p.Amount);
+            var revenueMonthLast = (double)await paymentsQuery.Where(p => p.PaymentDate >= lastMonthStart && p.PaymentDate <= lastMonthEnd).Select(p => (double)p.Amount).SumAsync()
+                                 + (double)await invoicesQuery.Where(i => i.CreatedAt >= lastMonthStart && i.CreatedAt <= lastMonthEnd).Select(i => (double)(i.TotalAmount - i.DiscountAmount)).SumAsync()
+                                 + (double)await ordersQuery.Where(o => o.CreatedDate >= lastMonthStart && o.CreatedDate <= lastMonthEnd).Select(o => (double)o.TotalAmount).SumAsync();
 
-            var revenueTotal = await paymentsQuery
-                .Select(p => (double)p.Amount)
-                .SumAsync();
+            var revenueTotal = (double)await paymentsQuery.Select(p => (double)p.Amount).SumAsync()
+                             + (double)await invoicesQuery.Select(i => (double)(i.TotalAmount - i.DiscountAmount)).SumAsync()
+                             + (double)await ordersQuery.Select(o => (double)o.TotalAmount).SumAsync();
 
             // 5. Recent Payments
             var recentPayments = await paymentsQuery
