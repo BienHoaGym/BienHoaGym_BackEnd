@@ -378,6 +378,34 @@ using (var scope = app.Services.CreateScope())
                         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Providers' AND column_name='SupplyType') THEN
                             ALTER TABLE ""Providers"" ADD COLUMN ""SupplyType"" text;
                         END IF;
+
+                        -- Sửa bảng StockTransactions (Audit & Payment)
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='StockTransactions' AND column_name='PaidAmount') THEN
+                            ALTER TABLE ""StockTransactions"" ADD COLUMN ""PaidAmount"" decimal DEFAULT 0;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='StockTransactions' AND column_name='PaymentMethod') THEN
+                            ALTER TABLE ""StockTransactions"" ADD COLUMN ""PaymentMethod"" text;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='StockTransactions' AND column_name='PaymentDueDate') THEN
+                            ALTER TABLE ""StockTransactions"" ADD COLUMN ""PaymentDueDate"" timestamp with time zone;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='StockTransactions' AND column_name='AttachmentUrl') THEN
+                            ALTER TABLE ""StockTransactions"" ADD COLUMN ""AttachmentUrl"" text;
+                        END IF;
+
+                        -- Sửa bảng EquipmentTransactions (Audit & Payment)
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='EquipmentTransactions' AND column_name='PaidAmount') THEN
+                            ALTER TABLE ""EquipmentTransactions"" ADD COLUMN ""PaidAmount"" decimal DEFAULT 0;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='EquipmentTransactions' AND column_name='PaymentMethod') THEN
+                            ALTER TABLE ""EquipmentTransactions"" ADD COLUMN ""PaymentMethod"" text;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='EquipmentTransactions' AND column_name='PaymentDueDate') THEN
+                            ALTER TABLE ""EquipmentTransactions"" ADD COLUMN ""PaymentDueDate"" timestamp with time zone;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='EquipmentTransactions' AND column_name='AttachmentUrl') THEN
+                            ALTER TABLE ""EquipmentTransactions"" ADD COLUMN ""AttachmentUrl"" text;
+                        END IF;
                     END $$;");
                 Console.WriteLine("✅ Database self-healing completed!");
             } catch (Exception ex) {
