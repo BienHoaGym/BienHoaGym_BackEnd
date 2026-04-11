@@ -45,9 +45,8 @@ public static class DataSeeder
             }
 
             // 3. Members & Subscriptions & Payments
-            var lastMonthInvoices = await context.Invoices.CountAsync(i => i.CreatedAt >= today.AddDays(-30));
-            // Demo data seeding has been disabled due to MemberCode unique constraint conflicts
-            if (false)
+            var hasDemoData = await context.Members.AnyAsync(m => m.FullName.StartsWith("Thành viên Demo"));
+            if (!hasDemoData)
             {
                 var packages = await context.MembershipPackages.ToListAsync();
                 var random = new Random();
@@ -61,7 +60,8 @@ public static class DataSeeder
                         Email = $"member{i}@demo.com",
                         PhoneNumber = $"09123456{i:D2}",
                         JoinedDate = joinedDate,
-                        Status = MemberStatus.Active, // Dng Status thay vA IsActive
+                        MemberCode = $"DEMO{i:D4}",
+                        Status = MemberStatus.Active,
                         CreatedAt = joinedDate
                     };
                     context.Members.Add(member);

@@ -560,6 +560,7 @@ public class InventoryService : IInventoryService
         try
         {
             order.CreatedDate = DateTime.UtcNow;
+            order.Status = "Completed"; // Mặc định đơn quầy là hoàn tất
             var count = await _unitOfWork.Orders.GetQueryable().CountAsync();
             order.OrderNumber = $"ORD-{DateTime.UtcNow:yyyyMMdd}-{(count + 1):D4}";
 

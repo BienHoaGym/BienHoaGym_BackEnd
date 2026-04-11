@@ -60,7 +60,7 @@ public class ReportsService : IReportsService
             Console.WriteLine($"✅ Found {invoices.Count} invoices");
 
             var ordersQuery = _unitOfWork.Orders.GetQueryable()
-                .Where(o => (o.Status == "Completed" || o.Status == "completed") && !o.IsDeleted && o.CreatedDate >= start && o.CreatedDate <= end);
+                .Where(o => (string.IsNullOrEmpty(o.Status) || o.Status == "Completed" || o.Status == "completed") && !o.IsDeleted && o.CreatedDate >= start && o.CreatedDate <= end);
 
             var orders = await ordersQuery
                 .Include(o => o.Member)
@@ -80,23 +80,43 @@ public class ReportsService : IReportsService
 
             var rawPaymentsThisYear = await _unitOfWork.Payments.GetQueryable().Where(p => p.Status == PaymentStatus.Completed && !p.IsDeleted && p.PaymentDate >= yearStart).Select(p => p.Amount).ToListAsync();
             var rawInvoicesThisYear = await _unitOfWork.Invoices.GetQueryable().Where(i => i.Status == PaymentStatus.Completed && !i.IsDeleted && i.CreatedAt >= yearStart).Select(i => i.TotalAmount - i.DiscountAmount).ToListAsync();
-            var rawOrdersThisYear = await _unitOfWork.Orders.GetQueryable().Where(o => (o.Status == "Completed" || o.Status == "completed") && !o.IsDeleted && o.CreatedDate >= yearStart).Select(o => o.TotalAmount).ToListAsync();
-            var revenueThisYear = rawPaymentsThisYear.Sum() + rawInvoicesThisYear.Sum() + rawOrdersThisYear.Sum();
+            var rawOrdersThisYear = await _unitOfWork.Orders.GetQueryable().Where(o => (string.IsNullOrEmpty(o.Status) || o.Status == "Completed" || o.Status == "completed") && !o.IsDeleted && o.CreatedDate >= yearStart).Select(o => o.TotalAmount).ToListAsync();
+            var revenueThisYear = rawPaymentsThisMonth.Sum() + rawInvoicesThisMonth.Sum() + rawOrdersThisMonth.Sum();
 
+            // 💸 CHI PHÍ (EXPENSES) - TRUY XUẤT TỪ CÁC NGUỒN KHÁC (NHƯ YÊU CẦU)
+            // 1. Chi phí vận hành & bảo trì (Đã có)
             var rawMaintExpense = await _unitOfWork.MaintenanceLogs.GetQueryable().Where(m => m.Date >= start && m.Date <= end && m.Status == MaintenanceStatus.Completed).Select(m => m.Cost).ToListAsync();
-            var maintExpenseMonth = rawMaintExpense.Sum();
+            var maintExpense = rawMaintExpense.Sum();
             
+            // 2. Chi phí nhập hàng (Inventory Procurement - NEW)
+            var rawImportExpense = await _unitOfWork.StockTransactions.GetQueryable()
+                .Where(t => t.Type == StockTransactionType.Import && !t.IsDeleted && t.CreatedAt >= start && t.CreatedAt <= end)
+                .Select(t => t.Quantity * t.UnitPrice)
+                .ToListAsync();
+            var importExpense = (decimal)rawImportExpense.Sum(x => (double)x);
+
+            // 3. Chi phí mua sắm thiết bị (Equipment Purchase - NEW)
+            var rawEquipPurchaseExpense = await _unitOfWork.Equipments.GetQueryable()
+                .Where(e => !e.IsDeleted && e.CreatedAt >= start && e.CreatedAt <= end)
+                .Select(e => e.PurchasePrice)
+                .ToListAsync();
+            var equipExpense = rawEquipPurchaseExpense.Sum();
+
+            // 4. Khấu hao (Dự kiến)
             var rawDepExpense = await _unitOfWork.Depreciations.GetQueryable().Where(d => d.PeriodMonth == now.Month && d.PeriodYear == now.Year).Select(d => d.Amount).ToListAsync();
             var depExpenseMonth = rawDepExpense.Sum();
+
+            var totalExpense = maintExpense + importExpense + equipExpense + depExpenseMonth;
 
             var overview = new RevenueOverviewDto
             {
                 RevenueToday = payments.Where(p => p.PaymentDate.Date == today).Sum(p => p.Amount) + 
                                        invoices.Where(i => i.CreatedAt.Date == today).Sum(i => i.TotalAmount - i.DiscountAmount) +
                                        orders.Where(o => o.CreatedDate.Date == today).Sum(o => o.TotalAmount),
-                RevenueThisMonth = periodRevenue, // Trả về doanh thu trong kỳ được chọn để hiển thị lên KPI Cards
+                RevenueThisMonth = periodRevenue, // Doanh thu trong kỳ được chọn
                 RevenueThisYear = revenueThisYear,
-                TotalExpenseThisMonth = maintExpenseMonth + depExpenseMonth,
+                TotalExpenseThisMonth = totalExpense,
+                NetProfitThisMonth = periodRevenue - totalExpense,
                 NewMembersCount = await _unitOfWork.Members.GetQueryable().CountAsync(m => !m.IsDeleted && m.JoinedDate >= start && m.JoinedDate <= end),
                 TotalPackagesSold = await _unitOfWork.Subscriptions.GetQueryable().CountAsync(s => !s.IsDeleted && s.CreatedAt >= start && s.CreatedAt <= end)
             };
@@ -106,7 +126,7 @@ public class ReportsService : IReportsService
                     var d = start.Date.AddDays(i);
                     var pRev = payments.Where(p => p.PaymentDate.Date == d).Sum(p => p.Amount);
                     var iRev = invoices.Where(i => i.CreatedAt.Date == d).Sum(i => i.TotalAmount - i.DiscountAmount);
-                    var oRev = orders.Where(o => o.CreatedDate.Date == d).Sum(o => o.TotalAmount);
+                    var oRev = orders.Where(o => (string.IsNullOrEmpty(o.Status) || o.Status == "Completed" || o.Status == "completed") && o.CreatedDate.Date == d).Sum(o => o.TotalAmount);
                     return new RevenueChartItemDto { Label = d.ToString("dd/MM"), Revenue = pRev + iRev + oRev };
                 }).ToList();
 
