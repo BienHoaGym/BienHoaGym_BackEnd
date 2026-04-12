@@ -388,6 +388,54 @@ using (var scope = app.Services.CreateScope())
                             ALTER TABLE ""EquipmentTransactions"" ADD COLUMN ""AttachmentUrl"" text;
                         END IF;
 
+                        -- TỰ CỨU: Tạo bảng Kiểm kê (StockAudits & StockAuditDetails) nếu chưa có
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'StockAudits') THEN
+                            CREATE TABLE ""StockAudits"" (
+                                ""Id"" uuid PRIMARY KEY,
+                                ""WarehouseId"" uuid NOT NULL,
+                                ""AuditDate"" timestamp with time zone NOT NULL,
+                                ""PerformedBy"" text,
+                                ""ApprovedBy"" text,
+                                ""Status"" integer NOT NULL,
+                                ""Note"" text,
+                                ""CreatedAt"" timestamp with time zone NOT NULL,
+                                ""UpdatedAt"" timestamp with time zone,
+                                ""IsDeleted"" boolean NOT NULL DEFAULT false
+                            );
+                        END IF;
+
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'StockAuditDetails') THEN
+                            CREATE TABLE ""StockAuditDetails"" (
+                                ""Id"" uuid PRIMARY KEY,
+                                ""StockAuditId"" uuid NOT NULL,
+                                ""ProductId"" uuid NOT NULL,
+                                ""SystemQuantity"" integer NOT NULL,
+                                ""ActualQuantity"" integer NOT NULL,
+                                ""Reason"" text,
+                                ""CreatedAt"" timestamp with time zone NOT NULL,
+                                ""UpdatedAt"" timestamp with time zone,
+                                ""IsDeleted"" boolean NOT NULL DEFAULT false
+                            );
+                        END IF;
+
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'ProviderPayments') THEN
+                            CREATE TABLE ""ProviderPayments"" (
+                                ""Id"" uuid PRIMARY KEY,
+                                ""ProviderId"" uuid NOT NULL,
+                                ""Amount"" decimal(18,2) NOT NULL,
+                                ""PaymentMethod"" text NOT NULL,
+                                ""Date"" timestamp with time zone NOT NULL,
+                                ""Note"" text,
+                                ""ReferenceNumber"" text,
+                                ""StockTransactionId"" uuid,
+                                ""EquipmentTransactionId"" uuid,
+                                ""PerformedBy"" text,
+                                ""CreatedAt"" timestamp with time zone NOT NULL,
+                                ""UpdatedAt"" timestamp with time zone,
+                                ""IsDeleted"" boolean NOT NULL DEFAULT false
+                            );
+                        END IF;
+
                         -- Khởi tạo giá trị mặc định cho dữ liệu cũ (Tránh lỗi NULL)
                         UPDATE ""Providers"" SET ""TotalDebt"" = 0 WHERE ""TotalDebt"" IS NULL;
                         UPDATE ""Providers"" SET ""SupplyType"" = 'General' WHERE ""SupplyType"" IS NULL;
