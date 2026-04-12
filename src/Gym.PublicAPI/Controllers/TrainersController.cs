@@ -167,6 +167,14 @@ public class TrainersController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("assignments")]
+    [Authorize(Policy = PermissionConstants.TrainerRead)]
+    public async Task<IActionResult> GetAllAssignments()
+    {
+        var result = await _trainerService.GetAllAssignmentsAsync();
+        return Ok(result);
+    }
+
     [HttpDelete("unassign/{assignmentId:guid}")]
     [Authorize(Policy = PermissionConstants.TrainerUpdate)]
     public async Task<IActionResult> RemoveAssignment(Guid assignmentId)
