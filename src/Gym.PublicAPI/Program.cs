@@ -8,6 +8,7 @@ using Gym.Application.Mappings;
 using Gym.Application.Services;
 using Gym.Application.Validators.Members;
 using Gym.Domain.Entities;
+using Gym.Domain.Enums;
 using Gym.Infrastructure.Data;
 using Gym.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
