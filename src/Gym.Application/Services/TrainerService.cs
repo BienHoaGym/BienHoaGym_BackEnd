@@ -156,28 +156,81 @@ public class TrainerService : ITrainerService
 
     public async Task<ResponseDto<TrainerAssignmentDto>> AssignMemberAsync(CreateTrainerAssignmentDto dto)
     {
-        // Check if member exists
+        // 1. Kiểm tra Hội viên & PT
         var member = await _unitOfWork.Members.GetByIdAsync(dto.MemberId);
         if (member == null || member.IsDeleted)
-            return ResponseDto<TrainerAssignmentDto>.FailureResult("Member not found");
+            return ResponseDto<TrainerAssignmentDto>.FailureResult("Không tìm thấy hội viên");
 
-        // Check if trainer exists
         var trainer = await _unitOfWork.Trainers.GetByIdAsync(dto.TrainerId);
         if (trainer == null || trainer.IsDeleted)
-            return ResponseDto<TrainerAssignmentDto>.FailureResult("Trainer not found");
+            return ResponseDto<TrainerAssignmentDto>.FailureResult("Không tìm thấy huấn luyện viên");
 
-        // Check if already assigned
-        var existing = await _unitOfWork.TrainerMemberAssignments.FindAsync(a =>
-            a.MemberId == dto.MemberId && a.TrainerId == dto.TrainerId && !a.IsDeleted && a.IsActive);
+        TrainerMemberAssignment? assignment;
 
-        if (existing.Any())
-            return ResponseDto<TrainerAssignmentDto>.FailureResult("Member is already assigned to this trainer");
+        if (dto.Id.HasValue && dto.Id != Guid.Empty)
+        {
+            // CASE A: Assigning to an existing contract (Hợp đồng chờ phân công)
+            assignment = await _unitOfWork.TrainerMemberAssignments.GetByIdAsync(dto.Id.Value);
+            if (assignment == null || assignment.IsDeleted)
+                return ResponseDto<TrainerAssignmentDto>.FailureResult("Không tìm thấy hợp đồng huấn luyện");
+            
+            if (assignment.Status != Gym.Domain.Enums.TrainerAssignmentStatus.PendingAssignment && assignment.TrainerId != null)
+                return ResponseDto<TrainerAssignmentDto>.FailureResult("Hợp đồng này đã được phân công PT.");
 
-        var assignment = _mapper.Map<TrainerMemberAssignment>(dto);
-        assignment.AssignedDate = DateTime.UtcNow;
-        assignment.IsActive = true;
+            assignment.TrainerId = dto.TrainerId;
+            assignment.Status = Gym.Domain.Enums.TrainerAssignmentStatus.Active;
+            assignment.AssignedDate = DateTime.UtcNow;
+            if(!string.IsNullOrEmpty(dto.Notes)) assignment.Notes = dto.Notes;
+            
+            _unitOfWork.TrainerMemberAssignments.Update(assignment);
+        }
+        else
+        {
+            // CASE B: Creating a new direct assignment
+            var existing = await _unitOfWork.TrainerMemberAssignments.FindAsync(a =>
+                a.MemberId == dto.MemberId && a.TrainerId == dto.TrainerId && !a.IsDeleted && a.IsActive && a.Status == Gym.Domain.Enums.TrainerAssignmentStatus.Active);
 
-        await _unitOfWork.TrainerMemberAssignments.AddAsync(assignment);
+            if (existing.Any())
+                return ResponseDto<TrainerAssignmentDto>.FailureResult("Hội viên đã được gán cho PT này và đang hoạt động.");
+
+            assignment = _mapper.Map<TrainerMemberAssignment>(dto);
+            assignment.AssignedDate = DateTime.UtcNow;
+            assignment.IsActive = true;
+            assignment.Status = Gym.Domain.Enums.TrainerAssignmentStatus.Active;
+
+            await _unitOfWork.TrainerMemberAssignments.AddAsync(assignment);
+        }
+
+        // --- NGHIỆP VỤ TẠO LỚP HỌC 1-1 (WF): Tự động tạo 'Virtual Class' ---
+        var className = $"PT 1-1: {member.FullName}";
+        var existingClass = await _unitOfWork.Classes.FindAsync(c => 
+            c.ClassName == className && c.TrainerId == dto.TrainerId && !c.IsDeleted && c.IsActive);
+
+        Class? ptClass = existingClass.FirstOrDefault();
+        if (ptClass == null)
+        {
+            ptClass = new Class
+            {
+                ClassName = className,
+                ClassType = "PT 1-1",
+                TrainerId = dto.TrainerId,
+                MaxCapacity = 1,
+                CurrentEnrollment = 1,
+                IsActive = true,
+                Description = $"Lớp học 1-1 giữa {member.FullName} và PT {trainer.FullName}"
+            };
+            await _unitOfWork.Classes.AddAsync(ptClass);
+            
+            // Tự động Enroll member vào lớp học mới tạo
+            var enrollment = new ClassEnrollment
+            {
+                ClassId = ptClass.Id,
+                MemberId = dto.MemberId,
+                EnrolledDate = DateTime.UtcNow
+            };
+            await _unitOfWork.ClassEnrollments.AddAsync(enrollment);
+        }
+
         await _unitOfWork.SaveChangesAsync();
 
         // Load for mapping
@@ -186,7 +239,7 @@ public class TrainerService : ITrainerService
             .Include(a => a.Trainer)
             .FirstOrDefaultAsync(a => a.Id == assignment.Id);
 
-        return ResponseDto<TrainerAssignmentDto>.SuccessResult(_mapper.Map<TrainerAssignmentDto>(result), "Member assigned successfully");
+        return ResponseDto<TrainerAssignmentDto>.SuccessResult(_mapper.Map<TrainerAssignmentDto>(result), "Phân công PT và tạo lớp học 1-1 thành công");
     }
 
     public async Task<ResponseDto<bool>> RemoveAssignmentAsync(Guid assignmentId)
@@ -311,5 +364,18 @@ public class TrainerService : ITrainerService
         {
             return ResponseDto<PersonalScheduleDto>.FailureResult($"Global schedule error: {ex.Message}");
         }
+    }
+
+    public async Task<ResponseDto<List<TrainerAssignmentDto>>> GetAllAssignmentsAsync()
+    {
+        var assignments = await _unitOfWork.TrainerMemberAssignments.GetQueryable()
+            .Include(a => a.Member)
+            .Include(a => a.Trainer)
+            .Where(a => !a.IsDeleted)
+            .OrderByDescending(a => a.CreatedAt)
+            .ToListAsync();
+
+        var dtos = _mapper.Map<List<TrainerAssignmentDto>>(assignments);
+        return ResponseDto<List<TrainerAssignmentDto>>.SuccessResult(dtos);
     }
 }

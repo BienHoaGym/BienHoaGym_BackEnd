@@ -16,7 +16,7 @@ public class ClassDto
 
     public string TrainerName { get; set; } = string.Empty;
 
-    public string? ScheduleDay { get; set; }
+    public List<string>? ScheduleDay { get; set; }
 
     public TimeSpan StartTime { get; set; }
 

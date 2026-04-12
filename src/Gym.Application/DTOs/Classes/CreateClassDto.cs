@@ -10,7 +10,7 @@ public class CreateClassDto
 
     public Guid TrainerId { get; set; }
 
-    public string? ScheduleDay { get; set; }
+    public List<string>? ScheduleDay { get; set; }
 
     public TimeSpan StartTime { get; set; }
 

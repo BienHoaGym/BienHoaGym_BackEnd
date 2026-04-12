@@ -388,6 +388,14 @@ using (var scope = app.Services.CreateScope())
                             ALTER TABLE ""EquipmentTransactions"" ADD COLUMN ""AttachmentUrl"" text;
                         END IF;
 
+                        -- Sửa bảng TrainerMemberAssignments (Workflow PT 1-1)
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='TrainerMemberAssignments' AND column_name='MemberSubscriptionId') THEN
+                            ALTER TABLE ""TrainerMemberAssignments"" ADD COLUMN ""MemberSubscriptionId"" uuid;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='TrainerMemberAssignments' AND column_name='Status') THEN
+                            ALTER TABLE ""TrainerMemberAssignments"" ADD COLUMN ""Status"" integer DEFAULT 1;
+                        END IF;
+
                         -- TỰ CỨU: Tạo bảng Kiểm kê (StockAudits & StockAuditDetails) nếu chưa có
                         IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'StockAudits') THEN
                             CREATE TABLE ""StockAudits"" (
@@ -448,18 +456,72 @@ using (var scope = app.Services.CreateScope())
                         UPDATE ""EquipmentTransactions"" SET ""TotalAmount"" = 0 WHERE ""TotalAmount"" IS NULL;
                     END $$;
                 ");
+                Console.WriteLine("✅ Database self-healing completed!");
             } catch (Exception ex) {
-                Console.WriteLine($"⚠️ Postgres Self-Heal Warning: {ex.Message}");
+                Console.WriteLine($"🔍 Self-healing info: {ex.Message}");
             }
         }
-        else
+        else if (db.Database.ProviderName == "Microsoft.EntityFrameworkCore.Sqlite")
         {
-            Console.WriteLine($"ℹ️ Skipping Postgres self-healing (Provider: {db.Database.ProviderName})");
+            try {
+                Console.WriteLine("🛠️ Running Database self-healing (SQLite)...");
+                // SQLite ALTER TABLE ADD doesn't support IF NOT EXISTS easily, so we use try-catch for each
+                try { db.Database.ExecuteSqlRaw("ALTER TABLE TrainerMemberAssignments ADD COLUMN MemberSubscriptionId TEXT;"); } catch {}
+                try { db.Database.ExecuteSqlRaw("ALTER TABLE TrainerMemberAssignments ADD COLUMN Status INTEGER DEFAULT 1;"); } catch {}
+                Console.WriteLine("✅ SQLite self-healing completed!");
+            } catch (Exception ex) {
+                Console.WriteLine($"🔍 SQLite healing info: {ex.Message}");
+            }
+        }
+        else 
+        {
+            Console.WriteLine("ℹ️ Skipping self-healing (Provider: " + db.Database.ProviderName + ")");
         }
 
         // 2. Apply Migrations
         db.Database.Migrate();
         Console.WriteLine("✅ Public API: Database migrated successfully!");
+
+        // 🔍 PT ASSIGNMENT RECOVERY (Cấp cứu: Tự động khôi phục các hợp đồng PT bị thiếu từ POS)
+        try {
+            var missingAssignments = await db.MemberSubscriptions
+                .Include(s => s.Package)
+                .Where(s => s.Status == SubscriptionStatus.Active && s.Package.HasPT && !s.IsDeleted)
+                .Where(s => !db.TrainerMemberAssignments.Any(a => a.MemberSubscriptionId == s.Id))
+                .ToListAsync();
+
+            if (missingAssignments.Any())
+            {
+                // Lấy PT đầu tiên làm mặc định nếu DB yêu cầu NOT NULL (như trên SQLite cũ)
+                var defaultTrainer = await db.Trainers.FirstOrDefaultAsync(t => !t.IsDeleted && t.IsActive);
+
+                foreach (var sub in missingAssignments)
+                {
+                    var ptContract = new TrainerMemberAssignment
+                    {
+                        MemberId = sub.MemberId,
+                        MemberSubscriptionId = sub.Id,
+                        Status = TrainerAssignmentStatus.PendingAssignment,
+                        AssignedDate = DateTime.UtcNow,
+                        IsActive = true,
+                        Notes = $"Hợp đồng tự động (Phục hồi từ hệ thống): {sub.Package.Name}"
+                    };
+
+                    // Nếu là SQLite, gán tạm PT mặc định để vượt qua ràng buộc NOT NULL nếu có
+                    if (db.Database.IsSqlite() && defaultTrainer != null)
+                    {
+                        ptContract.TrainerId = defaultTrainer.Id;
+                        ptContract.Notes += " (Gán tạm PT do ràng buộc DB)";
+                    }
+
+                    await db.TrainerMemberAssignments.AddAsync(ptContract);
+                }
+                await db.SaveChangesAsync();
+                Console.WriteLine($"✅ Public API: Fixed {missingAssignments.Count} missing PT assignments!");
+            }
+        } catch (Exception ex) {
+            Console.WriteLine($"⚠️ Public API PT Recovery Warning: {ex.Message}");
+        }
 
         // 3. 🟢 LOGIC TỰ ĐỘNG DỌN DẸP DỮ LIỆU LỖI PHÔNG CHỮ (ĐỒNG BỘ NỀN TẢNG)
         try {

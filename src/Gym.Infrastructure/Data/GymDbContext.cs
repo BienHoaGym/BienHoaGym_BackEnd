@@ -395,6 +395,12 @@ public class GymDbContext : DbContext
             .HasForeignKey(a => a.MemberId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        modelBuilder.Entity<TrainerMemberAssignment>()
+            .HasOne(a => a.MemberSubscription)
+            .WithMany()
+            .HasForeignKey(a => a.MemberSubscriptionId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         modelBuilder.Entity<Product>()
             .HasOne(p => p.Provider)
             .WithMany(u => u.Products)
@@ -481,6 +487,7 @@ public class GymDbContext : DbContext
         modelBuilder.Entity<MaintenanceLog>().Property(m => m.Status).HasConversion<int>();
         modelBuilder.Entity<EquipmentTransaction>().Property(t => t.Type).HasConversion<int>();
         modelBuilder.Entity<StockTransaction>().Property(t => t.Type).HasConversion<int>();
+        modelBuilder.Entity<TrainerMemberAssignment>().Property(a => a.Status).HasConversion<int>();
     }
 
     private static void ConfigureDecimalPrecision(ModelBuilder modelBuilder)

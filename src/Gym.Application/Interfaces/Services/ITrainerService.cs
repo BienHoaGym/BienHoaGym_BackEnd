@@ -14,6 +14,7 @@ public interface ITrainerService
 
     // Student Management
     Task<ResponseDto<List<TrainerAssignmentDto>>> GetAssignedMembersAsync(Guid trainerId);
+    Task<ResponseDto<List<TrainerAssignmentDto>>> GetAllAssignmentsAsync();
     Task<ResponseDto<TrainerAssignmentDto>> AssignMemberAsync(CreateTrainerAssignmentDto dto);
     Task<ResponseDto<bool>> RemoveAssignmentAsync(Guid assignmentId);
 

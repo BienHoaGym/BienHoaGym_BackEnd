@@ -1,4 +1,4 @@
-﻿﻿using AutoMapper;
+﻿using AutoMapper;
 
 using Gym.Application.DTOs.Common;
 
@@ -523,7 +523,24 @@ public class SubscriptionService : ISubscriptionService
 
         subscription.UpdatedAt = DateTime.UtcNow;
 
-        _unitOfWork.Subscriptions.Update(subscription);
+                _unitOfWork.Subscriptions.Update(subscription);
+
+        // --- PT LOGIC (Workflow: Tự động tạo hợp đồng PT khi mua gói) ---
+        var package = await _unitOfWork.Packages.GetByIdAsync(subscription.PackageId);
+        if (package != null && package.HasPT)
+        {
+            var ptContract = new TrainerMemberAssignment
+            {
+                MemberId = subscription.MemberId,
+                MemberSubscriptionId = subscription.Id,
+                Status = TrainerAssignmentStatus.PendingAssignment,
+                AssignedDate = DateTime.UtcNow,
+                IsActive = true,
+                Notes = $"Hợp đồng tự động từ gói: {package.Name}"
+            };
+            await _unitOfWork.TrainerMemberAssignments.AddAsync(ptContract);
+        }
+
 
         // --- Äá»’NG Bá»˜ TRáº NG THÃI Há»˜I VIÃŠN ---
 

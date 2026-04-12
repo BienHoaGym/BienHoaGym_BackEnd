@@ -164,6 +164,22 @@ public class BillingService : IBillingService
                     {
                         existingSub.Status = SubscriptionStatus.Active;
                         _unitOfWork.Subscriptions.Update(existingSub);
+
+                        // --- PT LOGIC (Workflow: Tự động tạo hợp đồng PT khi thanh toán tại POS) ---
+                        var pkg = await _unitOfWork.Packages.GetByIdAsync(existingSub.PackageId);
+                        if (pkg != null && pkg.HasPT)
+                        {
+                            var ptContract = new TrainerMemberAssignment
+                            {
+                                MemberId = existingSub.MemberId,
+                                MemberSubscriptionId = existingSub.Id,
+                                Status = TrainerAssignmentStatus.PendingAssignment,
+                                AssignedDate = DateTime.UtcNow,
+                                IsActive = true,
+                                Notes = $"Hợp đồng tự động từ thanh toán POS: {pkg.Name}"
+                            };
+                            await _unitOfWork.TrainerMemberAssignments.AddAsync(ptContract);
+                        }
                     }
                 }
                 else if (d.ItemType == "Package" && d.ReferenceId.HasValue && dto.MemberId.HasValue)
@@ -180,6 +196,21 @@ public class BillingService : IBillingService
                     if (pkg != null) {
                         subscription.EndDate = startDate.AddDays(pkg.DurationInDays);
                         subscription.OriginalPackageName = pkg.Name;
+                        
+                        // --- PT LOGIC (Workflow: Tự động tạo hợp đồng PT khi mua gói trực tiếp tại POS) ---
+                        if (pkg.HasPT)
+                        {
+                            var ptContract = new TrainerMemberAssignment
+                            {
+                                MemberId = subscription.MemberId,
+                                MemberSubscriptionId = subscription.Id,
+                                Status = TrainerAssignmentStatus.PendingAssignment,
+                                AssignedDate = DateTime.UtcNow,
+                                IsActive = true,
+                                Notes = $"Hợp đồng tự động từ bán lẻ POS: {pkg.Name}"
+                            };
+                            await _unitOfWork.TrainerMemberAssignments.AddAsync(ptContract);
+                        }
                     }
                     await _unitOfWork.Subscriptions.AddAsync(subscription);
                 }

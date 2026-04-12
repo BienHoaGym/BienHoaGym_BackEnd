@@ -126,6 +126,22 @@ public class PaymentService : IPaymentService
             subscription.Status = SubscriptionStatus.Active;
             subscription.UpdatedAt = DateTime.UtcNow;
             _unitOfWork.Subscriptions.Update(subscription);
+
+            // --- PT LOGIC (Workflow: Tự động tạo hợp đồng PT khi kích hoạt gói) ---
+            var package = await _unitOfWork.Packages.GetByIdAsync(subscription.PackageId);
+            if (package != null && package.HasPT)
+            {
+                var ptContract = new TrainerMemberAssignment
+                {
+                    MemberId = subscription.MemberId,
+                    MemberSubscriptionId = subscription.Id,
+                    Status = TrainerAssignmentStatus.PendingAssignment,
+                    AssignedDate = DateTime.UtcNow,
+                    IsActive = true,
+                    Notes = $"Hợp đồng tự động từ thanh toán: {package.Name}"
+                };
+                await _unitOfWork.TrainerMemberAssignments.AddAsync(ptContract);
+            }
         }
 
         await _unitOfWork.SaveChangesAsync();
