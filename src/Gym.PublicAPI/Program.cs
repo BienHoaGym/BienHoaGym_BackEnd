@@ -394,8 +394,11 @@ using (var scope = app.Services.CreateScope())
                             ALTER TABLE ""TrainerMemberAssignments"" ADD COLUMN ""MemberSubscriptionId"" uuid;
                         END IF;
                         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='TrainerMemberAssignments' AND column_name='Status') THEN
-                            ALTER TABLE ""TrainerMemberAssignments"" ADD COLUMN ""Status"" integer DEFAULT 1;
+                            ALTER TABLE "TrainerMemberAssignments" ADD COLUMN "Status" integer DEFAULT 1;
                         END IF;
+
+                        -- BỔ SUNG: Cho phép TrainerId NULL để hỗ trợ trạng thái Chờ phân công
+                        ALTER TABLE "TrainerMemberAssignments" ALTER COLUMN "TrainerId" DROP NOT NULL;
 
                         -- TỰ CỨU: Tạo bảng Kiểm kê (StockAudits & StockAuditDetails) nếu chưa có
                         IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'StockAudits') THEN
