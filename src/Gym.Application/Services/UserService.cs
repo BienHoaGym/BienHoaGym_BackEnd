@@ -51,7 +51,9 @@ public class UserService : IUserService
             Gender = u.Gender,
             HireDate = u.HireDate,
             BankCardNumber = u.BankCardNumber,
-            BankName = u.BankName
+            BankName = u.BankName,
+            ProfilePhoto = u.ProfilePhoto,
+            IsPublic = u.Trainer?.IsPublic ?? false
         }).ToList();
 
         return ResponseDto<List<UserListDto>>.SuccessResult(dtos);
@@ -90,7 +92,9 @@ public class UserService : IUserService
             Gender = u.Gender,
             HireDate = u.HireDate,
             BankCardNumber = u.BankCardNumber,
-            BankName = u.BankName
+            BankName = u.BankName,
+            ProfilePhoto = u.ProfilePhoto,
+            IsPublic = u.Trainer?.IsPublic ?? false
         };
 
         return ResponseDto<UserListDto>.SuccessResult(dto);
@@ -116,6 +120,7 @@ public class UserService : IUserService
         user.HireDate = dto.HireDate;
         user.BankCardNumber = dto.BankCardNumber;
         user.BankName = dto.BankName;
+        user.ProfilePhoto = dto.ProfilePhoto;
         user.UpdatedAt = DateTime.UtcNow;
 
         // Cập nhật roles (Chủ động để tránh lỗi Concurrency khi Clear/Add)
@@ -138,7 +143,9 @@ public class UserService : IUserService
         }
 
         // Nếu là Trainer -> Cập nhật thông tin Trainer
-        var isTrainer = dto.RoleIds.Contains(3);
+        var trainerRole = await _unitOfWork.Roles.GetQueryable().FirstOrDefaultAsync(r => r.RoleName.ToLower() == "trainer");
+        var isTrainer = trainerRole != null && dto.RoleIds.Contains(trainerRole.Id);
+        Console.WriteLine($"[DEBUG] UpdateStaff: User={user.Username}, IsTrainerDetected={isTrainer}, DtoIsPublic={dto.IsPublic}");
         if (isTrainer)
         {
             // Kiểm tra xem đã có bản ghi Trainer chưa (trường hợp Include không ra hoặc mới add)
@@ -160,7 +167,8 @@ public class UserService : IUserService
                     Specialization = dto.Specialization,
                     ExperienceYears = dto.ExperienceYears ?? 0,
                     Salary = dto.Salary ?? 0,
-                    IsActive = true
+                    IsActive = true,
+                    IsPublic = dto.IsPublic
                 };
                 await _unitOfWork.Trainers.AddAsync(trainer);
                 user.Trainer = trainer;
@@ -172,6 +180,7 @@ public class UserService : IUserService
                 trainer.ExperienceYears = dto.ExperienceYears ?? 0;
                 trainer.Salary = dto.Salary ?? 0;
                 trainer.IsActive = dto.IsActive;
+                trainer.IsPublic = dto.IsPublic;
                 trainer.IsDeleted = false; // Phục hồi nếu lỡ bị xóa mềm
                 _unitOfWork.Trainers.Update(trainer);
             }
@@ -202,6 +211,7 @@ public class UserService : IUserService
             HireDate = dto.HireDate,
             BankCardNumber = dto.BankCardNumber,
             BankName = dto.BankName,
+            ProfilePhoto = dto.ProfilePhoto,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
@@ -211,7 +221,10 @@ public class UserService : IUserService
             user.UserRoles.Add(new UserRole { UserId = user.Id, RoleId = rid });
         }
 
-        if (dto.RoleIds.Contains(3)) // Role Trainer
+        var trainerRole = await _unitOfWork.Roles.GetQueryable().FirstOrDefaultAsync(r => r.RoleName.ToLower() == "trainer");
+        var isTrainer = trainerRole != null && dto.RoleIds.Contains(trainerRole.Id);
+        Console.WriteLine($"[DEBUG] CreateStaff: User={user.Username}, IsTrainerDetected={isTrainer}, DtoIsPublic={dto.IsPublic}");
+        if (isTrainer) // Role Trainer
         {
             user.Trainer = new Trainer
             {
@@ -221,7 +234,8 @@ public class UserService : IUserService
                 Specialization = dto.Specialization,
                 ExperienceYears = dto.ExperienceYears ?? 0,
                 Salary = dto.Salary ?? 0,
-                IsActive = true
+                IsActive = true,
+                IsPublic = dto.IsPublic
             };
         }
 

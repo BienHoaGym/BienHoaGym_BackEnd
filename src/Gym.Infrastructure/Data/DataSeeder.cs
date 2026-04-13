@@ -27,7 +27,7 @@ public static class DataSeeder
             if (!await context.Providers.AnyAsync())
             {
                 context.Providers.AddRange(new List<Provider> {
-                    new Provider { Name = "C\u00F4ng ty Thi\u1EBFt b\u1ECB Gym To\u00E0n C\u1EA7u", ContactPerson = "Nguy\u1EC5n V\u0103n A", Email = "contact@globalgym.com", PhoneNumber = "0901234567", Address = "TP.HCM", IsActive = true, CreatedAt = now },
+                    new Provider { Name = "C\u00F4ng ty Thi\u1EBFt b\u1ECB Gym To\u00E0n C\u1EA7u", ContactPerson = "Nguy\u1EC5n V\u0103n A", Email = "contact@globalgym.com", PhoneNumber = "0908581517", Address = "TP.HCM", IsActive = true, CreatedAt = now },
                     new Provider { Name = "T\u1ED5ng kho Dinh d\u01B0\u1EE1ng Vi\u1EC7t", ContactPerson = "Tr\u1EA7n Th\u1ECB B", Email = "sales@dinhduongviet.vn", PhoneNumber = "0908889999", Address = "H\u00E0 N\u1ED9i", IsActive = true, CreatedAt = now }
                 });
                 await context.SaveChangesAsync();

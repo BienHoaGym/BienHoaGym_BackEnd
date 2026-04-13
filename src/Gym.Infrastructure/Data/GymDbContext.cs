@@ -587,7 +587,7 @@ public class GymDbContext : DbContext
 
         var users = new List<User>
         {
-            new User { Id = adminUserId, Username = "admin", Email = "admin@gym.com", FullName = "System Administrator", PhoneNumber = "0901234567", IsActive = true, CreatedAt = seedDate },
+            new User { Id = adminUserId, Username = "admin", Email = "admin@gym.com", FullName = "System Administrator", PhoneNumber = "0908581517", IsActive = true, CreatedAt = seedDate },
             new User { Id = managerUserId, Username = "manager", Email = "manager@gym.com", FullName = "Nguyễn Văn Manager", PhoneNumber = "0902345678", IsActive = true, CreatedAt = seedDate },
             new User { Id = trainerUserId1, Username = "trainer1", Email = "trainer1@gym.com", FullName = "Trần Thị Hương", PhoneNumber = "0903456789", IsActive = true, CreatedAt = seedDate },
             new User { Id = trainerUserId2, Username = "trainer2", Email = "trainer2@gym.com", FullName = "Lê Văn Nam", PhoneNumber = "0904567890", IsActive = true, CreatedAt = seedDate },

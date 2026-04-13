@@ -2149,7 +2149,7 @@ namespace Gym.Infrastructure.Migrations
                             FullName = "System Administrator",
                             IsActive = true,
                             PasswordHash = "AQAAAAIAAYagAAAAEGSwZJgw10drI4sODnH89nmsxn2woMXj7HHOGIvUqZh6SBzUJVjQwRnc+XyxJMVUAw==",
-                            PhoneNumber = "0901234567",
+                            PhoneNumber = "0908581517",
                             Username = "admin"
                         },
                         new

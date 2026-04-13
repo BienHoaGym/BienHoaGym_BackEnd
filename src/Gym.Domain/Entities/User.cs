@@ -29,6 +29,7 @@ public class User
     public DateTime? HireDate { get; set; }
     public string? BankCardNumber { get; set; }
     public string? BankName { get; set; }
+    public string? ProfilePhoto { get; set; }
     
     public bool IsActive { get; set; } = true;
 

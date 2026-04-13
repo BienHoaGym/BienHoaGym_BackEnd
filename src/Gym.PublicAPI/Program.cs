@@ -71,9 +71,10 @@ builder.Services.AddDbContext<GymDbContext>(options =>
     // CỐ ĐỊNH: Chỉ sử dụng 1 file duy nhất tại thư mục chạy để tránh dữ liệu bị "lan mang"
     if (connectionString.Contains(".sqlite") || connectionString.Contains("Data Source") || connectionString.Contains("Filename"))
     {
-        var dbPath = Path.Combine(builder.Environment.ContentRootPath, "GymManagement.sqlite");
-        Console.WriteLine($"📌 PUBLIC API DATABASE FIXED PATH: {dbPath}");
-        options.UseSqlite($"Data Source={dbPath}");
+        // Đồng bộ hóa: Sử dụng chung 1 file DB tại thư mục gốc src của Backend
+        var sharedDbPath = Path.Combine(Directory.GetParent(builder.Environment.ContentRootPath)!.FullName, "GymManagement.sqlite");
+        Console.WriteLine($"📌 SHARED DATABASE PATH: {sharedDbPath}");
+        options.UseSqlite($"Data Source={sharedDbPath}");
     }
     else
     {
@@ -236,6 +237,17 @@ app.Use(async (context, next) => {
     }
 });
 
+// --- SHARED STATIC FILES FOR UPLOADS ---
+var uploadsPath = Path.Combine(Directory.GetParent(builder.Environment.ContentRootPath)!.FullName, "uploads");
+if (!Directory.Exists(uploadsPath)) Directory.CreateDirectory(uploadsPath);
+
+app.UseStaticFiles(); 
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsPath),
+    RequestPath = "/uploads"
+});
+
 app.UseSwagger();
 app.UseSwaggerUI(options => {
     options.SwaggerEndpoint("/swagger/v1/swagger.json", "Gym Public API V1");
@@ -310,6 +322,9 @@ using (var scope = app.Services.CreateScope())
                         END IF;
                         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Users' AND column_name='BankName') THEN
                             ALTER TABLE ""Users"" ADD COLUMN ""BankName"" text;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Users' AND column_name='ProfilePhoto') THEN
+                            ALTER TABLE ""Users"" ADD COLUMN ""ProfilePhoto"" text;
                         END IF;
 
                         -- Sửa bảng MemberSubscriptions
@@ -396,6 +411,9 @@ using (var scope = app.Services.CreateScope())
                         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='TrainerMemberAssignments' AND column_name='Status') THEN
                             ALTER TABLE ""TrainerMemberAssignments"" ADD COLUMN ""Status"" integer DEFAULT 1;
                         END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Trainers' AND column_name='IsPublic') THEN
+                            ALTER TABLE ""Trainers"" ADD COLUMN ""IsPublic"" boolean DEFAULT false;
+                        END IF;
 
                         -- BỔ SUNG: Cho phép TrainerId NULL để hỗ trợ trạng thái Chờ phân công
                         ALTER TABLE ""TrainerMemberAssignments"" ALTER COLUMN ""TrainerId"" DROP NOT NULL;
@@ -448,6 +466,29 @@ using (var scope = app.Services.CreateScope())
                             );
                         END IF;
 
+                        -- Sửa bảng Members (Thêm các cột mới)
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Members' AND column_name='Gender') THEN
+                            ALTER TABLE ""Members"" ADD COLUMN ""Gender"" text;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Members' AND column_name='Address') THEN
+                            ALTER TABLE ""Members"" ADD COLUMN ""Address"" text;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Members' AND column_name='Note') THEN
+                            ALTER TABLE ""Members"" ADD COLUMN ""Note"" text;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Members' AND column_name='EmergencyContact') THEN
+                            ALTER TABLE ""Members"" ADD COLUMN ""EmergencyContact"" text;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Members' AND column_name='EmergencyPhone') THEN
+                            ALTER TABLE ""Members"" ADD COLUMN ""EmergencyPhone"" text;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Members' AND column_name='FaceEncoding') THEN
+                            ALTER TABLE ""Members"" ADD COLUMN ""FaceEncoding"" text;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Members' AND column_name='QRCode') THEN
+                            ALTER TABLE ""Members"" ADD COLUMN ""QRCode"" text;
+                        END IF;
+
                         -- Khởi tạo giá trị mặc định cho dữ liệu cũ (Tránh lỗi NULL)
                         UPDATE ""Providers"" SET ""TotalDebt"" = 0 WHERE ""TotalDebt"" IS NULL;
                         UPDATE ""Providers"" SET ""SupplyType"" = 'General' WHERE ""SupplyType"" IS NULL;
@@ -472,6 +513,12 @@ using (var scope = app.Services.CreateScope())
                 // SQLite ALTER TABLE ADD doesn't support IF NOT EXISTS easily, so we use try-catch for each
                 try { db.Database.ExecuteSqlRaw("ALTER TABLE TrainerMemberAssignments ADD COLUMN MemberSubscriptionId TEXT;"); } catch {}
                 try { db.Database.ExecuteSqlRaw("ALTER TABLE TrainerMemberAssignments ADD COLUMN Status INTEGER DEFAULT 1;"); } catch {}
+                try { db.Database.ExecuteSqlRaw("ALTER TABLE Users ADD COLUMN ProfilePhoto TEXT;"); } catch {}
+                try { db.Database.ExecuteSqlRaw("ALTER TABLE Trainers ADD COLUMN IsPublic INTEGER DEFAULT 0;"); } catch {}
+                try { db.Database.ExecuteSqlRaw("ALTER TABLE Members ADD COLUMN FaceEncoding TEXT;"); } catch {}
+                try { db.Database.ExecuteSqlRaw("ALTER TABLE Members ADD COLUMN QRCode TEXT;"); } catch {}
+                try { db.Database.ExecuteSqlRaw("ALTER TABLE Members ADD COLUMN Gender TEXT;"); } catch {}
+                try { db.Database.ExecuteSqlRaw("ALTER TABLE Members ADD COLUMN Address TEXT;"); } catch {}
                 Console.WriteLine("✅ SQLite self-healing completed!");
             } catch (Exception ex) {
                 Console.WriteLine($"🔍 SQLite healing info: {ex.Message}");
@@ -533,10 +580,13 @@ using (var scope = app.Services.CreateScope())
             await connection.OpenAsync();
             using var command = connection.CreateCommand();
             command.CommandText = @"
+                -- Sửa tên gói trong MembershipPackages
                 UPDATE MembershipPackages SET Name = REPLACE(Name, 'GA3i', 'Gói');
                 UPDATE MembershipPackages SET Name = REPLACE(Name, 'ThAng', 'Tháng');
                 UPDATE MembershipPackages SET Name = REPLACE(Name, 'Nm', 'Năm');
                 UPDATE MembershipPackages SET Name = REPLACE(Name, 'NgAy', 'Ngày');
+
+                -- Sửa tên gói trong Subscriptions
                 UPDATE MemberSubscriptions SET OriginalPackageName = REPLACE(OriginalPackageName, 'GA3i', 'Gói');
                 UPDATE MemberSubscriptions SET OriginalPackageName = REPLACE(OriginalPackageName, 'ThAng', 'Tháng');
                 
@@ -556,7 +606,7 @@ using (var scope = app.Services.CreateScope())
                 UPDATE InvoiceDetails SET ItemName = REPLACE(ItemName, 'ThAng', 'Tháng');
             ";
             await command.ExecuteNonQueryAsync();
-            Console.WriteLine("✨ Public API: Database Cleanup completed.");
+            Console.WriteLine("✨ Public API: Database Cleanup: Corrupted characters fixed!");
         } catch (Exception ex) {
             Console.WriteLine($"⚠️ Public API Cleanup Warning: {ex.Message}");
         }

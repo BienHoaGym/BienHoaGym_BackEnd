@@ -947,7 +947,7 @@ namespace Gym.Infrastructure.Migrations
                 columns: new[] { "Id", "CreatedAt", "Email", "FullName", "IsActive", "LastLoginAt", "PasswordHash", "PhoneNumber", "UpdatedAt", "Username" },
                 values: new object[,]
                 {
-                    { new Guid("11111111-1111-1111-1111-111111111111"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "admin@gym.com", "System Administrator", true, null, "AQAAAAIAAYagAAAAEHL4vT2Buc/sGNdvHQvFfQ4CPc4UQOmiPbzp5m1Z7oQcBwOSwcLDD59AMEAn/VIucg==", "0901234567", null, "admin" },
+                    { new Guid("11111111-1111-1111-1111-111111111111"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "admin@gym.com", "System Administrator", true, null, "AQAAAAIAAYagAAAAEHL4vT2Buc/sGNdvHQvFfQ4CPc4UQOmiPbzp5m1Z7oQcBwOSwcLDD59AMEAn/VIucg==", "0908581517", null, "admin" },
                     { new Guid("22222222-2222-2222-2222-222222222222"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "manager@gym.com", "Nguyễn Văn Manager", true, null, "AQAAAAIAAYagAAAAEMOE509lshkBGDxE6dq/f4XoE6hQo4zLMTgN++LE8Y6ZGamPY0pO27BTeK3UQAOJIA==", "0902345678", null, "manager" },
                     { new Guid("33333333-3333-3333-3333-333333333333"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "trainer1@gym.com", "Trần Thị Hương", true, null, "AQAAAAIAAYagAAAAEHmUV0/HBqxqxwRVGtDla2IqXBjr91HmiCdPU0Yuvxk6AIzRZNC/eEOTH84lDXDiEw==", "0903456789", null, "trainer1" },
                     { new Guid("44444444-4444-4444-4444-444444444444"), new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "trainer2@gym.com", "Lê Văn Nam", true, null, "AQAAAAIAAYagAAAAEPrwImYQBLTEJwPjRlKXNIG8ikfT8srZxmJWqEZXHOIkQVC//7TkcwH0C4pxNZ36pQ==", "0904567890", null, "trainer2" },

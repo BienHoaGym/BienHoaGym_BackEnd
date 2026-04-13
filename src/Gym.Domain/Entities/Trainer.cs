@@ -33,7 +33,6 @@ public class Trainer : BaseEntity
     /// </summary>
     public string? Bio { get; set; }
 
-    public string? ProfilePhoto { get; set; }
 
     public DateTime? HireDate { get; set; }
 
@@ -41,6 +40,7 @@ public class Trainer : BaseEntity
     public decimal SessionRate { get; set; } // Giá mỗi buổi PT
 
     public bool IsActive { get; set; } = true;
+    public bool IsPublic { get; set; } = false; // Mặc định là không công khai
 
     // Navigation properties
     public virtual User? User { get; set; }

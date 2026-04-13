@@ -21,6 +21,7 @@ public class TrainerDto
     public decimal Salary { get; set; }
     public decimal SessionRate { get; set; }
     public bool IsActive { get; set; }
+    public bool IsPublic { get; set; }
 
     public DateTime CreatedAt { get; set; }
 }

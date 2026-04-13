@@ -20,7 +20,9 @@ public class TrainerService : ITrainerService
 
     public async Task<ResponseDto<TrainerDto>> GetByIdAsync(Guid id)
     {
-        var trainer = await _unitOfWork.Trainers.GetByIdAsync(id);
+        var trainer = await _unitOfWork.Trainers.GetQueryable()
+            .Include(t => t.User)
+            .FirstOrDefaultAsync(t => t.Id == id);
 
         if (trainer == null || trainer.IsDeleted)
         {
@@ -33,11 +35,11 @@ public class TrainerService : ITrainerService
 
     public async Task<ResponseDto<List<TrainerDto>>> GetAllAsync()
     {
-        var trainers = await _unitOfWork.Trainers.GetAllAsync();
-        var activeTrainers = trainers
+        var activeTrainers = await _unitOfWork.Trainers.GetQueryable()
+            .Include(t => t.User)
             .Where(t => !t.IsDeleted)
             .OrderBy(t => t.FullName)
-            .ToList();
+            .ToListAsync();
 
         var trainerDtos = _mapper.Map<List<TrainerDto>>(activeTrainers);
         return ResponseDto<List<TrainerDto>>.SuccessResult(trainerDtos);
@@ -138,7 +140,19 @@ public class TrainerService : ITrainerService
     public async Task<ResponseDto<List<TrainerDto>>> GetAvailableAsync()
     {
         var trainers = await _unitOfWork.Trainers.GetAvailableTrainersAsync();
+        Console.WriteLine($"[DEBUG] TrainerService: Found {trainers.Count} public trainers in DB");
         var trainerDtos = _mapper.Map<List<TrainerDto>>(trainers);
+        
+        // Manual fix to ensure ProfilePhoto is carried over
+        for(int i = 0; i < trainers.Count; i++)
+        {
+            var user = trainers[i].User;
+            if (user != null)
+            {
+                trainerDtos[i].ProfilePhoto = user.ProfilePhoto;
+            }
+        }
+        
         return ResponseDto<List<TrainerDto>>.SuccessResult(trainerDtos);
     }
 
@@ -314,6 +328,7 @@ public class TrainerService : ITrainerService
     public async Task<ResponseDto<PersonalScheduleDto>> GetTrainerScheduleAsync(Guid trainerId)
     {
         var trainer = await _unitOfWork.Trainers.GetQueryable()
+            .Include(t => t.User)
             .Include(t => t.Classes)
             .Include(t => t.TrainerMemberAssignments)
                 .ThenInclude(a => a.Member)

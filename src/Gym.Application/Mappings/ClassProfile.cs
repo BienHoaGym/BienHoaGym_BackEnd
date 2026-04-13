@@ -11,7 +11,8 @@ public class ClassProfile : Profile
     public ClassProfile()
     {
         CreateMap<Class, ClassDto>()
-            .ForMember(dest => dest.TrainerName, opt => opt.MapFrom(src => src.Trainer.FullName))
+            .ForMember(d => d.TrainerName, opt => opt.MapFrom(s => s.Trainer != null ? s.Trainer.FullName : string.Empty))
+            .ForMember(d => d.TrainerPhoto, opt => opt.MapFrom(s => (s.Trainer != null && s.Trainer.User != null) ? s.Trainer.User.ProfilePhoto : null))
             .ForMember(dest => dest.ScheduleDay, opt => opt.MapFrom(src => 
                 !string.IsNullOrEmpty(src.ScheduleDay) 
                 ? src.ScheduleDay.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList() 

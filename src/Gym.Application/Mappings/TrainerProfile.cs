@@ -8,7 +8,9 @@ public class TrainerProfile : Profile
 {
     public TrainerProfile()
     {
-        CreateMap<Trainer, TrainerDto>().ReverseMap();
+        CreateMap<Trainer, TrainerDto>()
+            .ForMember(dest => dest.ProfilePhoto, opt => opt.MapFrom(src => src.User != null ? src.User.ProfilePhoto : null))
+            .ReverseMap();
         CreateMap<CreateTrainerDto, Trainer>();
         CreateMap<UpdateTrainerDto, Trainer>();
 

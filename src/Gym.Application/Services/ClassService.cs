@@ -59,6 +59,7 @@ public class ClassService : IClassService
     {
         var activeClassesFromDb = await _unitOfWork.Classes.GetQueryable()
             .Include(c => c.Trainer)
+                .ThenInclude(t => t!.User)
             .Where(c => !c.IsDeleted && c.IsActive)
             .ToListAsync();
 

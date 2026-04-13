@@ -15,6 +15,7 @@ public class ClassDto
     public Guid TrainerId { get; set; }
 
     public string TrainerName { get; set; } = string.Empty;
+    public string? TrainerPhoto { get; set; }
 
     public List<string>? ScheduleDay { get; set; }
 

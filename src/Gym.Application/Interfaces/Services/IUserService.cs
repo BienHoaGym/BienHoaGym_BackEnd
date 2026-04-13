@@ -41,6 +41,8 @@ public class UserListDto
     public int? ExperienceYears { get; set; }
     public string? TrainerCode { get; set; }
     public decimal? Salary { get; set; }
+    public string? ProfilePhoto { get; set; }
+    public bool IsPublic { get; set; }
 }
 
 public class CreateStaffDto
@@ -64,6 +66,8 @@ public class CreateStaffDto
     public string? Specialization { get; set; }
     public int? ExperienceYears { get; set; }
     public decimal? Salary { get; set; }
+    public string? ProfilePhoto { get; set; }
+    public bool IsPublic { get; set; }
 }
 
 public class UpdateStaffDto
@@ -86,4 +90,6 @@ public class UpdateStaffDto
     public string? Specialization { get; set; }
     public int? ExperienceYears { get; set; }
     public decimal? Salary { get; set; }
+    public string? ProfilePhoto { get; set; }
+    public bool IsPublic { get; set; }
 }
