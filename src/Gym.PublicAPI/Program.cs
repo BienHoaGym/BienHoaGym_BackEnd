@@ -238,8 +238,9 @@ app.Use(async (context, next) => {
 });
 
 // --- SHARED STATIC FILES FOR UPLOADS ---
-var uploadsPath = Path.Combine(Directory.GetParent(builder.Environment.ContentRootPath)!.FullName, "uploads");
+var uploadsPath = Path.Combine(builder.Environment.ContentRootPath, "uploads");
 if (!Directory.Exists(uploadsPath)) Directory.CreateDirectory(uploadsPath);
+Console.WriteLine($"📂 PUBLIC API UPLOADS PATH: {uploadsPath}");
 
 app.UseStaticFiles(); 
 app.UseStaticFiles(new StaticFileOptions
