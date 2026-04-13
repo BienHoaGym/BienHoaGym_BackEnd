@@ -68,12 +68,21 @@ builder.Services.AddDbContext<GymDbContext>(options =>
         throw new Exception("Connection string 'DefaultConnection' or 'DATABASE_URL' not found.");
     }
 
-    // CỐ ĐỊNH: Chỉ sử dụng 1 file duy nhất tại thư mục chạy để tránh dữ liệu bị "lan mang"
+    // CỐ ĐỊNH: Sử dụng file DB tại thư mục chạy để đảm bảo quyền ghi và dễ quản lý
     if (connectionString.Contains(".sqlite") || connectionString.Contains("Data Source") || connectionString.Contains("Filename"))
     {
-        // Đồng bộ hóa: Sử dụng chung 1 file DB tại thư mục gốc src của Backend
-        var sharedDbPath = Path.Combine(Directory.GetParent(builder.Environment.ContentRootPath)!.FullName, "GymManagement.sqlite");
-        Console.WriteLine($"📌 SHARED DATABASE PATH: {sharedDbPath}");
+        // Sử dụng ContentRootPath trực tiếp thay vì Parent để an toàn hơn trong Docker/Render
+        var dbFile = "GymManagement.sqlite";
+        var sharedDbPath = Path.Combine(builder.Environment.ContentRootPath, dbFile);
+        
+        // Cấp cứu: Nếu file không tồn tại ở App Root, thử tìm ở Parent (tương thích ngược) hoặc Project Root
+        if (!System.IO.File.Exists(sharedDbPath))
+        {
+            var parentPath = Path.Combine(Directory.GetParent(builder.Environment.ContentRootPath)?.FullName ?? "", dbFile);
+            if (System.IO.File.Exists(parentPath)) sharedDbPath = parentPath;
+        }
+
+        Console.WriteLine($"📌 DATABASE PATH: {sharedDbPath}");
         options.UseSqlite($"Data Source={sharedDbPath}");
     }
     else
@@ -266,8 +275,13 @@ app.Use(async (context, next) => {
 });
 
 // --- SHARED STATIC FILES FOR UPLOADS ---
-var uploadsPath = Path.Combine(Directory.GetParent(builder.Environment.ContentRootPath)!.FullName, "uploads");
-if (!Directory.Exists(uploadsPath)) Directory.CreateDirectory(uploadsPath);
+// Sử dụng thư mục uploads ngay tại App Root để đảm bảo Render map đúng volume (nếu có)
+var uploadsPath = Path.Combine(builder.Environment.ContentRootPath, "uploads");
+if (!Directory.Exists(uploadsPath)) 
+{
+    Directory.CreateDirectory(uploadsPath);
+}
+Console.WriteLine($"📂 UPLOADS PATH: {uploadsPath}");
 
 app.UseStaticFiles(); // Theo mặc định là wwwroot
 app.UseStaticFiles(new StaticFileOptions
@@ -279,8 +293,17 @@ app.UseStaticFiles(new StaticFileOptions
 app.UseSwagger();
 app.UseSwaggerUI(options =>
 {
-    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Gym Management API V1");
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Gym Master API V1");
     options.RoutePrefix = "swagger";
+});
+
+// Thêm route gốc để kiểm tra nhanh trạng thái API
+app.MapGet("/", () => new { 
+    service = "Gym Master API", 
+    status = "Running", 
+    swagger = "/swagger",
+    health = "/api/health",
+    timestamp = DateTime.UtcNow 
 });
 
 // Thêm Endpoint Health Check công khai (Không cần Auth) để kiểm tra CORS/DB

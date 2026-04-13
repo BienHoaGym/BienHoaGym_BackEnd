@@ -38,6 +38,15 @@ public class PublicController : ControllerBase
     public async Task<IActionResult> GetClasses()
     {
         var result = await _classService.GetActiveClassesAsync();
+        
+        // Lọc bỏ các lớp PT 1-1 cho trang Marketing (chỉ hiện lớp nhóm)
+        if (result.Success && result.Data != null)
+        {
+            result.Data = result.Data
+                .Where(c => c.ClassType != "PT 1-1" && !c.ClassName.Contains("PT 1-1"))
+                .ToList();
+        }
+        
         return Ok(result);
     }
 
@@ -55,3 +64,4 @@ public class PublicController : ControllerBase
         return Ok(result);
     }
 }
+
